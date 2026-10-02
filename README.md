@@ -17,8 +17,3 @@ Template front-end pour une plateforme de vêtements de seconde main (vente et �
 | `/articles/{id}`      | `items/show.blade.php` |
 | `/articles/nouveau`   | `items/create.blade.php` |
 
-## Étapes suivantes
-
-- Remplacer `demoItems()` dans `routes/web.php` par un modèle `Item` (`php artisan make:model Item -mcr`).
-- Remplacer les blocs de couleur `.item-photo` par de vraies images (`<img>` déjà prévu en commentaire dans `components/item-card.blade.php`).
-- Ajouter l'authentification avec Laravel Breeze (`composer require laravel/breeze --dev`) — le header gère déjà `@auth`.
