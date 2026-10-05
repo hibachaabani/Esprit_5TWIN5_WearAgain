@@ -169,3 +169,10 @@ legend, .field > label, .label { display: block; font-weight: 600; margin-bottom
   .nav a:not(.btn) { display: none; }
   .field-row { grid-template-columns: 1fr; }
 }
+
+/* Cartes catégorie */
+.categorie-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
+.categorie-icon { font-size: 2rem; line-height: 1; }
+.categorie-body { flex: 1; }
+.categorie-body h2 { margin-bottom: .25rem; }
+.categorie-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
