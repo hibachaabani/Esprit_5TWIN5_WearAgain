@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../back/routes/web.php',
-        commands: __DIR__.'/../back/routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -18,6 +18,4 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
-    })->create()
-    ->useAppPath(dirname(__DIR__).'/back/app')
-    ->useDatabasePath(dirname(__DIR__).'/back/database');
+    })->create();
