@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AtelierController;
+use App\Http\Controllers\ReparationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,3 +29,6 @@ Route::get('/articles/{id}', function (int $id) {
     $item = collect(demoItems())->firstWhere('id', $id) ?? abort(404);
     return view('items.show', ['item' => $item]);
 })->name('items.show');
+
+Route::resource('ateliers', AtelierController::class);
+Route::resource('reparations', ReparationController::class);
