@@ -32,12 +32,22 @@ class CollecteSeeder extends Seeder
 
             // Des dépôts à chaque étape du parcours, rattachés aux particuliers créés plus haut.
             $repartition = $point->actif
-                ? ['enAttente' => rand(1, 4), 'recu' => rand(0, 3), 'trie' => rand(2, 5), 'annule' => rand(0, 1)]
+                ? ['enAttente' => rand(1, 4), 'recu' => rand(0, 3), 'trie' => rand(4, 9), 'annule' => rand(0, 2)]
                 : ['trie' => rand(3, 6)];
 
             foreach ($repartition as $etat => $nombre) {
                 Depot::factory($nombre)->{$etat}()->for($point)->recycle($particuliers)->create();
             }
+        }
+
+        // Trois dépôts jamais apportés depuis plus d'une semaine : `php artisan depots:expirer` les annule.
+        foreach (['Borne textile Lafayette', 'Local solidaire La Marsa', 'Borne textile Sousse Centre'] as $nom) {
+            $date = today()->subDays(rand(9, 14));
+
+            Depot::factory()
+                ->for(PointCollecte::where('nom', $nom)->firstOrFail())
+                ->recycle($particuliers)
+                ->create(['date_depot' => $date->toDateString(), 'created_at' => $date->copy()->subDays(2)->setTime(10, 0)]);
         }
 
         // Le petit conteneur d'Ennasr est plein : il illustre le refus de dépôt.
