@@ -1,0 +1,156 @@
+/* WearAgain — module collecte (points de collecte et dépôts) */
+
+.collecte { padding-top: 2rem; }
+
+/* Sous-navigation du module */
+.subnav { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: 2rem; padding: .4rem; background: var(--white); border: 1px solid var(--line); border-radius: 999px; }
+.subnav a:not(.btn) { padding: .45rem 1rem; border-radius: 999px; color: var(--ink); text-decoration: none; font-weight: 500; }
+.subnav a:not(.btn):hover { background: var(--cream); }
+.subnav a.active { background: var(--ink); color: var(--white); }
+.subnav .btn { margin-left: auto; }
+
+.flash-erreur { background: #B3261E; }
+
+/* Boutons complémentaires */
+.btn-sm { padding: .4rem .85rem; font-size: .85rem; }
+.btn-danger { border-color: #B3261E; color: #B3261E; background: transparent; }
+.btn-danger:hover { background: #B3261E; color: var(--white); }
+.btn-gold { background: var(--gold); color: var(--white); }
+.btn-gold:hover { background: #94693A; }
+.btn-sage { background: var(--sage); color: var(--white); }
+.btn-sage:hover { background: #5E6150; }
+.inline-form { display: inline; margin: 0; }
+
+/* Indicateurs */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+.kpi { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; }
+.kpi strong { display: block; font: 700 2rem/1 var(--font-display); color: var(--maroon); margin-bottom: .35rem; }
+.kpi span { color: var(--muted); font-size: .9rem; }
+
+/* Barre de filtres */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: 1rem; padding: 1rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.toolbar input[type=search] { flex: 1 1 220px; width: auto; }
+.toolbar select, .toolbar input[type=date] { width: auto; flex: 0 1 auto; }
+.check { display: inline-flex; align-items: center; gap: .4rem; font-weight: 500; cursor: pointer; }
+.check input { width: 1.05rem; height: 1.05rem; accent-color: var(--maroon); }
+.note { font-size: .9rem; color: var(--muted); margin: 0 0 1rem; }
+
+input[type=date] {
+  width: 100%; padding: .6rem .85rem; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--white); font: inherit; color: var(--ink);
+}
+
+/* Carte + liste des points */
+.collecte-layout { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.5rem; align-items: start; }
+.carte { height: 560px; border-radius: var(--radius-lg); border: 1px solid var(--line); background: #E9E4D8; position: sticky; top: 90px; z-index: 0; }
+.carte-sm { height: 300px; position: static; }
+.carte-picker { height: 280px; position: static; cursor: crosshair; }
+.points-liste { display: grid; gap: 1rem; }
+
+.point-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.15rem 1.25rem; transition: border-color .15s; }
+.point-card:hover { border-color: var(--maroon); }
+.point-card h3 { font: 700 1.1rem var(--font-display); margin: 0; }
+.point-card h3 a { color: var(--ink); text-decoration: none; }
+.point-card p { margin: .2rem 0; }
+.point-card-head { display: flex; justify-content: space-between; align-items: start; gap: .75rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .9rem; }
+
+/* Étiquettes */
+.tag { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font: 600 .72rem var(--font-body); white-space: nowrap; }
+.tag-ok { background: #E4E6DC; color: #4E5240; }
+.tag-alerte { background: var(--maroon); color: var(--white); }
+.tag-muted { background: #EEE9DF; color: var(--muted); }
+
+/* Jauge de capacité */
+.jauge { margin-top: .75rem; }
+.jauge p { margin: .35rem 0 0; }
+.jauge-barre { height: 8px; border-radius: 999px; background: #EEE9DF; overflow: hidden; }
+.jauge-barre span { display: block; height: 100%; border-radius: inherit; background: var(--sage); transition: width .4s ease-out; }
+.jauge-haut .jauge-barre span { background: var(--gold); }
+.jauge-plein .jauge-barre span { background: var(--maroon); }
+
+/* Statuts de dépôt */
+.statut { display: inline-block; padding: .25rem .7rem; border-radius: 999px; font: 600 .78rem var(--font-body); white-space: nowrap; }
+.statut-en_attente { background: #F3E6D3; color: #7A5527; }
+.statut-recu { background: #E4E6DC; color: #4E5240; }
+.statut-trie { background: var(--sage); color: var(--white); }
+.statut-annule { background: #EEE9DF; color: var(--muted); text-decoration: line-through; }
+
+.statut-filtres { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.statut-filtres a { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--white); color: var(--ink); text-decoration: none; font-weight: 500; }
+.statut-filtres a.active { border-color: var(--maroon); background: var(--maroon); color: var(--white); }
+.statut-filtres b { font-family: var(--font-display); }
+
+/* Panneaux et grilles de détail */
+.panel { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.5rem; }
+.panel + .panel { margin-top: 1.5rem; }
+.panel h2 { font-size: 1.25rem; }
+.split { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.5rem; align-items: start; }
+.page-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.5rem; }
+.page-head h1 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); margin: .35rem 0 .25rem; }
+.page-head p { margin: 0; }
+.back-link { font-size: .875rem; }
+.repartition { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+
+/* Tableau */
+.table-wrap { overflow-x: auto; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.table th, .table td { padding: .8rem 1rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: #FBF8F2; }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover { background: #FBF8F2; }
+.code { font: 600 .9rem ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: .03em; }
+
+/* Frise de suivi */
+.timeline { list-style: none; margin: 1rem 0 0; padding: 0; }
+.timeline li { position: relative; padding: 0 0 1.25rem 2rem; color: var(--muted); }
+.timeline li::before { content: ""; position: absolute; left: 0; top: .2rem; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); background: var(--white); }
+.timeline li::after { content: ""; position: absolute; left: 7px; top: 1.15rem; bottom: .1rem; width: 2px; background: var(--line); transform: translateX(-50%); }
+.timeline li:last-child { padding-bottom: 0; }
+.timeline li:last-child::after { display: none; }
+.timeline li.faite { color: var(--ink); }
+.timeline li.faite::before { background: var(--maroon); border-color: var(--maroon); }
+.timeline li.faite::after { background: var(--maroon); }
+.timeline strong { display: block; }
+.timeline span { font-size: .85rem; color: var(--muted); }
+
+/* Bon de dépôt + QR code */
+.bon { text-align: center; }
+.bon .code { display: block; font-size: 1.6rem; color: var(--maroon); margin: .5rem 0 1rem; }
+.qr { display: inline-block; padding: 10px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.qr img, .qr canvas { display: block; }
+
+/* Suivi public */
+.suivi-form { display: flex; gap: .6rem; margin: 1.5rem 0 2rem; }
+.suivi-form input { text-transform: uppercase; font: 600 1.1rem ui-monospace, Consolas, monospace; letter-spacing: .05em; }
+
+/* Pagination */
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; margin-top: 1.5rem; }
+.pagination .page { min-width: 2.4rem; padding: .45rem .75rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--white); color: var(--ink); text-decoration: none; text-align: center; font-weight: 500; }
+.pagination a.page:hover { border-color: var(--maroon); color: var(--maroon); }
+.pagination .current { background: var(--maroon); border-color: var(--maroon); color: var(--white); }
+.pagination .disabled { color: var(--muted); }
+
+/* Popups Leaflet aux couleurs du site */
+.leaflet-popup-content { font-family: var(--font-body); }
+.leaflet-popup-content a { color: var(--maroon); font-weight: 600; }
+
+@media (max-width: 900px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .collecte-layout, .split { grid-template-columns: 1fr; }
+  .carte { position: static; height: 360px; }
+  .subnav .btn { margin-left: 0; }
+}
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: 1fr 1fr; }
+  .suivi-form { flex-direction: column; }
+  .table th:nth-child(3), .table td:nth-child(3), .table th:nth-child(5), .table td:nth-child(5) { display: none; }
+}
+
+/* Impression du bon de dépôt */
+@media print {
+  .site-header, .site-footer, .subnav, .no-print, .flash { display: none !important; }
+  body { background: var(--white); }
+  .split { grid-template-columns: 1fr 1fr; }
+  .panel { border-color: #999; }
+}
