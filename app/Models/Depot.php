@@ -97,12 +97,37 @@ class Depot extends Model
     }
 
     /**
-     * Filtres de la liste et de l'export : statut, point, période, recherche libre.
+     * Déclarés mais toujours pas apportés alors que la date prévue est passée.
+     */
+    public function scopeEnRetard(Builder $query): void
+    {
+        $query->where('statut', 'en_attente')->whereDate('date_depot', '<', today());
+    }
+
+    /**
+     * Vêtements censés être dans le point (date de dépôt arrivée) et pas encore récupérés.
+     */
+    public function scopeACollecter(Builder $query): void
+    {
+        $query->where('statut', 'en_attente')->whereDate('date_depot', '<=', today());
+    }
+
+    /**
+     * En retard depuis plus de $jours jours : à annuler automatiquement.
+     */
+    public function scopeExpires(Builder $query, int $jours): void
+    {
+        $query->where('statut', 'en_attente')->whereDate('date_depot', '<', today()->subDays($jours));
+    }
+
+    /**
+     * Filtres de la liste et de l'export : statut, retard, point, période, recherche libre.
      */
     public function scopeFiltrer(Builder $query, array $filtres): void
     {
         $query
             ->when($filtres['statut'] ?? null, fn (Builder $q, $statut) => $q->where('statut', $statut))
+            ->when($filtres['retard'] ?? false, fn (Builder $q) => $q->enRetard())
             ->when($filtres['point_collecte_id'] ?? null, fn (Builder $q, $id) => $q->where('point_collecte_id', $id))
             ->when($filtres['du'] ?? null, fn (Builder $q, $date) => $q->whereDate('date_depot', '>=', $date))
             ->when($filtres['au'] ?? null, fn (Builder $q, $date) => $q->whereDate('date_depot', '<=', $date))
@@ -120,6 +145,11 @@ class Depot extends Model
     public function estActif(): bool
     {
         return in_array($this->statut, self::STATUTS_ACTIFS, true);
+    }
+
+    public function estEnRetard(): bool
+    {
+        return $this->statut === 'en_attente' && $this->date_depot->lt(today());
     }
 
     /**
