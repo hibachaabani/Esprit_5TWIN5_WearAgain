@@ -3,12 +3,18 @@
     <select id="point_collecte_id" name="point_collecte_id" required>
         <option value="">Choisir un point…</option>
         @foreach ($points as $point)
-            @php($estPointActuel = $depot->exists && (int) $depot->point_collecte_id === $point->id)
+            @php
+                $estPointActuel = $depot->exists && (int) $depot->point_collecte_id === $point->id;
+                $disponibilite = match (true) {
+                    ! $point->actif => 'fermé',
+                    $point->estComplet() => 'complet',
+                    default => $point->placesRestantes().' places',
+                };
+            @endphp
             <option value="{{ $point->id }}"
                     @selected((int) old('point_collecte_id', $depot->point_collecte_id) === $point->id)
                     @disabled(! $point->accepteDepots() && ! $estPointActuel)>
-                {{ $point->ville }} — {{ $point->nom }}
-                @if (! $point->actif) (fermé) @elseif ($point->estComplet()) (complet) @else ({{ $point->placesRestantes() }} places) @endif
+                {{ $point->ville }} — {{ $point->nom }} ({{ $disponibilite }})
             </option>
         @endforeach
     </select>
