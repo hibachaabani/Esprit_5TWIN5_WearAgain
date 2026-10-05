@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DepotController;
+use App\Http\Controllers\PointCollecteController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,3 +29,12 @@ Route::get('/articles/{id}', function (int $id) {
     $item = collect(demoItems())->firstWhere('id', $id) ?? abort(404);
     return view('items.show', ['item' => $item]);
 })->name('items.show');
+
+// Module collecte (membre 3) : points de collecte et dépôts
+Route::resource('points-collecte', PointCollecteController::class)
+    ->parameters(['points-collecte' => 'pointCollecte']);
+
+Route::get('depots/suivi', [DepotController::class, 'suivi'])->name('depots.suivi');
+Route::get('depots/export', [DepotController::class, 'export'])->name('depots.export');
+Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
+Route::resource('depots', DepotController::class);
