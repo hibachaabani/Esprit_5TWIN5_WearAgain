@@ -3,7 +3,8 @@
 .collecte { padding-top: 2rem; }
 
 /* Sous-navigation du module */
-.subnav { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: 2rem; padding: .4rem; background: var(--white); border: 1px solid var(--line); border-radius: 999px; }
+.subnav { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-bottom: 2rem; padding: .4rem; background: var(--white); border: 1px solid var(--line); border-radius: 28px; }
+.subnav-label { margin-left: .6rem; padding-left: 1rem; border-left: 1px solid var(--line); font: 700 .72rem var(--font-body); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
 .subnav a:not(.btn) { padding: .45rem 1rem; border-radius: 999px; color: var(--ink); text-decoration: none; font-weight: 500; }
 .subnav a:not(.btn):hover { background: var(--cream); }
 .subnav a.active { background: var(--ink); color: var(--white); }
@@ -24,7 +25,9 @@
 /* Indicateurs */
 .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
 .kpi { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; }
-.kpi strong { display: block; font: 700 2rem/1 var(--font-display); color: var(--maroon); margin-bottom: .35rem; }
+.kpi strong { display: block; font: 600 2rem/1.1 var(--font-body); color: var(--ink); margin-bottom: .35rem; }
+.kpi-lien { color: inherit; text-decoration: none; transition: border-color .15s; }
+.kpi-lien:hover { border-color: var(--maroon); }
 .kpi span { color: var(--muted); font-size: .9rem; }
 
 /* Barre de filtres */
@@ -60,6 +63,7 @@ input[type=date] {
 .tag-ok { background: #E4E6DC; color: #4E5240; }
 .tag-alerte { background: var(--maroon); color: var(--white); }
 .tag-muted { background: #EEE9DF; color: var(--muted); }
+.tag-retard { background: #FBE3D6; color: #8A3A12; }
 
 /* Jauge de capacité */
 .jauge { margin-top: .75rem; }
@@ -71,10 +75,11 @@ input[type=date] {
 
 /* Statuts de dépôt */
 .statut { display: inline-block; padding: .25rem .7rem; border-radius: 999px; font: 600 .78rem var(--font-body); white-space: nowrap; }
-.statut-en_attente { background: #F3E6D3; color: #7A5527; }
-.statut-recu { background: #E4E6DC; color: #4E5240; }
-.statut-trie { background: var(--sage); color: var(--white); }
-.statut-annule { background: #EEE9DF; color: var(--muted); text-decoration: line-through; }
+/* Mêmes familles de teintes que les graphiques : ocre, bleu, vert, gris. */
+.statut-en_attente { background: #F6EBD9; color: #7A5527; }
+.statut-recu { background: #E2EBF6; color: #2D5A8A; }
+.statut-trie { background: #DDEEE2; color: #2B6340; }
+.statut-annule { background: #EEE9DF; color: #6F685C; text-decoration: line-through; }
 
 .statut-filtres { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
 .statut-filtres a { display: inline-flex; align-items: center; gap: .45rem; padding: .4rem .9rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--white); color: var(--ink); text-decoration: none; font-weight: 500; }
@@ -131,20 +136,115 @@ input[type=date] {
 .pagination .current { background: var(--maroon); border-color: var(--maroon); color: var(--white); }
 .pagination .disabled { color: var(--muted); }
 
+/* Actions groupées sur la liste des dépôts */
+.barre-groupe { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: .75rem; }
+.barre-groupe .note { margin-right: auto; }
+.barre-groupe select { width: auto; }
+.col-choix { width: 2.5rem; }
+.col-choix input { width: 1.05rem; height: 1.05rem; accent-color: var(--maroon); }
+
+/* Tableau de bord — couleurs validées (contraste et daltonisme) sur fond blanc */
+.viz {
+  --viz-serie: #8A2A3B;
+  --viz-en_attente: #C0892F;
+  --viz-recu: #3F78B5;
+  --viz-trie: #3E8E5A;
+  --viz-annule: #BDB5A6;
+  --viz-grille: #EEE8DC;
+  --viz-axe: #CFC6B4;
+}
+.viz-grille { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.viz-grille .panel + .panel { margin-top: 0; }
+.viz figcaption h2, .viz h2 { margin-bottom: .2rem; }
+.viz figcaption { margin-bottom: 1.25rem; }
+figure.viz { margin: 0; }
+
+.impact { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem; }
+.impact-label { font-weight: 600; margin: 0; }
+.hero-figure { font: 600 3.4rem/1.05 var(--font-body); color: var(--ink); margin: .2rem 0 .35rem; letter-spacing: -0.02em; }
+.impact-details { display: grid; gap: .9rem; margin: 0; }
+.impact-details dt { font-size: .85rem; color: var(--muted); }
+.impact-details dd { margin: 0; font: 600 1.4rem var(--font-body); }
+.impact-note { grid-column: 1 / -1; margin: 0; }
+
+/* Colonnes (une série) */
+.colonnes { display: grid; grid-template-columns: 2rem 1fr; gap: .5rem; }
+.axe-y { position: relative; height: 180px; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.axe-y span { position: absolute; right: 0; transform: translateY(50%); }
+.trace {
+  position: relative; height: 180px; display: flex; align-items: flex-end;
+  border-bottom: 1px solid var(--viz-axe);
+  background-image: linear-gradient(var(--viz-grille), var(--viz-grille)), linear-gradient(var(--viz-grille), var(--viz-grille));
+  background-size: 100% 1px; background-position: 0 0, 0 50%; background-repeat: no-repeat;
+}
+.colonne-zone { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; outline-offset: -2px; }
+.colonne { width: min(24px, 60%); border-radius: 4px 4px 0 0; background: var(--viz-serie); transition: opacity .15s; }
+.colonne-zone:hover .colonne, .colonne-zone:focus-visible .colonne { opacity: .75; }
+.colonne-valeur { position: absolute; left: 0; right: 0; text-align: center; font-size: .8rem; font-weight: 600; }
+.axe-x { display: flex; margin-top: .4rem; }
+.axe-x span { flex: 1; text-align: center; font-size: .75rem; color: var(--muted); }
+
+/* Barre empilée (parts du total) */
+.empile { display: flex; gap: 2px; height: 28px; }
+.segment { display: flex; align-items: center; justify-content: center; min-width: 4px; font-size: .78rem; font-weight: 600; transition: opacity .15s; }
+.segment:first-child { border-radius: 4px 0 0 4px; }
+.segment:last-child { border-radius: 0 4px 4px 0; }
+.segment:only-child { border-radius: 4px; }
+.segment:hover, .segment:focus-visible { opacity: .8; }
+.segment-en_attente { background: var(--viz-en_attente); color: var(--ink); }
+.segment-recu { background: var(--viz-recu); color: var(--white); }
+.segment-trie { background: var(--viz-trie); color: var(--white); }
+.segment-annule { background: var(--viz-annule); color: var(--ink); }
+.legende { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; list-style: none; margin: 1rem 0 0; padding: 0; font-size: .9rem; }
+.legende li { display: inline-flex; align-items: center; gap: .4rem; }
+.pastille { width: 12px; height: 12px; border-radius: 3px; }
+
+/* Barres horizontales (une série, valeur au bout) */
+.barres { list-style: none; margin: 0; padding: 0; display: grid; gap: .9rem; }
+.barres li { display: grid; gap: .3rem; border-radius: var(--radius-sm); }
+.barre-libelle { font-size: .9rem; }
+.barre-libelle a { color: var(--ink); font-weight: 500; text-decoration: none; }
+.barre-piste { display: flex; align-items: center; gap: .5rem; }
+.barre { height: 14px; min-width: 4px; border-radius: 0 4px 4px 0; background: var(--viz-serie); transition: opacity .15s; }
+.barres li:hover .barre, .barres li:focus-visible .barre { opacity: .75; }
+.barre-valeur { font-size: .85rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.remplissage { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.remplissage a { color: var(--ink); font-weight: 500; }
+
+.viz-donnees { margin-top: 1.25rem; font-size: .9rem; }
+.viz-donnees summary { cursor: pointer; color: var(--maroon); font-weight: 600; }
+.viz-donnees .table { margin-top: .75rem; font-variant-numeric: tabular-nums; }
+
+.viz-bulle { position: fixed; z-index: 1000; pointer-events: none; display: grid; gap: .1rem; padding: .45rem .7rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-sm); box-shadow: 0 6px 18px rgba(34, 31, 28, .12); font-size: .85rem; white-space: nowrap; }
+.viz-bulle strong { font-size: .95rem; }
+.viz-bulle span { color: var(--muted); }
+
+/* Tournée */
+.etapes { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.etape { display: grid; grid-template-columns: auto 1fr; gap: 1rem; align-items: start; }
+.etape-numero { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--maroon); color: var(--white); font-weight: 700; }
+.etape-marqueur span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--maroon); color: var(--white); border: 2px solid var(--white); font: 700 .8rem var(--font-body); box-shadow: 0 1px 4px rgba(0, 0, 0, .3); }
+
+/* Réception par QR code */
+.lecteur { min-height: 260px; border: 2px dashed var(--line); border-radius: var(--radius-lg); overflow: hidden; margin: 1rem 0; }
+.lecteur button { font: 600 .9rem var(--font-body); padding: .5rem 1rem; border-radius: 999px; border: 0; background: var(--maroon); color: var(--white); cursor: pointer; margin: .5rem; }
+
 /* Popups Leaflet aux couleurs du site */
 .leaflet-popup-content { font-family: var(--font-body); }
 .leaflet-popup-content a { color: var(--maroon); font-weight: 600; }
 
 @media (max-width: 900px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
-  .collecte-layout, .split { grid-template-columns: 1fr; }
+  .collecte-layout, .split, .viz-grille, .impact { grid-template-columns: 1fr; }
   .carte { position: static; height: 360px; }
   .subnav .btn { margin-left: 0; }
 }
 @media (max-width: 640px) {
   .kpis { grid-template-columns: 1fr 1fr; }
   .suivi-form { flex-direction: column; }
-  .table th:nth-child(3), .table td:nth-child(3), .table th:nth-child(5), .table td:nth-child(5) { display: none; }
+  .table-depots th:nth-child(4), .table-depots td:nth-child(4), .table-depots th:nth-child(6), .table-depots td:nth-child(6) { display: none; }
+  .subnav-label { flex-basis: 100%; margin: .4rem 0 0; padding: 0 0 0 1rem; border: 0; }
 }
 
 /* Impression du bon de dépôt */

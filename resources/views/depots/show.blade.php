@@ -2,34 +2,28 @@
 
 @section('title', 'Dépôt '.$depot->code)
 
-@php
-    $actions = [
-        'recu' => ['libelle' => 'Marquer comme reçu', 'classe' => 'btn-gold'],
-        'trie' => ['libelle' => 'Marquer comme trié', 'classe' => 'btn-sage'],
-        'annule' => ['libelle' => 'Annuler le dépôt', 'classe' => 'btn-danger', 'confirmation' => 'Annuler ce dépôt ? Il restera dans l’historique.'],
-    ];
-    $lienSuivi = route('depots.suivi', ['code' => $depot->code]);
-@endphp
+@php($lienSuivi = route('depots.suivi', ['code' => $depot->code]))
 
 @section('page')
 <div class="page-head">
     <div>
         <a href="{{ route('depots.index') }}" class="back-link no-print">← Tous les dépôts</a>
         <h1>{{ $depot->vetement_titre }}</h1>
-        <p><x-statut-depot :statut="$depot->statut" /> <span class="muted small">· déposé par {{ $depot->user->name }}</span></p>
+        <p>
+            <x-statut-depot :statut="$depot->statut" />
+            @if ($depot->estEnRetard())
+                <span class="tag tag-retard" title="La date de dépôt prévue est passée">⚠ En retard</span>
+            @endif
+            <span class="muted small">· déposé par {{ $depot->user->name }}</span>
+        </p>
     </div>
     <div class="actions no-print">
-        @foreach ($depot->transitionsPossibles() as $statut)
-            <form method="POST" action="{{ route('depots.statut', $depot) }}" class="inline-form"
-                  @isset($actions[$statut]['confirmation']) onsubmit="return confirm('{{ $actions[$statut]['confirmation'] }}')" @endisset>
-                @csrf
-                @method('PATCH')
-                <input type="hidden" name="statut" value="{{ $statut }}">
-                <button type="submit" class="btn {{ $actions[$statut]['classe'] }}">{{ $actions[$statut]['libelle'] }}</button>
-            </form>
-        @endforeach
+        @include('depots._actions-statut')
     </div>
 </div>
+@if ($depot->transitionsPossibles())
+    <p class="note no-print">Le particulier reçoit un email à chaque changement de statut.</p>
+@endif
 
 <div class="split">
     <div>
