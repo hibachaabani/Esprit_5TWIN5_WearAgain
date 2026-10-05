@@ -8,7 +8,7 @@ use Illuminate\Support\Collection;
 /**
  * Ordonne les points à vider pour rouler le moins possible (problème du
  * voyageur de commerce, résolu de façon approchée) : heuristique du plus
- * proche voisin, puis amélioration 2-opt du trajet obtenu.
+ * proche voisin, puis amélioration locale 2-opt / or-opt du trajet obtenu.
  */
 class TourneeCollecte
 {
@@ -88,36 +88,64 @@ class TourneeCollecte
     }
 
     /**
-     * 2-opt : inverser un segment du trajet tant que cela le raccourcit
-     * (supprime les « croisements » laissés par le plus proche voisin).
+     * Recherche locale : on adopte le premier trajet voisin plus court,
+     * jusqu'à ce qu'aucun voisin ne raccourcisse la tournée.
      *
      * @param  PointCollecte[]  $ordre
      * @return PointCollecte[]
      */
     private function ameliorer(array $ordre, array $depart): array
     {
-        $nombre = count($ordre);
         $longueur = $this->longueur($ordre, $depart);
 
         do {
             $ameliore = false;
 
-            for ($i = 0; $i < $nombre - 1; $i++) {
-                for ($k = $i + 1; $k < $nombre; $k++) {
-                    $candidat = array_merge(
-                        array_slice($ordre, 0, $i),
-                        array_reverse(array_slice($ordre, $i, $k - $i + 1)),
-                        array_slice($ordre, $k + 1),
-                    );
-                    $longueurCandidat = $this->longueur($candidat, $depart);
+            foreach ($this->trajetsVoisins($ordre) as $candidat) {
+                $longueurCandidat = $this->longueur($candidat, $depart);
 
-                    if ($longueurCandidat < $longueur - 0.001) {
-                        [$ordre, $longueur, $ameliore] = [$candidat, $longueurCandidat, true];
-                    }
+                if ($longueurCandidat < $longueur - 0.001) {
+                    [$ordre, $longueur, $ameliore] = [$candidat, $longueurCandidat, true];
+                    break;
                 }
             }
         } while ($ameliore);
 
         return $ordre;
+    }
+
+    /**
+     * Trajets voisins : un segment inversé (2-opt, supprime les croisements)
+     * ou un point déplacé ailleurs dans l'ordre (or-opt).
+     *
+     * @param  PointCollecte[]  $ordre
+     * @return \Generator<int, PointCollecte[]>
+     */
+    private function trajetsVoisins(array $ordre): \Generator
+    {
+        $nombre = count($ordre);
+
+        for ($i = 0; $i < $nombre - 1; $i++) {
+            for ($k = $i + 1; $k < $nombre; $k++) {
+                yield array_merge(
+                    array_slice($ordre, 0, $i),
+                    array_reverse(array_slice($ordre, $i, $k - $i + 1)),
+                    array_slice($ordre, $k + 1),
+                );
+            }
+        }
+
+        for ($i = 0; $i < $nombre; $i++) {
+            $reste = $ordre;
+            $deplace = array_splice($reste, $i, 1);
+
+            for ($j = 0; $j < $nombre; $j++) {
+                if ($j !== $i) {
+                    $candidat = $reste;
+                    array_splice($candidat, $j, 0, $deplace);
+                    yield $candidat;
+                }
+            }
+        }
     }
 }

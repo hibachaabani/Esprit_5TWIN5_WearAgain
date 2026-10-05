@@ -77,7 +77,7 @@ class StatistiquesCollecte
     /**
      * Dépôts par mois de dépôt sur les derniers mois, mois vides compris.
      *
-     * @return Collection<int, array{cle: string, libelle: string, total: int}>
+     * @return Collection<int, array{cle: string, libelle: string, libelle_complet: string, total: int}>
      */
     public function depotsParMois(int $nombreMois = 6): Collection
     {
@@ -92,7 +92,8 @@ class StatistiquesCollecte
 
             return [
                 'cle' => $mois->format('Y-m'),
-                'libelle' => self::MOIS[$mois->month - 1].' '.$mois->format('y'),
+                'libelle' => self::MOIS[$mois->month - 1],
+                'libelle_complet' => self::MOIS[$mois->month - 1].' '.$mois->year,
                 'total' => (int) ($totaux[$mois->format('Y-m')] ?? 0),
             ];
         });
