@@ -40,7 +40,7 @@ class DepotRequest extends FormRequest
     {
         return function (string $attribute, mixed $value, Closure $fail) {
             $depot = $this->route('depot');
-            if ($depot && (int) $value === $depot->point_collecte_id) {
+            if ($depot && (int) $value === (int) $depot->point_collecte_id) {
                 return;
             }
 

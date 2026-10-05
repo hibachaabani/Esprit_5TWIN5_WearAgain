@@ -33,9 +33,13 @@ class PointCollecteController extends Controller
         }
 
         // « Autour de moi » : tri par distance depuis la position envoyée par le navigateur.
-        if (isset($filtres['lat'], $filtres['lng'])) {
-            $points->each(function (PointCollecte $p) use ($filtres) {
-                $p->distance = $p->distanceDe((float) $filtres['lat'], (float) $filtres['lng']);
+        $position = isset($filtres['lat'], $filtres['lng'])
+            ? [(float) $filtres['lat'], (float) $filtres['lng']]
+            : null;
+
+        if ($position) {
+            $points->each(function (PointCollecte $p) use ($position) {
+                $p->distance = $p->distanceDe(...$position);
             });
             $points = $points->sortBy('distance')->values();
         }
@@ -53,6 +57,7 @@ class PointCollecteController extends Controller
         return view('points-collecte.index', [
             'points' => $points,
             'carte' => $carte,
+            'position' => $position,
             'filtres' => $filtres,
             'villes' => PointCollecte::distinct()->orderBy('ville')->pluck('ville'),
             'stats' => $this->statistiques(),
