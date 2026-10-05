@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\PointCollecteController;
+use App\Http\Controllers\StatistiquesCollecteController;
+use App\Http\Controllers\TourneeCollecteController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -31,10 +33,16 @@ Route::get('/articles/{id}', function (int $id) {
 })->name('items.show');
 
 // Module collecte (membre 3) : points de collecte et dépôts
+Route::get('collecte/statistiques', StatistiquesCollecteController::class)->name('collecte.statistiques');
+
+Route::get('points-collecte/tournee', [TourneeCollecteController::class, 'index'])->name('tournee.index');
+Route::post('points-collecte/{pointCollecte}/collecter', [TourneeCollecteController::class, 'collecter'])->name('tournee.collecter');
 Route::resource('points-collecte', PointCollecteController::class)
     ->parameters(['points-collecte' => 'pointCollecte']);
 
 Route::get('depots/suivi', [DepotController::class, 'suivi'])->name('depots.suivi');
+Route::get('depots/reception', [DepotController::class, 'reception'])->name('depots.reception');
 Route::get('depots/export', [DepotController::class, 'export'])->name('depots.export');
+Route::patch('depots/statut', [DepotController::class, 'changerStatutGroupe'])->name('depots.statut-groupe');
 Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
 Route::resource('depots', DepotController::class);

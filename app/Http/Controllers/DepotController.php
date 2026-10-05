@@ -6,6 +6,7 @@ use App\Http\Requests\DepotRequest;
 use App\Models\Depot;
 use App\Models\PointCollecte;
 use App\Models\User;
+use App\Services\WorkflowDepot;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -30,6 +31,7 @@ class DepotController extends Controller
             'depots' => $depots,
             'filtres' => $filtres,
             'compteurs' => Depot::selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut'),
+            'enRetard' => Depot::enRetard()->count(),
             'points' => PointCollecte::orderBy('nom')->get(['id', 'nom', 'ville']),
         ]);
     }
@@ -95,19 +97,57 @@ class DepotController extends Controller
     /**
      * Fait avancer le dépôt dans son parcours (reçu, trié) ou l'annule.
      */
-    public function changerStatut(Request $request, Depot $depot): RedirectResponse
+    public function changerStatut(Request $request, Depot $depot, WorkflowDepot $workflow): RedirectResponse
     {
         $statut = $request->validate([
             'statut' => ['required', Rule::in(array_keys(Depot::STATUTS))],
         ])['statut'];
 
-        if (! $depot->peutPasserA($statut)) {
+        if (! $workflow->appliquer($depot, $statut)) {
             return back()->with('erreur', "Un dépôt « {$depot->libelleStatut()} » ne peut pas passer à « ".Depot::STATUTS[$statut].' ».');
         }
 
-        $depot->changerStatut($statut);
+        return back()->with('status', "Dépôt {$depot->code} : {$depot->libelleStatut()}. Le particulier a été prévenu par email.");
+    }
 
-        return back()->with('status', "Dépôt {$depot->code} : {$depot->libelleStatut()}.");
+    /**
+     * Action groupée depuis la liste : seuls les dépôts dont la transition est autorisée changent.
+     */
+    public function changerStatutGroupe(Request $request, WorkflowDepot $workflow): RedirectResponse
+    {
+        $donnees = $request->validate([
+            'depots' => ['required', 'array', 'min:1'],
+            'depots.*' => ['integer', 'exists:depots,id'],
+            'statut' => ['required', Rule::in(array_keys(Depot::STATUTS))],
+        ], [
+            'depots.required' => 'Coche au moins un dépôt.',
+            'statut.required' => 'Choisis l\'action à appliquer.',
+        ]);
+
+        $resultat = $workflow->appliquerEnMasse(
+            Depot::with(['user', 'pointCollecte'])->whereIn('id', $donnees['depots'])->get(),
+            $donnees['statut'],
+        );
+
+        $message = "{$resultat['appliques']} dépôt(s) passé(s) à « ".Depot::STATUTS[$donnees['statut']].' »';
+        if ($resultat['ignores'] > 0) {
+            $message .= ", {$resultat['ignores']} ignoré(s) car ce changement n'est pas autorisé pour eux";
+        }
+
+        return back()->with($resultat['appliques'] > 0 ? 'status' : 'erreur', $message.'.');
+    }
+
+    /**
+     * Espace association : retrouver un dépôt en scannant son QR code (ou en tapant son code).
+     */
+    public function reception(Request $request): View
+    {
+        $code = $this->codeDemande($request);
+
+        return view('depots.reception', [
+            'code' => $code,
+            'depot' => $code !== '' ? Depot::with(['user', 'pointCollecte'])->where('code', $code)->first() : null,
+        ]);
     }
 
     /**
@@ -115,7 +155,7 @@ class DepotController extends Controller
      */
     public function suivi(Request $request): View
     {
-        $code = Str::upper(trim((string) $request->query('code', '')));
+        $code = $this->codeDemande($request);
 
         return view('depots.suivi', [
             'code' => $code,
@@ -159,6 +199,7 @@ class DepotController extends Controller
         return $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'statut' => ['nullable', Rule::in(array_keys(Depot::STATUTS))],
+            'retard' => ['nullable', 'boolean'],
             'point_collecte_id' => ['nullable', 'integer'],
             'du' => ['nullable', 'date'],
             'au' => ['nullable', 'date', Rule::when($request->filled('du'), 'after_or_equal:du')],
@@ -171,6 +212,16 @@ class DepotController extends Controller
             'points' => PointCollecte::withCount('depotsActifs')->orderBy('ville')->orderBy('nom')->get(),
             'users' => User::orderBy('name')->get(['id', 'name', 'email']),
         ];
+    }
+
+    /**
+     * Code saisi ou lu dans le QR code (qui contient l'URL de suivi complète).
+     */
+    private function codeDemande(Request $request): string
+    {
+        $saisie = Str::upper(trim((string) $request->query('code', '')));
+
+        return preg_match('/DEP-[A-Z0-9]{6}/', $saisie, $trouve) ? $trouve[0] : $saisie;
     }
 
     private function depotArchive(Depot $depot): RedirectResponse
