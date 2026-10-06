@@ -6,7 +6,7 @@
 <div class="container section">
     <div class="section-head">
         <div>
-            <p class="eyebrow">TexTileCycle</p>
+            <p class="eyebrow">WearAgain</p>
             <h1>Réparations</h1>
             <p class="lead">Donnez une seconde vie à vos vêtements : consultez les réparations proposées et leurs avis.</p>
         </div>

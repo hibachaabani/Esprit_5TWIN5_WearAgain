@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Back office') — TexTileCycle</title>
+    <title>@yield('title', 'Back office') — WearAgain</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/wearagain.css') }}">
@@ -44,7 +44,7 @@
 <body>
     <header class="site-header admin-header">
         <div class="container header-inner">
-            <a href="{{ route('home') }}" class="logo">TexTile<span>Cycle</span> — Back office</a>
+            <a href="{{ route('home') }}" class="logo">Wear<span>Again</span> — Back office</a>
 
             <nav class="nav">
                 <a href="{{ route('admin.reparations.index') }}" @class(['active' => request()->routeIs('admin.reparations.*')])>Réparations</a>
