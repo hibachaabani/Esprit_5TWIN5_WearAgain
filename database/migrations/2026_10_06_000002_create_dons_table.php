@@ -10,9 +10,6 @@ return new class extends Migration
     {
         Schema::create('dons', function (Blueprint $table) {
             $table->id();
-            // Vetement n'existe pas encore comme table (voir diagramme complet) :
-            // on garde vetement_id nullable sans contrainte + un titre libre pour l'affichage,
-            // comme pour reparations.vetement_id.
             $table->unsignedBigInteger('vetement_id')->nullable();
             $table->string('vetement_titre')->nullable();
             $table->foreignId('donateur_id')->constrained('users')->cascadeOnDelete();
