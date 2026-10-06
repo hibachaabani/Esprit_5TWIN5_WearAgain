@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AssociationController;
+use App\Http\Controllers\DonController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,3 +29,14 @@ Route::get('/articles/{id}', function (int $id) {
     $item = collect(demoItems())->firstWhere('id', $id) ?? abort(404);
     return view('items.show', ['item' => $item]);
 })->name('items.show');
+
+Route::resource('associations', AssociationController::class);
+Route::resource('dons', DonController::class);
+Route::patch('dons/{don}/statut', [DonController::class, 'updateStatus'])->name('dons.statut');
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('associations', [AssociationController::class, 'adminIndex'])->name('associations.index');
+    Route::patch('associations/{association}/verifier', [AssociationController::class, 'verifier'])->name('associations.verifier');
+
+    Route::get('dons', [DonController::class, 'adminIndex'])->name('dons.index');
+});

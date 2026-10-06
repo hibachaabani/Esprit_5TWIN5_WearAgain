@@ -9,11 +9,14 @@
 
         <nav class="nav">
             <a href="{{ route('items.index') }}" @class(['active' => request()->routeIs('items.index')])>Parcourir</a>
+            <a href="{{ route('associations.index') }}" @class(['active' => request()->routeIs('associations.*')])>Associations</a>
+            <a href="{{ route('dons.index') }}" @class(['active' => request()->routeIs('dons.*')])>Dons</a>
             @auth
                 <a href="#">Mon dressing</a>
             @else
                 <a href="#">Se connecter</a>
             @endauth
+            <a href="{{ route('admin.associations.index') }}" class="small">Back-office</a>
             <a href="{{ route('items.create') }}" class="btn btn-primary">Vendre un article</a>
         </nav>
     </div>
