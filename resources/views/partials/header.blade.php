@@ -1,6 +1,6 @@
 <header class="site-header">
     <div class="container header-inner">
-        <a href="{{ route('home') }}" class="logo">Wear<span>Again</span></a>
+        <a href="{{ route('home') }}" class="logo">TexTile<span>Cycle</span></a>
 
         <form action="{{ route('items.index') }}" method="GET" class="search">
             <label for="q" class="sr-only">Rechercher un article</label>
