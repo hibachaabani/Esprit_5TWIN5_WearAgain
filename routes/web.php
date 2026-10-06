@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Route;
 
 /*
 | Données de démonstration — à remplacer par un modèle Item + base de données.
+| Garde function_exists : le fichier de routes est rechargé à chaque test.
 */
+if (! function_exists('demoItems')) {
 function demoItems(): array
 {
     return [
@@ -19,6 +21,7 @@ function demoItems(): array
         ['id' => 5, 'title' => 'Chemise à carreaux', 'brand' => 'H&M', 'size' => 'M', 'condition' => 'Bon état', 'price' => 18, 'type' => 'vente', 'city' => 'Tunis', 'color' => '#A6513A'],
         ['id' => 6, 'title' => 'Manteau laine', 'brand' => 'Mango', 'size' => 'M', 'condition' => 'Très bon état', 'price' => null, 'type' => 'échange', 'city' => 'Nabeul', 'color' => '#3D3F47'],
     ];
+}
 }
 
 Route::get('/', fn () => view('home', ['items' => array_slice(demoItems(), 0, 4)]))->name('home');
