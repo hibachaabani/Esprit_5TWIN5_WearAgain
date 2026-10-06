@@ -79,7 +79,7 @@
             </tbody>
         </table>
 
-        {{ $reparations->links('pagination::bootstrap-5') }}
+        {{ $reparations->links('pagination.numbers') }}
     @else
         <div class="empty">
             <p>Aucune réparation pour le moment.</p>

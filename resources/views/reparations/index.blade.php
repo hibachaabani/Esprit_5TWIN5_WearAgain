@@ -66,7 +66,7 @@
                 </div>
 
                 <div style="margin-top: 2rem;">
-                    {{ $reparations->links('pagination::bootstrap-5') }}
+                    {{ $reparations->links('pagination.numbers') }}
                 </div>
             @else
                 <div class="empty">

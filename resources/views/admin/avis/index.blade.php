@@ -48,7 +48,7 @@
             </tbody>
         </table>
 
-        {{ $avis->links('pagination::bootstrap-5') }}
+        {{ $avis->links('pagination.numbers') }}
     @else
         <div class="empty">
             <p>Aucun avis pour le moment.</p>
