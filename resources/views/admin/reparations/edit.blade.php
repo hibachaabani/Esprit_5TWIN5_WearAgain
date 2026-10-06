@@ -3,14 +3,18 @@
 @section('title', 'Modifier la réparation')
 
 @section('content')
-    <h1 class="h2">Modifier la réparation n°{{ $reparation->id }}</h1>
+    <p class="page-sub">Réparation n°{{ $reparation->id }} — modifiez puis mettez à jour.</p>
 
-    <form method="POST" action="{{ route('admin.reparations.update', $reparation) }}" class="form narrow" novalidate>
-        @csrf
-        @method('PUT')
-        @include('admin.reparations._form')
+    <div class="form-card">
+        <form method="POST" action="{{ route('admin.reparations.update', $reparation) }}" class="form" novalidate>
+            @csrf
+            @method('PUT')
+            @include('admin.reparations._form')
 
-        <button class="btn btn-primary">Mettre à jour</button>
-        <a href="{{ route('admin.reparations.index') }}" class="btn btn-ghost">Annuler</a>
-    </form>
+            <div class="form-actions">
+                <button class="btn btn-primary"><x-icon name="check" /> Mettre à jour</button>
+                <a href="{{ route('admin.reparations.index') }}" class="btn btn-outline">Annuler</a>
+            </div>
+        </form>
+    </div>
 @endsection
