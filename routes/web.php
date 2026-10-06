@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin;
+use App\Http\Controllers\ReparationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,3 +29,17 @@ Route::get('/articles/{id}', function (int $id) {
     $item = collect(demoItems())->firstWhere('id', $id) ?? abort(404);
     return view('items.show', ['item' => $item]);
 })->name('items.show');
+
+/*
+| Réparations & Avis — front office (Member 5)
+*/
+Route::get('/reparations', [ReparationController::class, 'index'])->name('reparations.index');
+Route::get('/reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show');
+
+/*
+| Back office — gestion des réparations et des avis (Member 5)
+*/
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::resource('reparations', Admin\ReparationController::class)->except('show');
+    Route::resource('avis', Admin\AvisController::class)->except('show');
+});

@@ -9,6 +9,8 @@
 
         <nav class="nav">
             <a href="{{ route('items.index') }}" @class(['active' => request()->routeIs('items.index')])>Parcourir</a>
+            <a href="{{ route('reparations.index') }}" @class(['active' => request()->routeIs('reparations.*')])>Réparations</a>
+            <a href="{{ route('admin.avis.index') }}" @class(['active' => request()->routeIs('admin.*')])>Avis</a>
             @auth
                 <a href="#">Mon dressing</a>
             @else
