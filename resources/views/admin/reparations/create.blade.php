@@ -6,7 +6,7 @@
     <p class="page-sub">Renseignez les détails de la réparation à proposer.</p>
 
     <div class="form-card">
-        <form method="POST" action="{{ route('admin.reparations.store') }}" class="form" novalidate>
+        <form method="POST" action="{{ route('admin.reparations.store') }}" class="form" enctype="multipart/form-data" novalidate>
             @csrf
             @include('admin.reparations._form')
 

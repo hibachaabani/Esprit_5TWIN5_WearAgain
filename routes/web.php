@@ -35,6 +35,7 @@ Route::get('/articles/{id}', function (int $id) {
 */
 Route::get('/reparations', [ReparationController::class, 'index'])->name('reparations.index');
 Route::get('/reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show');
+Route::post('/reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
 
 /*
 | Back office — gestion des réparations et des avis (Member 5)

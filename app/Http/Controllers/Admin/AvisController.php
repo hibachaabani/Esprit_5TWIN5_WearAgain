@@ -8,20 +8,31 @@ use App\Http\Requests\UpdateAvisRequest;
 use App\Models\Avis;
 use App\Models\Reparation;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class AvisController extends Controller
 {
     /**
-     * Back office : liste des avis.
+     * Back office : tableau de bord + liste des avis.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $avis = Avis::query()
-            ->with(['reparation', 'user'])
-            ->latest()
-            ->paginate(10);
+        $stats = [
+            'total' => Avis::count(),
+            'moyenne' => (float) Avis::query()->avg('note'),
+            'cinq' => Avis::where('note', 5)->count(),
+            'faibles' => Avis::where('note', '<', 3)->count(),
+        ];
 
-        return view('admin.avis.index', compact('avis'));
+        $query = Avis::query()->with(['reparation', 'user']);
+
+        if ($request->filled('note')) {
+            $query->where('note', $request->integer('note'));
+        }
+
+        $avis = $query->latest()->paginate(10)->withQueryString();
+
+        return view('admin.avis.index', compact('avis', 'stats'));
     }
 
     public function create()

@@ -10,6 +10,47 @@
         </a>
     </div>
 
+    <div class="stats-grid">
+        <div class="stat-card" style="--accent: #6B1A2A;">
+            <span class="stat-icon"><x-icon name="message" :size="18" /></span>
+            <span class="stat-value">{{ $stats['total'] }}</span>
+            <span class="stat-label">Total des avis</span>
+        </div>
+        <div class="stat-card" style="--accent: #AD7F45;">
+            <span class="stat-icon"><x-icon name="star" :size="18" /></span>
+            <span class="stat-value">{{ number_format($stats['moyenne'], 1) }}</span>
+            <span class="stat-label">Note moyenne (/5)</span>
+        </div>
+        <div class="stat-card" style="--accent: #4E7B3E;">
+            <span class="stat-icon"><x-icon name="star" :size="18" /></span>
+            <span class="stat-value">{{ $stats['cinq'] }}</span>
+            <span class="stat-label">Avis 5 étoiles</span>
+        </div>
+        <div class="stat-card" style="--accent: #3C6EAE;">
+            <span class="stat-icon"><x-icon name="message" :size="18" /></span>
+            <span class="stat-value">{{ $stats['faibles'] }}</span>
+            <span class="stat-label">Avis en dessous de 3 étoiles</span>
+        </div>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom: 1.25rem;">
+        <form method="GET" action="{{ route('admin.avis.index') }}">
+            <label class="label" for="note"><x-icon name="filter" /> Filtrer par note</label>
+            <select name="note" id="note">
+                <option value="">Toutes les notes</option>
+                @for ($i = 5; $i >= 1; $i--)
+                    <option value="{{ $i }}" @selected(request('note') !== null && (int) request('note') === $i)>
+                        {{ $i }} étoile{{ $i > 1 ? 's' : '' }}
+                    </option>
+                @endfor
+            </select>
+            <button class="btn btn-outline">Appliquer</button>
+            @if (request('note'))
+                <a href="{{ route('admin.avis.index') }}" class="small muted">Réinitialiser</a>
+            @endif
+        </form>
+    </div>
+
     @if (count($avis))
         <div class="table-wrap">
             <table class="table">

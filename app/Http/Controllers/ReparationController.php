@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAvisRequest;
+use App\Models\Avis;
 use App\Models\Reparation;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ReparationController extends Controller
@@ -44,6 +47,26 @@ class ReparationController extends Controller
             ->load(['avis.user', 'user'])
             ->loadAvg('avis', 'note');
 
-        return view('reparations.show', compact('reparation'));
+        return view('reparations.show', [
+            'reparation' => $reparation,
+            'users' => User::orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Front office : publication d'un avis sur une réparation.
+     */
+    public function storeAvis(StoreAvisRequest $request, Reparation $reparation)
+    {
+        Avis::create([
+            'reparation_id' => $reparation->id,
+            'user_id' => $request->integer('user_id'),
+            'note' => $request->integer('note'),
+            'commentaire' => $request->string('commentaire'),
+        ]);
+
+        return redirect()
+            ->route('reparations.show', $reparation)
+            ->with('status', 'Merci, votre avis a bien été publié.');
     }
 }

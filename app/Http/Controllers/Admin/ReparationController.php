@@ -8,9 +8,12 @@ use App\Http\Requests\UpdateReparationRequest;
 use App\Models\Reparation;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 
 class ReparationController extends Controller
 {
+    private const IMAGE_DIR = 'uploads/reparations';
+
     /**
      * Back office : tableau de bord + liste des réparations.
      */
@@ -41,7 +44,13 @@ class ReparationController extends Controller
 
     public function store(StoreReparationRequest $request)
     {
-        Reparation::create($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->storeImage($request->file('image'));
+        }
+
+        Reparation::create($data);
 
         return redirect()
             ->route('admin.reparations.index')
@@ -58,7 +67,16 @@ class ReparationController extends Controller
 
     public function update(UpdateReparationRequest $request, Reparation $reparation)
     {
-        $reparation->update($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $this->deleteImage($reparation);
+            $data['image'] = $this->storeImage($request->file('image'));
+        } else {
+            $data['image'] = $reparation->image;
+        }
+
+        $reparation->update($data);
 
         return redirect()
             ->route('admin.reparations.index')
@@ -67,10 +85,28 @@ class ReparationController extends Controller
 
     public function destroy(Reparation $reparation)
     {
+        $this->deleteImage($reparation);
         $reparation->delete();
 
         return redirect()
             ->route('admin.reparations.index')
             ->with('status', 'Réparation supprimée avec succès.');
+    }
+
+    private function storeImage(UploadedFile $file): string
+    {
+        $name = uniqid('reparation_', true).'.'.$file->getClientOriginalExtension();
+        $file->move(public_path(self::IMAGE_DIR), $name);
+
+        return $name;
+    }
+
+    private function deleteImage(Reparation $reparation): void
+    {
+        if (! $reparation->hasImage()) {
+            return;
+        }
+
+        @unlink(public_path(self::IMAGE_DIR.'/'.$reparation->image));
     }
 }

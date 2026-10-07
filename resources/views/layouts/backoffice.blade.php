@@ -308,6 +308,17 @@
         .form-actions { display: flex; gap: .75rem; align-items: center; margin-top: .5rem; }
         .error { color: #B3261E; font-size: .875rem; margin: .35rem 0 0; }
         .field > label { font-size: .92rem; }
+        .field-hint { font-size: .8rem; color: var(--muted); margin: .35rem 0 0; }
+        .image-preview img {
+            display: block;
+            width: 100%;
+            max-width: 260px;
+            aspect-ratio: 4 / 5;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+        }
+        .thumb { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; border: 1px solid var(--line); display: block; }
 
         /* ---------- Pagination (numéros uniquement) ---------- */
         .pagination { display: flex; gap: .45rem; list-style: none; padding: 0; margin-top: 1.5rem; flex-wrap: wrap; justify-content: center; }

@@ -51,6 +51,7 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>Photo</th>
                         <th>Titre</th>
                         <th>Membre</th>
                         <th>Statut</th>
@@ -64,6 +65,13 @@
                     @foreach ($reparations as $reparation)
                         <tr>
                             <td class="muted">{{ $reparation->id }}</td>
+                            <td>
+                                @if ($reparation->hasImage())
+                                    <img src="{{ $reparation->imageUrl() }}" alt="" class="thumb">
+                                @else
+                                    <span class="thumb" style="opacity: .15; align-content: center; text-align: center;"><x-icon name="wrench" :size="16" /></span>
+                                @endif
+                            </td>
                             <td>
                                 <a href="{{ route('reparations.show', $reparation) }}">{{ $reparation->titre }}</a>
                             </td>

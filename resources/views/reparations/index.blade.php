@@ -47,6 +47,9 @@
                     @foreach ($reparations as $reparation)
                         <a href="{{ route('reparations.show', $reparation) }}" class="item-card">
                             <div class="item-photo" style="--swatch: #E6DECD;">
+                                @if ($reparation->hasImage())
+                                    <img src="{{ $reparation->imageUrl() }}" alt="{{ $reparation->titre }}">
+                                @endif
                                 <span class="condition-badge">{{ $reparation->statutLabel() }}</span>
                             </div>
                             <div class="item-body">

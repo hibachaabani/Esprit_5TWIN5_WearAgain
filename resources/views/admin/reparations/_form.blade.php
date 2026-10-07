@@ -28,6 +28,19 @@
         @error('description')<p class="error">{{ $message }}</p>@enderror
     </div>
 
+    <div class="field">
+        <label for="image">Photo</label>
+        <input type="file" name="image" id="image" accept="image/jpeg,image/png,image/webp">
+        <p class="field-hint">Format jpeg, png ou webp — 2 Mo maximum.</p>
+        @error('image')<p class="error">{{ $message }}</p>@enderror
+
+        @if (isset($reparation) && $reparation->hasImage())
+            <div class="image-preview" style="margin-top: .75rem;">
+                <img src="{{ $reparation->imageUrl() }}" alt="Photo de la réparation — {{ $reparation->titre }}">
+            </div>
+        @endif
+    </div>
+
     <div class="field-row">
         <div class="field">
             <label for="statut">Statut</label>

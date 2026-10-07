@@ -21,6 +21,7 @@ class Reparation extends Model
         'user_id',
         'titre',
         'description',
+        'image',
         'statut',
         'cout_estime',
         'date_reparation',
@@ -44,5 +45,17 @@ class Reparation extends Model
     public function statutLabel(): string
     {
         return self::STATUTS[$this->statut] ?? $this->statut;
+    }
+
+    public function imageUrl(): ?string
+    {
+        return $this->image ? asset('uploads/reparations/'.$this->image) : null;
+    }
+
+    public function hasImage(): bool
+    {
+        return $this->image !== null
+            && $this->image !== ''
+            && file_exists(public_path('uploads/reparations/'.$this->image));
     }
 }
