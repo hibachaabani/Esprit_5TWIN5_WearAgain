@@ -176,3 +176,47 @@ legend, .field > label, .label { display: block; font-weight: 600; margin-bottom
 .categorie-body { flex: 1; }
 .categorie-body h2 { margin-bottom: .25rem; }
 .categorie-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+/* ── Multi-photo upload ─────────────────────────────────────────────────── */
+.photo-drop-area { position: relative; border: 2px dashed var(--line); border-radius: var(--radius-lg); background: var(--white); overflow: hidden; }
+.photo-drop-area:focus-within { border-color: var(--maroon); }
+.photo-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.photo-drop-label { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; min-height: 140px; padding: 1.5rem; color: var(--muted); cursor: pointer; font-weight: 500; }
+.photo-drop-label:hover { color: var(--maroon); }
+.photo-drop-icon { font-size: 2rem; line-height: 1; }
+.photo-preview-grid { display: flex; flex-wrap: wrap; gap: .6rem; padding: .75rem; }
+.photo-thumb { position: relative; width: 100px; height: 120px; border-radius: var(--radius-sm); overflow: hidden; border: 2px solid var(--line); flex-shrink: 0; }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-main-badge { position: absolute; bottom: 4px; left: 4px; background: var(--maroon); color: var(--white); font: 600 .65rem var(--font-body); padding: .2rem .45rem; border-radius: 999px; }
+.photo-delete-check { position: absolute; top: 4px; right: 4px; }
+.photo-delete-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.photo-delete-check span { display: grid; place-items: center; width: 24px; height: 24px; background: rgba(34,31,28,.65); color: #fff; border-radius: 50%; cursor: pointer; font-size: .85rem; backdrop-filter: blur(2px); }
+.photo-delete-check input:checked + span { background: #B3261E; }
+
+/* ── Photo gallery (show page) ──────────────────────────────────────────── */
+.detail-gallery { display: flex; flex-direction: column; gap: .75rem; }
+.gallery-main { width: 100%; aspect-ratio: 4/5; border-radius: var(--radius-lg); overflow: hidden; position: relative; }
+.gallery-main img { width: 100%; height: 100%; object-fit: cover; transition: opacity .2s; }
+.gallery-thumbs { display: flex; gap: .5rem; flex-wrap: wrap; }
+.gallery-thumb { width: 68px; height: 82px; border-radius: var(--radius-sm); overflow: hidden; border: 2px solid var(--line); cursor: pointer; padding: 0; background: none; flex-shrink: 0; transition: border-color .15s; }
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-thumb.active, .gallery-thumb:hover { border-color: var(--maroon); }
+
+/* ── Favori button (card) ───────────────────────────────────────────────── */
+.item-card-wrap { position: relative; }
+.favori-form { position: absolute; top: .6rem; right: .6rem; z-index: 2; }
+.favori-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: rgba(255,255,255,.85); backdrop-filter: blur(3px); cursor: pointer; font-size: 1.1rem; line-height: 1; display: grid; place-items: center; color: var(--muted); transition: color .15s, background .15s; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.favori-btn:hover, .favori-btn.is-favori { color: var(--maroon); background: var(--white); }
+
+/* ── Favori button (detail page) ────────────────────────────────────────── */
+.detail-actions .favori-btn { width: auto; height: auto; border-radius: 999px; border: 2px solid var(--ink); padding: .85rem 1.5rem; font-size: 1rem; font-family: var(--font-body); font-weight: 600; background: transparent; color: var(--ink); backdrop-filter: none; box-shadow: none; }
+.detail-actions .favori-btn:hover { background: var(--ink); color: var(--white); }
+.detail-actions .favori-btn.is-favori { border-color: var(--maroon); color: var(--maroon); }
+.detail-actions .favori-btn.is-favori:hover { background: var(--maroon); color: var(--white); }
+
+/* ── Active filter badges ───────────────────────────────────────────────── */
+.filter-badges { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: 1.25rem; }
+.filter-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .3rem .75rem; background: var(--white); border: 1.5px solid var(--maroon); color: var(--maroon); border-radius: 999px; font: 500 .82rem var(--font-body); text-decoration: none; transition: background .15s, color .15s; }
+.filter-badge:hover { background: var(--maroon); color: var(--white); }
+.filter-badge-clear { border-color: var(--ink); color: var(--ink); }
+.filter-badge-clear:hover { background: var(--ink); color: var(--white); }

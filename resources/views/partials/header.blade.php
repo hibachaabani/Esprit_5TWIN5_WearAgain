@@ -19,6 +19,11 @@
                 Catégories
             </a>
             @auth
+                <a href="{{ route('favoris.index') }}"
+                   @class(['active' => request()->routeIs('favoris.*')])
+                   title="Mes favoris">
+                    ♥ Favoris
+                </a>
                 <a href="#">Mon dressing</a>
             @else
                 <a href="#">Se connecter</a>

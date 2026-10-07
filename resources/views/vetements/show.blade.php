@@ -5,13 +5,37 @@
 @section('content')
 <div class="container section detail">
 
-    {{-- Photo --}}
-    <div class="detail-photo item-photo"
-         @if(!$vetement->photoUrl()) style="--swatch: {{ '#' . substr(md5($vetement->titre), 0, 6) }}" @endif>
-        @if($vetement->photoUrl())
-            <img src="{{ $vetement->photoUrl() }}" alt="{{ $vetement->titre }}">
+    {{-- Galerie photos --}}
+    <div class="detail-gallery">
+        @if($vetement->photos->isNotEmpty())
+            {{-- Photo principale --}}
+            <div class="gallery-main item-photo">
+                <img id="mainPhoto"
+                     src="{{ $vetement->photos->first()->url() }}"
+                     alt="{{ $vetement->titre }}">
+                <span class="condition-badge">{{ $vetement->etatLibelle() }}</span>
+            </div>
+
+            {{-- Miniatures --}}
+            @if($vetement->photos->count() > 1)
+                <div class="gallery-thumbs">
+                    @foreach($vetement->photos as $photo)
+                        <button type="button"
+                                class="gallery-thumb {{ $loop->first ? 'active' : '' }}"
+                                onclick="switchPhoto(this, '{{ $photo->url() }}')"
+                                aria-label="Photo {{ $loop->iteration }}">
+                            <img src="{{ $photo->url() }}" alt="Photo {{ $loop->iteration }}">
+                        </button>
+                    @endforeach
+                </div>
+            @endif
+        @else
+            {{-- Placeholder coloré si aucune photo --}}
+            <div class="detail-photo item-photo"
+                 style="--swatch: {{ '#' . substr(md5($vetement->titre), 0, 6) }}">
+                <span class="condition-badge">{{ $vetement->etatLibelle() }}</span>
+            </div>
         @endif
-        <span class="condition-badge">{{ $vetement->etatLibelle() }}</span>
     </div>
 
     {{-- Infos --}}
@@ -26,11 +50,9 @@
 
         <h1>{{ $vetement->titre }}</h1>
 
-        {{-- Statut non-disponible --}}
+        {{-- Statut --}}
         @if($vetement->statut !== 'disponible')
-            <p style="font-weight:700;color:var(--gold)">
-                {{ $vetement->statutLibelle() }}
-            </p>
+            <p style="font-weight:700;color:var(--gold)">{{ $vetement->statutLibelle() }}</p>
         @endif
 
         {{-- Specs --}}
@@ -56,10 +78,24 @@
         @if($vetement->statut === 'disponible')
             <div class="detail-actions">
                 <a href="#" class="btn btn-primary btn-lg">Contacter le vendeur</a>
+
+                {{-- Bouton favori --}}
+                @auth
+                    @php $isFavori = $vetement->estFavoriPar(auth()->id()); @endphp
+                    <form method="POST" action="{{ route('favoris.toggle', $vetement) }}">
+                        @csrf
+                        <button type="submit"
+                                class="btn btn-ghost btn-lg favori-btn {{ $isFavori ? 'is-favori' : '' }}"
+                                title="{{ $isFavori ? 'Retirer des favoris' : 'Ajouter aux favoris' }}">
+                            {{ $isFavori ? '♥ Favori' : '♡ Favori' }}
+                        </button>
+                    </form>
+                @endauth
+
                 @auth
                     @if(auth()->id() === $vetement->user_id)
                         <a href="{{ route('vetements.edit', $vetement) }}" class="btn btn-ghost btn-lg">
-                            Modifier l'article
+                            Modifier
                         </a>
                     @endif
                 @endauth
@@ -73,9 +109,21 @@
             </span>
             <div>
                 <strong>{{ $vetement->user->name ?? 'Anonyme' }}</strong>
-                <p class="small muted">Publié le {{ $vetement->created_at->translatedFormat('j F Y') }}</p>
+                <p class="small muted">
+                    Publié le {{ $vetement->created_at->translatedFormat('j F Y') }}
+                </p>
             </div>
         </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function switchPhoto(btn, url) {
+    document.getElementById('mainPhoto').src = url;
+    document.querySelectorAll('.gallery-thumb').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+</script>
+@endpush

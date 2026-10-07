@@ -11,31 +11,64 @@
           enctype="multipart/form-data" class="form">
         @csrf @method('PUT')
 
-        {{-- Photo actuelle --}}
-        @if($vetement->photoUrl())
+        {{-- Photos existantes --}}
+        @if($vetement->photos->isNotEmpty())
             <div class="field">
-                <span class="label">Photo actuelle</span>
-                <img src="{{ $vetement->photoUrl() }}" alt="{{ $vetement->titre }}"
-                     style="max-width:200px;border-radius:var(--radius-lg);margin-bottom:.5rem">
+                <span class="label">Photos actuelles
+                    <span class="muted small">(cocher pour supprimer)</span>
+                </span>
+                <div class="photo-preview-grid">
+                    @foreach($vetement->photos as $photo)
+                        <div class="photo-thumb">
+                            <img src="{{ $photo->url() }}" alt="Photo {{ $loop->iteration }}">
+                            @if($loop->first)
+                                <span class="photo-main-badge">Principale</span>
+                            @endif
+                            <label class="photo-delete-check">
+                                <input type="checkbox"
+                                       name="supprimer_photos[]"
+                                       value="{{ $photo->id }}">
+                                <span>🗑</span>
+                            </label>
+                        </div>
+                    @endforeach
+                </div>
+                <p class="small muted" style="margin-top:.5rem">
+                    {{ $vetement->photos->count() }}/6 photos · vous pouvez en ajouter
+                    {{ max(0, 6 - $vetement->photos->count()) }} de plus.
+                </p>
             </div>
         @endif
 
-        <div class="field">
-            <span class="label">Changer la photo</span>
-            <label class="dropzone" for="photo">
-                <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp">
-                <span>Choisir une nouvelle photo (optionnel)</span>
-            </label>
-            @error('photo') <p class="error">{{ $message }}</p> @enderror
-        </div>
+        {{-- Ajouter de nouvelles photos --}}
+        @if($vetement->photos->count() < 6)
+            <div class="field">
+                <span class="label">Ajouter des photos</span>
+                <div class="photo-drop-area">
+                    <input id="photos" name="photos[]" type="file"
+                           accept="image/jpeg,image/png,image/webp"
+                           multiple
+                           class="photo-input"
+                           onchange="previewPhotos(this)">
+                    <label for="photos" class="photo-drop-label">
+                        <span class="photo-drop-icon">📷</span>
+                        <span>Glisser-déposer ou <u>choisir des photos</u></span>
+                    </label>
+                    <div id="photoPreview" class="photo-preview-grid"></div>
+                </div>
+                @error('photos.*') <p class="error">{{ $message }}</p> @enderror
+            </div>
+        @endif
 
+        {{-- Titre --}}
         <div class="field">
             <label for="titre">Titre <span style="color:#B3261E">*</span></label>
             <input id="titre" name="titre" type="text"
-                value="{{ old('titre', $vetement->titre) }}" required>
+                   value="{{ old('titre', $vetement->titre) }}" required>
             @error('titre') <p class="error">{{ $message }}</p> @enderror
         </div>
 
+        {{-- Catégorie --}}
         <div class="field">
             <label for="categorie_id">Catégorie <span style="color:#B3261E">*</span></label>
             <select id="categorie_id" name="categorie_id" required>
@@ -50,12 +83,13 @@
             @error('categorie_id') <p class="error">{{ $message }}</p> @enderror
         </div>
 
+        {{-- Taille + Matière --}}
         <div class="field-row">
             <div class="field">
                 <label for="taille">Taille</label>
                 <select id="taille" name="taille">
                     <option value="">—</option>
-                    @foreach (['XS', 'S', 'M', 'L', 'XL', 'XXL', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'] as $t)
+                    @foreach (['XS','S','M','L','XL','XXL','36','37','38','39','40','41','42','43','44','45'] as $t)
                         <option @selected(old('taille', $vetement->taille) === $t)>{{ $t }}</option>
                     @endforeach
                 </select>
@@ -63,15 +97,16 @@
             <div class="field">
                 <label for="matiere">Matière</label>
                 <input id="matiere" name="matiere" type="text"
-                    value="{{ old('matiere', $vetement->matiere) }}">
+                       value="{{ old('matiere', $vetement->matiere) }}">
             </div>
         </div>
 
+        {{-- Couleur + État --}}
         <div class="field-row">
             <div class="field">
                 <label for="couleur">Couleur</label>
                 <input id="couleur" name="couleur" type="text"
-                    value="{{ old('couleur', $vetement->couleur) }}">
+                       value="{{ old('couleur', $vetement->couleur) }}">
             </div>
             <div class="field">
                 <label for="etat">État <span style="color:#B3261E">*</span></label>
@@ -87,6 +122,7 @@
             </div>
         </div>
 
+        {{-- Statut --}}
         <div class="field">
             <label for="statut">Statut</label>
             <select id="statut" name="statut">
@@ -99,6 +135,7 @@
             </select>
         </div>
 
+        {{-- Description --}}
         <div class="field">
             <label for="description">Description</label>
             <textarea id="description" name="description" rows="5">{{ old('description', $vetement->description) }}</textarea>
@@ -123,3 +160,22 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function previewPhotos(input) {
+    const grid = document.getElementById('photoPreview');
+    grid.innerHTML = '';
+    Array.from(input.files).slice(0, 6).forEach((file, i) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const div = document.createElement('div');
+            div.className = 'photo-thumb';
+            div.innerHTML = `<img src="${e.target.result}" alt="Nouvelle photo ${i+1}">`;
+            grid.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+</script>
+@endpush
