@@ -20,7 +20,7 @@ Route::get('/', function () {
 Route::resource('vetements', VetementController::class);
 
 // Catégories
-Route::resource('categories', CategorieController::class);
+Route::resource('categories', CategorieController::class)->parameters(['categories' => 'categorie']);
 
 // Favoris
 Route::post('favoris/{vetement}/toggle', [FavoriController::class, 'toggle'])->name('favoris.toggle');
