@@ -11,7 +11,7 @@
     <select name="statut" onchange="this.form.submit()">
         <option value="">Tous les statuts</option>
         @foreach (\App\Models\Don::STATUTS as $statut)
-            <option value="{{ $statut }}" @selected(request('statut') === $statut)>{{ ucfirst($statut) }}</option>
+            <option value="{{ $statut }}" @selected(request('statut') === $statut)>{{ \App\Models\Don::LIBELLES_STATUT[$statut] }}</option>
         @endforeach
     </select>
 </form>
@@ -34,8 +34,8 @@
                 <td>{{ $don->vetement_titre }}</td>
                 <td>{{ $don->donateur?->name }}</td>
                 <td>{{ $don->association?->nom }}</td>
-                <td><span class="status-badge status-{{ $don->statut }}">{{ ucfirst($don->statut) }}</span></td>
-                <td><a href="{{ route('dons.show', $don) }}" class="btn btn-ghost small">Voir</a></td>
+                <td><span class="status-badge status-{{ $don->statut }}">{{ \App\Models\Don::LIBELLES_STATUT[$don->statut] }}</span></td>
+                <td><a href="{{ route('admin.dons.show', $don) }}" class="btn btn-ghost small">Voir</a></td>
             </tr>
         @empty
             <tr><td colspan="6">Aucun don.</td></tr>

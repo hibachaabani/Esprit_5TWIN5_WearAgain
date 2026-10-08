@@ -22,4 +22,12 @@ class DonController extends Controller
 
         return view('admin.dons.index', compact('dons'));
     }
+
+    /** Back-office : détail d'un don, en lecture seule. */
+    public function show(Don $don): View
+    {
+        $don->load(['donateur', 'association']);
+
+        return view('admin.dons.show', compact('don'));
+    }
 }

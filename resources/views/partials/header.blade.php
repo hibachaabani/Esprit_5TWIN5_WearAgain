@@ -2,8 +2,12 @@
     $liens = [
         ['route' => 'items.index', 'actif' => ['items.index', 'items.show'], 'label' => 'Parcourir'],
         ['route' => 'associations.index', 'actif' => ['associations.*'], 'label' => 'Associations'],
-        ['route' => 'dons.index', 'actif' => ['dons.*'], 'label' => 'Dons'],
     ];
+    if (auth()->check()) {
+        $liens[] = ['route' => 'dons.index', 'actif' => ['dons.index', 'dons.show', 'dons.create', 'dons.edit'], 'label' => 'Mes dons'];
+    }
+    $associationConnectee = auth()->user()?->association;
+    $donsATraiter = $associationConnectee?->dons()->where('statut', 'propose')->count() ?? 0;
 @endphp
 
 <header class="site-header" id="site-header">
@@ -15,6 +19,15 @@
                 <a href="{{ route($lien['route']) }}" @class(['active' => request()->routeIs(...$lien['actif'])])
                    @if (request()->routeIs(...$lien['actif'])) aria-current="page" @endif>{{ $lien['label'] }}</a>
             @endforeach
+            @if ($associationConnectee)
+                <a href="{{ route('dons.recus') }}" @class(['active' => request()->routeIs('dons.recus')])
+                   @if (request()->routeIs('dons.recus')) aria-current="page" @endif>
+                    Dons reçus
+                    @if ($donsATraiter)
+                        <span class="count-badge" aria-label="{{ $donsATraiter }} à traiter">{{ $donsATraiter }}</span>
+                    @endif
+                </a>
+            @endif
         </nav>
 
         <div class="header-actions">
@@ -52,6 +65,12 @@
                         <a href="{{ route('profile.edit') }}">Mon profil</a>
                         @if ($user->association)
                             <a href="{{ route('associations.show', $user->association) }}">Mon association</a>
+                            <a href="{{ route('dons.recus') }}" class="account-link-count">
+                                Dons reçus
+                                @if ($donsATraiter)
+                                    <span class="count-badge" aria-label="{{ $donsATraiter }} à traiter">{{ $donsATraiter }}</span>
+                                @endif
+                            </a>
                         @endif
                         <a href="{{ route('admin.associations.index') }}">Back-office</a>
 
@@ -84,6 +103,9 @@
                 @foreach ($liens as $lien)
                     <a href="{{ route($lien['route']) }}" @class(['active' => request()->routeIs(...$lien['actif'])])>{{ $lien['label'] }}</a>
                 @endforeach
+                @if ($associationConnectee)
+                    <a href="{{ route('dons.recus') }}" @class(['active' => request()->routeIs('dons.recus')])>Dons reçus @if ($donsATraiter)<span class="count-badge">{{ $donsATraiter }}</span>@endif</a>
+                @endif
             </nav>
 
             @guest
