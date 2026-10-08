@@ -4,12 +4,17 @@
 
 @include('partials.leaflet')
 
+@php($gere = $point->estGerePar(auth()->user()))
+
 @section('page')
 <div class="page-head">
     <div>
         <a href="{{ route('points-collecte.index') }}" class="back-link">← Tous les points de collecte</a>
         <h1>{{ $point->nom }}</h1>
         <p class="lead">{{ $point->adresse }}, {{ $point->ville }}</p>
+        @if ($point->association)
+            <p class="small">Géré par <a href="{{ route('associations.show', $point->association) }}">{{ $point->association->nom }}</a></p>
+        @endif
     </div>
     <div class="actions">
         @if ($point->accepteDepots())
@@ -46,7 +51,7 @@
                 <div class="repartition">
                     @foreach (\App\Models\Depot::STATUTS as $statut => $libelle)
                         @if ($repartition->has($statut))
-                            <a href="{{ route('depots.index', ['point_collecte_id' => $point->id, 'statut' => $statut]) }}"><x-statut-depot :statut="$statut" /></a>
+                            <x-statut-depot :statut="$statut" />
                             <span class="small muted">× {{ $repartition[$statut] }}</span>
                         @endif
                     @endforeach
@@ -54,10 +59,12 @@
             @endif
         </section>
 
+        {{-- Les dépôts nomment des particuliers : seule l'association du point les voit. --}}
+        @if ($gere)
         <section class="panel">
             <div class="section-head">
                 <h2>Derniers dépôts</h2>
-                <a href="{{ route('depots.index', ['point_collecte_id' => $point->id]) }}" class="small">Tout voir</a>
+                <a href="{{ route('depots.recus', ['point_collecte_id' => $point->id]) }}" class="small">Tout voir</a>
             </div>
 
             @if ($derniersDepots->isEmpty())
@@ -82,14 +89,16 @@
                 </div>
             @endif
         </section>
+        @endif
     </div>
 
     <aside>
         <div id="carte" class="carte carte-sm" role="region" aria-label="Emplacement du point de collecte"></div>
 
+        @if ($gere)
         <div class="panel" style="margin-top: 1.5rem">
             <h2>Gestion du point</h2>
-            <p class="small muted">Réservé à l'association responsable et à l'administrateur.</p>
+            <p class="small muted">Vous gérez ce point pour {{ $point->association->nom }}.</p>
             <div class="actions">
                 <a href="{{ route('points-collecte.edit', $point) }}" class="btn btn-ghost btn-sm">Modifier</a>
                 <form method="POST" action="{{ route('points-collecte.destroy', $point) }}" class="inline-form"
@@ -100,6 +109,7 @@
                 </form>
             </div>
         </div>
+        @endif
     </aside>
 </div>
 @endsection

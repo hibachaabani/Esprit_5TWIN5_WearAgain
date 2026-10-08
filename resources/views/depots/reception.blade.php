@@ -5,7 +5,7 @@
 @section('page')
 <div class="page-head">
     <div>
-        <p class="eyebrow">Espace association</p>
+        <p class="eyebrow">{{ auth()->user()->association->nom }}</p>
         <h1>Réception des dépôts</h1>
         <p class="lead">Scanne le QR code du bon de dépôt avec la caméra, ou saisis son code.</p>
     </div>
@@ -29,6 +29,10 @@
             <div class="empty">
                 <p>Aucun dépôt ne correspond au code <span class="code">{{ $code }}</span>.</p>
             </div>
+        @elseif ($autreAssociation)
+            <div class="empty">
+                <p>Le dépôt <span class="code">{{ $depot->code }}</span> est prévu à {{ $depot->pointCollecte->nom }}, un point géré par une autre association.</p>
+            </div>
         @elseif ($depot)
             <article class="panel">
                 <div class="point-card-head">
@@ -51,10 +55,10 @@
                 @endif
 
                 <div class="actions">
-                    @include('depots._actions-statut')
+                    @include('depots._actions-statut', ['transitions' => $depot->transitionsPour(auth()->user()), 'route' => 'depots.statut'])
                     <a href="{{ route('depots.show', $depot) }}" class="btn btn-ghost btn-sm">Fiche complète</a>
                 </div>
-                @if ($depot->transitionsPossibles())
+                @if ($depot->transitionsPour(auth()->user()))
                     <p class="note" style="margin-top: 1rem">Le particulier sera prévenu par email.</p>
                 @endif
             </article>

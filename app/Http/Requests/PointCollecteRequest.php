@@ -7,9 +7,14 @@ use Illuminate\Validation\Rule;
 
 class PointCollecteRequest extends FormRequest
 {
+    /**
+     * Un compte association crée ses points ; seule l'association du point le modifie.
+     */
     public function authorize(): bool
     {
-        return true;
+        $point = $this->route('pointCollecte');
+
+        return $point ? $point->estGerePar($this->user()) : $this->user()?->association !== null;
     }
 
     protected function prepareForValidation(): void

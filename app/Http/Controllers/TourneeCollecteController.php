@@ -12,10 +12,18 @@ use Illuminate\View\View;
 class TourneeCollecteController extends Controller
 {
     /**
-     * Planifie la tournée qui vide les points ayant des vêtements à collecter.
+     * Planifie la tournée qui vide les points de l'association ayant des vêtements à collecter.
      */
-    public function index(Request $request, TourneeCollecte $tournee): View
+    public function index(Request $request, TourneeCollecte $tournee): View|RedirectResponse
     {
+        $association = $request->user()->association;
+
+        if (! $association) {
+            return redirect()
+                ->route('depots.index')
+                ->with('status', 'Cette page est réservée aux comptes association.');
+        }
+
         $filtres = $request->validate([
             'ville' => ['nullable', 'string', 'max:100'],
             'seuil' => ['nullable', 'integer', 'between:0,100'],
@@ -28,6 +36,7 @@ class TourneeCollecteController extends Controller
             'depotsActifs',
             'depots as a_collecter_count' => fn ($q) => $q->aCollecter(),
         ])
+            ->where('association_id', $association->id)
             ->when($filtres['ville'] ?? null, fn ($q, $ville) => $q->where('ville', $ville))
             ->get()
             ->filter(fn (PointCollecte $p) => $p->a_collecter_count > 0 && $p->tauxRemplissage() >= $seuil)
@@ -48,7 +57,7 @@ class TourneeCollecteController extends Controller
             'maPosition' => $maPosition,
             'filtres' => $filtres,
             'seuil' => $seuil,
-            'villes' => PointCollecte::distinct()->orderBy('ville')->pluck('ville'),
+            'villes' => $association->pointsCollecte()->distinct()->orderBy('ville')->pluck('ville'),
             'carte' => $plan ? $plan['etapes']->map(fn (array $etape, int $i) => [
                 'ordre' => $i + 1,
                 'nom' => $etape['point']->nom,
@@ -63,8 +72,10 @@ class TourneeCollecteController extends Controller
     /**
      * Le point a été vidé : ses dépôts arrivés sont marqués « reçus » et les particuliers prévenus.
      */
-    public function collecter(PointCollecte $pointCollecte, WorkflowDepot $workflow): RedirectResponse
+    public function collecter(Request $request, PointCollecte $pointCollecte, WorkflowDepot $workflow): RedirectResponse
     {
+        abort_unless($pointCollecte->estGerePar($request->user()), 403);
+
         $depots = $pointCollecte->depots()->aCollecter()->with(['user', 'pointCollecte'])->get();
 
         if ($depots->isEmpty()) {

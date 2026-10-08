@@ -9,9 +9,14 @@ use Illuminate\Validation\Rule;
 
 class DepotRequest extends FormRequest
 {
+    /**
+     * Tout compte connecté déclare un dépôt ; seul son auteur le modifie.
+     */
     public function authorize(): bool
     {
-        return true;
+        $depot = $this->route('depot');
+
+        return $this->user() !== null && (! $depot || $depot->user_id === $this->user()->id);
     }
 
     public function rules(): array
@@ -19,9 +24,10 @@ class DepotRequest extends FormRequest
         $depot = $this->route('depot');
 
         return [
-            'user_id' => ['required', 'integer', 'exists:users,id'],
             'point_collecte_id' => ['bail', 'required', 'integer', 'exists:points_collecte,id', $this->pointAccepteLeDepot()],
-            'vetement_titre' => ['required', 'string', 'min:3', 'max:255'],
+            // Soit une annonce publiée par le particulier, soit une description libre.
+            'vetement_id' => ['nullable', 'integer', Rule::exists('vetements', 'id')->where('user_id', $this->user()?->id)],
+            'vetement_titre' => ['required_without:vetement_id', 'nullable', 'string', 'min:3', 'max:255'],
             // Un nouveau dépôt se planifie entre aujourd'hui et dans 30 jours.
             'date_depot' => [
                 'required', 'date',
@@ -61,7 +67,8 @@ class DepotRequest extends FormRequest
             'string' => 'Le champ :attribute doit être un texte.',
             'integer' => 'Le champ :attribute est invalide.',
             'max' => 'Le champ :attribute ne doit pas dépasser :max caractères.',
-            'user_id.exists' => 'Ce particulier n\'existe pas.',
+            'vetement_id.exists' => 'Choisissez un de vos vêtements publiés.',
+            'vetement_titre.required_without' => 'Décrivez le vêtement ou choisissez une de vos annonces.',
             'point_collecte_id.exists' => 'Ce point de collecte n\'existe pas.',
             'vetement_titre.min' => 'Décrivez le vêtement en au moins :min caractères.',
             'date_depot.date' => 'La date de dépôt n\'est pas valide.',
@@ -73,7 +80,7 @@ class DepotRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'user_id' => 'particulier',
+            'vetement_id' => 'annonce',
             'point_collecte_id' => 'point de collecte',
             'vetement_titre' => 'vêtement',
             'date_depot' => 'date de dépôt',

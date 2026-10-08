@@ -22,20 +22,25 @@
     <p class="small muted">Pas sûr du lieu ? <a href="{{ route('points-collecte.index') }}">Voir la carte des points</a></p>
 </div>
 
-<div class="field">
-    <label for="user_id">Particulier *</label>
-    <select id="user_id" name="user_id" required>
-        <option value="">Qui dépose ?</option>
-        @foreach ($users as $user)
-            <option value="{{ $user->id }}" @selected((int) old('user_id', $depot->user_id) === $user->id)>{{ $user->name }} ({{ $user->email }})</option>
-        @endforeach
-    </select>
-    @error('user_id') <p class="error">{{ $message }}</p> @enderror
-</div>
+@if ($vetements->isNotEmpty())
+    <div class="field">
+        <label for="vetement_id">Une de mes annonces</label>
+        <select id="vetement_id" name="vetement_id">
+            <option value="">Aucune, je décris le vêtement ci-dessous</option>
+            @foreach ($vetements as $vetement)
+                <option value="{{ $vetement->id }}" @selected((int) old('vetement_id', $depot->vetement_id) === $vetement->id)>{{ $vetement->titre }}</option>
+            @endforeach
+        </select>
+        @error('vetement_id') <p class="error">{{ $message }}</p> @enderror
+    </div>
+@endif
 
 <div class="field">
-    <label for="vetement_titre">Vêtement déposé *</label>
-    <input id="vetement_titre" name="vetement_titre" type="text" value="{{ old('vetement_titre', $depot->vetement_titre) }}" placeholder="Ex. Veste en jean taille M" required>
+    <label for="vetement_titre">Vêtement déposé{{ $vetements->isEmpty() ? ' *' : '' }}</label>
+    <input id="vetement_titre" name="vetement_titre" type="text" value="{{ old('vetement_titre', $depot->vetement_titre) }}" placeholder="Ex. Veste en jean taille M">
+    @if ($vetements->isNotEmpty())
+        <p class="small muted">Inutile si vous choisissez une annonce : son titre est repris.</p>
+    @endif
     @error('vetement_titre') <p class="error">{{ $message }}</p> @enderror
 </div>
 

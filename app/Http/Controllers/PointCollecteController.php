@@ -64,8 +64,15 @@ class PointCollecteController extends Controller
         ]);
     }
 
-    public function create(): View
+    /** Seul un compte association ouvre un point de collecte, rattaché à son association. */
+    public function create(Request $request): View|RedirectResponse
     {
+        if (! $request->user()->association) {
+            return redirect()
+                ->route('points-collecte.index')
+                ->with('status', 'Seuls les comptes association peuvent ouvrir un point de collecte.');
+        }
+
         return view('points-collecte.create', [
             'point' => new PointCollecte(['actif' => true, 'capacite' => 50]),
         ]);
@@ -73,7 +80,7 @@ class PointCollecteController extends Controller
 
     public function store(PointCollecteRequest $request): RedirectResponse
     {
-        $point = PointCollecte::create($request->validated());
+        $point = $request->user()->association->pointsCollecte()->create($request->validated());
 
         return redirect()
             ->route('points-collecte.show', $point)
@@ -82,7 +89,7 @@ class PointCollecteController extends Controller
 
     public function show(PointCollecte $pointCollecte): View
     {
-        $pointCollecte->loadCount(['depots', 'depotsActifs']);
+        $pointCollecte->load('association')->loadCount(['depots', 'depotsActifs']);
 
         return view('points-collecte.show', [
             'point' => $pointCollecte,
@@ -99,8 +106,10 @@ class PointCollecteController extends Controller
         ]);
     }
 
-    public function edit(PointCollecte $pointCollecte): View
+    public function edit(Request $request, PointCollecte $pointCollecte): View
     {
+        abort_unless($pointCollecte->estGerePar($request->user()), 403);
+
         return view('points-collecte.edit', ['point' => $pointCollecte]);
     }
 
@@ -113,8 +122,10 @@ class PointCollecteController extends Controller
             ->with('status', 'Point de collecte mis à jour.');
     }
 
-    public function destroy(PointCollecte $pointCollecte): RedirectResponse
+    public function destroy(Request $request, PointCollecte $pointCollecte): RedirectResponse
     {
+        abort_unless($pointCollecte->estGerePar($request->user()), 403);
+
         if ($pointCollecte->depotsActifs()->exists()) {
             return back()->with('erreur', 'Suppression impossible : des vêtements sont encore en attente ou reçus dans ce point. Fermez-le plutôt aux nouveaux dépôts.');
         }

@@ -230,6 +230,11 @@ figure.viz { margin: 0; }
 .lecteur { min-height: 260px; border: 2px dashed var(--line); border-radius: var(--radius-lg); overflow: hidden; margin: 1rem 0; }
 .lecteur button { font: 600 .9rem var(--font-body); padding: .5rem 1rem; border-radius: 999px; border: 0; background: var(--maroon); color: var(--white); cursor: pointer; margin: .5rem; }
 
+/* Espace association : ses points en grille, boutons compacts dans les tableaux */
+.points-association { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+.table .btn, .admin-table .btn { padding: .35rem .75rem; font-size: .82rem; }
+.admin-content .toolbar input[type=search] { max-width: 320px; }
+
 /* Repère d'un point fermé ou complet (complète .map-pin de wearagain.css) */
 .map-pin.is-ferme { background: var(--muted); }
 

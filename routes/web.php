@@ -8,7 +8,6 @@ use App\Http\Controllers\AssociationController;
 use App\Http\Controllers\DonController;
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\PointCollecteController;
-use App\Http\Controllers\StatistiquesCollecteController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +59,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('categories', Admin\CategorieController::class)->only('index');
     Route::patch('categories/{categorie}/active', [Admin\CategorieController::class, 'toggleActive'])->name('categories.active');
     Route::post('categories/reorder', [Admin\CategorieController::class, 'reorder'])->name('categories.reorder');
+
+    // Collecte (membre 3) : points de collecte, dépôts et statistiques
+    Route::get('collecte/statistiques', Admin\StatistiquesCollecteController::class)->name('collecte.statistiques');
+    Route::resource('points-collecte', Admin\PointCollecteController::class)
+        ->only(['index', 'destroy'])
+        ->parameters(['points-collecte' => 'pointCollecte']);
+    Route::patch('points-collecte/{pointCollecte}/actif', [Admin\PointCollecteController::class, 'basculerActif'])->name('points-collecte.actif');
+    Route::get('depots/export', [Admin\DepotController::class, 'export'])->name('depots.export');
+    Route::patch('depots/statut', [Admin\DepotController::class, 'changerStatutGroupe'])->name('depots.statut-groupe');
+    Route::patch('depots/{depot}/statut', [Admin\DepotController::class, 'changerStatut'])->name('depots.statut');
+    Route::resource('depots', Admin\DepotController::class)->only(['index', 'show', 'destroy']);
 });
 
 Route::middleware('auth')->group(function () {
@@ -68,19 +78,25 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Module collecte (membre 3) : points de collecte et dépôts
-Route::get('collecte/statistiques', StatistiquesCollecteController::class)->name('collecte.statistiques');
-
-Route::get('points-collecte/tournee', [TourneeCollecteController::class, 'index'])->name('tournee.index');
-Route::post('points-collecte/{pointCollecte}/collecter', [TourneeCollecteController::class, 'collecter'])->name('tournee.collecter');
-Route::resource('points-collecte', PointCollecteController::class)
-    ->parameters(['points-collecte' => 'pointCollecte']);
-
+// Collecte (membre 3) — front office : carte des points et suivi public d'un dépôt
 Route::get('depots/suivi', [DepotController::class, 'suivi'])->name('depots.suivi');
-Route::get('depots/reception', [DepotController::class, 'reception'])->name('depots.reception');
-Route::get('depots/export', [DepotController::class, 'export'])->name('depots.export');
-Route::patch('depots/statut', [DepotController::class, 'changerStatutGroupe'])->name('depots.statut-groupe');
-Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
-Route::resource('depots', DepotController::class);
+
+Route::middleware('auth')->group(function () {
+    // Particulier : ses dépôts ; association : ses points, les dépôts reçus, la réception et la tournée
+    Route::resource('points-collecte', PointCollecteController::class)
+        ->except(['index', 'show'])
+        ->parameters(['points-collecte' => 'pointCollecte']);
+    Route::get('tournee-collecte', [TourneeCollecteController::class, 'index'])->name('tournee.index');
+    Route::post('tournee-collecte/{pointCollecte}/collecter', [TourneeCollecteController::class, 'collecter'])->name('tournee.collecter');
+
+    Route::get('depots-recus', [DepotController::class, 'recus'])->name('depots.recus');
+    Route::get('depots/reception', [DepotController::class, 'reception'])->name('depots.reception');
+    Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
+    Route::resource('depots', DepotController::class)->except('destroy');
+});
+
+Route::resource('points-collecte', PointCollecteController::class)
+    ->only(['index', 'show'])
+    ->parameters(['points-collecte' => 'pointCollecte']);
 
 require __DIR__.'/auth.php';

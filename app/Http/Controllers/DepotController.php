@@ -5,35 +5,39 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DepotRequest;
 use App\Models\Depot;
 use App\Models\PointCollecte;
-use App\Models\User;
+use App\Models\Vetement;
 use App\Services\WorkflowDepot;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * Front office des dépôts : le particulier déclare et suit ses dépôts,
+ * l'association traite ceux reçus dans ses points de collecte.
+ */
 class DepotController extends Controller
 {
+    /** « Mes dépôts » : les dépôts du particulier connecté, filtrables par statut. */
     public function index(Request $request): View
     {
-        $filtres = $this->filtres($request);
+        $statut = array_key_exists($request->query('statut'), Depot::STATUTS) ? $request->query('statut') : null;
 
-        $depots = Depot::with(['user', 'pointCollecte'])
-            ->filtrer($filtres)
+        $depots = $request->user()->depots()
+            ->with('pointCollecte')
+            ->when($statut, fn ($q) => $q->where('statut', $statut))
             ->latest('date_depot')
             ->latest('id')
             ->paginate(10)
             ->withQueryString();
 
-        return view('depots.index', [
-            'depots' => $depots,
-            'filtres' => $filtres,
-            'compteurs' => Depot::selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut'),
-            'enRetard' => Depot::enRetard()->count(),
-            'points' => PointCollecte::orderBy('nom')->get(['id', 'nom', 'ville']),
-        ]);
+        $compteurs = $request->user()->depots()
+            ->selectRaw('statut, count(*) as total')
+            ->groupBy('statut')
+            ->pluck('total', 'statut');
+
+        return view('depots.index', compact('depots', 'statut', 'compteurs'));
     }
 
     public function create(Request $request): View
@@ -43,59 +47,56 @@ class DepotController extends Controller
                 'date_depot' => today(),
                 'point_collecte_id' => $request->integer('point_collecte_id') ?: null,
             ]),
-            ...$this->listes(),
+            ...$this->listes($request),
         ]);
     }
 
     public function store(DepotRequest $request): RedirectResponse
     {
-        $depot = Depot::create($request->validated());
+        $depot = Depot::create($this->donnees($request) + ['user_id' => $request->user()->id]);
 
         return redirect()
             ->route('depots.show', $depot)
             ->with('status', "Dépôt {$depot->code} enregistré. Présentez ce code (ou le QR code) au point de collecte.");
     }
 
-    public function show(Depot $depot): View
+    public function show(Request $request, Depot $depot): View
     {
-        $depot->load(['user', 'pointCollecte']);
+        $depot->load(['user', 'pointCollecte.association', 'vetement']);
+
+        abort_unless($depot->estVisiblePar($request->user()), 403);
 
         return view('depots.show', compact('depot'));
     }
 
-    public function edit(Depot $depot): View|RedirectResponse
+    public function edit(Request $request, Depot $depot): View|RedirectResponse
     {
+        abort_unless($depot->user_id === $request->user()->id, 403);
+
         if (! $depot->estModifiable()) {
             return $this->depotArchive($depot);
         }
 
-        return view('depots.edit', ['depot' => $depot, ...$this->listes()]);
+        return view('depots.edit', ['depot' => $depot, ...$this->listes($request)]);
     }
 
     public function update(DepotRequest $request, Depot $depot): RedirectResponse
     {
+        abort_unless($depot->user_id === $request->user()->id, 403);
+
         if (! $depot->estModifiable()) {
             return $this->depotArchive($depot);
         }
 
-        $depot->update($request->validated());
+        $depot->update($this->donnees($request));
 
         return redirect()
             ->route('depots.show', $depot)
             ->with('status', 'Dépôt mis à jour.');
     }
 
-    public function destroy(Depot $depot): RedirectResponse
-    {
-        $depot->delete();
-
-        return redirect()
-            ->route('depots.index')
-            ->with('status', "Dépôt {$depot->code} supprimé.");
-    }
-
     /**
-     * Fait avancer le dépôt dans son parcours (reçu, trié) ou l'annule.
+     * Le particulier annule son dépôt ; l'association du point le reçoit ou le trie.
      */
     public function changerStatut(Request $request, Depot $depot, WorkflowDepot $workflow): RedirectResponse
     {
@@ -103,50 +104,71 @@ class DepotController extends Controller
             'statut' => ['required', Rule::in(array_keys(Depot::STATUTS))],
         ])['statut'];
 
+        abort_unless(in_array($statut, $depot->statutsAutorisesPour($request->user()), true), 403);
+
         if (! $workflow->appliquer($depot, $statut)) {
             return back()->with('erreur', "Un dépôt « {$depot->libelleStatut()} » ne peut pas passer à « ".Depot::STATUTS[$statut].' ».');
         }
 
-        return back()->with('status', "Dépôt {$depot->code} : {$depot->libelleStatut()}. Le particulier a été prévenu par email.");
+        $message = $depot->user_id === $request->user()->id
+            ? "Dépôt {$depot->code} : {$depot->libelleStatut()}."
+            : "Dépôt {$depot->code} : {$depot->libelleStatut()}. Le particulier a été prévenu par email.";
+
+        return back()->with('status', $message);
     }
 
     /**
-     * Action groupée depuis la liste : seuls les dépôts dont la transition est autorisée changent.
+     * Espace association : les dépôts reçus dans ses points de collecte.
      */
-    public function changerStatutGroupe(Request $request, WorkflowDepot $workflow): RedirectResponse
+    public function recus(Request $request): View|RedirectResponse
     {
-        $donnees = $request->validate([
-            'depots' => ['required', 'array', 'min:1'],
-            'depots.*' => ['integer', 'exists:depots,id'],
-            'statut' => ['required', Rule::in(array_keys(Depot::STATUTS))],
-        ], [
-            'depots.required' => 'Coche au moins un dépôt.',
-            'statut.required' => 'Choisis l\'action à appliquer.',
-        ]);
+        $association = $request->user()->association;
 
-        $resultat = $workflow->appliquerEnMasse(
-            Depot::with(['user', 'pointCollecte'])->whereIn('id', $donnees['depots'])->get(),
-            $donnees['statut'],
-        );
-
-        $message = "{$resultat['appliques']} dépôt(s) passé(s) à « ".Depot::STATUTS[$donnees['statut']].' »';
-        if ($resultat['ignores'] > 0) {
-            $message .= ", {$resultat['ignores']} ignoré(s) car ce changement n'est pas autorisé pour eux";
+        if (! $association) {
+            return $this->reserveAuxAssociations();
         }
 
-        return back()->with($resultat['appliques'] > 0 ? 'status' : 'erreur', $message.'.');
+        $filtres = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'statut' => ['nullable', Rule::in(array_keys(Depot::STATUTS))],
+            'retard' => ['nullable', 'boolean'],
+            'point_collecte_id' => ['nullable', 'integer'],
+        ]);
+
+        $depots = $association->depots()
+            ->with(['user', 'pointCollecte'])
+            ->filtrer($filtres)
+            ->latest('date_depot')
+            ->latest('depots.id')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('depots.recus', [
+            'association' => $association,
+            'depots' => $depots,
+            'filtres' => $filtres,
+            'points' => $association->pointsCollecte()->withCount(['depotsActifs', 'depots as a_collecter_count' => fn ($q) => $q->aCollecter()])->orderBy('nom')->get(),
+            'compteurs' => $association->depots()->selectRaw('depots.statut, count(*) as total')->groupBy('depots.statut')->pluck('total', 'statut'),
+            'enRetard' => $association->depots()->enRetard()->count(),
+        ]);
     }
 
     /**
      * Espace association : retrouver un dépôt en scannant son QR code (ou en tapant son code).
      */
-    public function reception(Request $request): View
+    public function reception(Request $request): View|RedirectResponse
     {
+        if (! $request->user()->association) {
+            return $this->reserveAuxAssociations();
+        }
+
         $code = $this->codeDemande($request);
+        $depot = $code !== '' ? Depot::with(['user', 'pointCollecte'])->where('code', $code)->first() : null;
 
         return view('depots.reception', [
             'code' => $code,
-            'depot' => $code !== '' ? Depot::with(['user', 'pointCollecte'])->where('code', $code)->first() : null,
+            'depot' => $depot,
+            'autreAssociation' => $depot !== null && ! $depot->pointCollecte->estGerePar($request->user()),
         ]);
     }
 
@@ -164,53 +186,24 @@ class DepotController extends Controller
     }
 
     /**
-     * Export CSV (séparateur « ; » pour Excel) qui respecte les filtres de la liste.
+     * Données validées ; le titre est repris de l'annonce quand un vêtement publié est choisi.
      */
-    public function export(Request $request): StreamedResponse
+    private function donnees(DepotRequest $request): array
     {
-        $depots = Depot::with(['user', 'pointCollecte'])
-            ->filtrer($this->filtres($request))
-            ->latest('date_depot')
-            ->get();
+        $donnees = $request->validated();
 
-        return response()->streamDownload(function () use ($depots) {
-            $sortie = fopen('php://output', 'w');
-            fwrite($sortie, "\xEF\xBB\xBF"); // BOM : accents corrects à l'ouverture dans Excel
-            fputcsv($sortie, ['Code', 'Vêtement', 'Particulier', 'Point de collecte', 'Ville', 'Date de dépôt', 'Statut'], ';', '"', '');
+        if (! empty($donnees['vetement_id'])) {
+            $donnees['vetement_titre'] = Vetement::findOrFail($donnees['vetement_id'])->titre;
+        }
 
-            foreach ($depots as $depot) {
-                fputcsv($sortie, [
-                    $depot->code,
-                    $depot->vetement_titre,
-                    $depot->user->name,
-                    $depot->pointCollecte->nom,
-                    $depot->pointCollecte->ville,
-                    $depot->date_depot->format('d/m/Y'),
-                    $depot->libelleStatut(),
-                ], ';', '"', '');
-            }
-
-            fclose($sortie);
-        }, 'depots-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return $donnees;
     }
 
-    private function filtres(Request $request): array
-    {
-        return $request->validate([
-            'q' => ['nullable', 'string', 'max:100'],
-            'statut' => ['nullable', Rule::in(array_keys(Depot::STATUTS))],
-            'retard' => ['nullable', 'boolean'],
-            'point_collecte_id' => ['nullable', 'integer'],
-            'du' => ['nullable', 'date'],
-            'au' => ['nullable', 'date', Rule::when($request->filled('du'), 'after_or_equal:du')],
-        ]);
-    }
-
-    private function listes(): array
+    private function listes(Request $request): array
     {
         return [
             'points' => PointCollecte::withCount('depotsActifs')->orderBy('ville')->orderBy('nom')->get(),
-            'users' => User::orderBy('name')->get(['id', 'name', 'email']),
+            'vetements' => Vetement::where('user_id', $request->user()->id)->orderBy('titre')->get(['id', 'titre']),
         ];
     }
 
@@ -222,6 +215,13 @@ class DepotController extends Controller
         $saisie = Str::upper(trim((string) $request->query('code', '')));
 
         return preg_match('/DEP-[A-Z0-9]{6}/', $saisie, $trouve) ? $trouve[0] : $saisie;
+    }
+
+    private function reserveAuxAssociations(): RedirectResponse
+    {
+        return redirect()
+            ->route('depots.index')
+            ->with('status', 'Cette page est réservée aux comptes association.');
     }
 
     private function depotArchive(Depot $depot): RedirectResponse

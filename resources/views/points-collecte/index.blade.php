@@ -11,7 +11,9 @@
         <h1>Points de collecte</h1>
         <p class="lead">Les associations partenaires récupèrent tes vêtements dans ces points, puis les trient pour leur offrir une seconde vie.</p>
     </div>
-    <a href="{{ route('points-collecte.create') }}" class="btn btn-ghost">Ajouter un point</a>
+    @if (auth()->user()?->association)
+        <a href="{{ route('points-collecte.create') }}" class="btn btn-ghost">Ajouter un point</a>
+    @endif
 </div>
 
 <div class="kpis">

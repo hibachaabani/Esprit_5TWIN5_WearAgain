@@ -2,12 +2,20 @@
 
 @section('title', 'Dépôt '.$depot->code)
 
-@php($lienSuivi = route('depots.suivi', ['code' => $depot->code]))
+@php
+    $lienSuivi = route('depots.suivi', ['code' => $depot->code]);
+    $estAuteur = $depot->user_id === auth()->id();
+    $transitions = $depot->transitionsPour(auth()->user());
+@endphp
 
 @section('page')
 <div class="page-head">
     <div>
-        <a href="{{ route('depots.index') }}" class="back-link no-print">← Tous les dépôts</a>
+        @if ($estAuteur)
+            <a href="{{ route('depots.index') }}" class="back-link no-print">← Mes dépôts</a>
+        @else
+            <a href="{{ route('depots.recus') }}" class="back-link no-print">← Dépôts reçus</a>
+        @endif
         <h1>{{ $depot->vetement_titre }}</h1>
         <p>
             <x-statut-depot :statut="$depot->statut" />
@@ -18,10 +26,10 @@
         </p>
     </div>
     <div class="actions no-print">
-        @include('depots._actions-statut')
+        @include('depots._actions-statut', ['transitions' => $transitions, 'route' => 'depots.statut'])
     </div>
 </div>
-@if ($depot->transitionsPossibles())
+@if ($transitions && ! $estAuteur)
     <p class="note no-print">Le particulier reçoit un email à chaque changement de statut.</p>
 @endif
 
@@ -34,6 +42,12 @@
                 <div><dt>Adresse</dt><dd>{{ $depot->pointCollecte->adresse }}, {{ $depot->pointCollecte->ville }}</dd></div>
                 <div><dt>Date de dépôt</dt><dd>{{ $depot->date_depot->format('d/m/Y') }}</dd></div>
                 <div><dt>Particulier</dt><dd>{{ $depot->user->name }}</dd></div>
+                @if ($depot->vetement)
+                    <div><dt>Annonce</dt><dd><a href="{{ route('vetements.show', $depot->vetement) }}">{{ $depot->vetement->titre }}</a></dd></div>
+                @endif
+                @if ($depot->pointCollecte->association)
+                    <div><dt>Association</dt><dd><a href="{{ route('associations.show', $depot->pointCollecte->association) }}">{{ $depot->pointCollecte->association->nom }}</a></dd></div>
+                @endif
             </dl>
             @if ($depot->commentaire)
                 <p><strong>Commentaire :</strong> {{ $depot->commentaire }}</p>
@@ -45,22 +59,17 @@
             @include('partials.depot-timeline', ['depot' => $depot])
         </section>
 
-        <section class="panel no-print">
-            <h2>Gestion</h2>
-            <div class="actions">
+        @if ($estAuteur)
+            <section class="panel no-print">
+                <h2>Mon dépôt</h2>
                 @if ($depot->estModifiable())
+                    <p class="small muted">Tu peux modifier ton dépôt tant qu’il n’est pas trié, ou l’annuler s’il n’a pas encore été reçu.</p>
                     <a href="{{ route('depots.edit', $depot) }}" class="btn btn-ghost btn-sm">Modifier</a>
                 @else
-                    <span class="small muted">Dépôt archivé : il ne peut plus être modifié.</span>
+                    <p class="small muted">Dépôt archivé : il ne peut plus être modifié.</p>
                 @endif
-                <form method="POST" action="{{ route('depots.destroy', $depot) }}" class="inline-form"
-                      onsubmit="return confirm('Supprimer définitivement ce dépôt ? Préférez l’annulation pour garder l’historique.')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                </form>
-            </div>
-        </section>
+            </section>
+        @endif
     </div>
 
     <aside class="panel bon">
