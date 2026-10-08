@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Association;
 use App\Models\Depot;
 use App\Models\PointCollecte;
 use App\Models\User;
@@ -23,12 +24,31 @@ class CollecteSeeder extends Seeder
         ['nom' => 'Borne textile Bizerte Vieux Port', 'adresse' => 'Quai Tarak Ibn Ziad', 'ville' => 'Bizerte', 'latitude' => 37.2720, 'longitude' => 9.8730, 'horaires' => 'Fermé pour travaux', 'capacite' => 40, 'actif' => false],
     ];
 
+    /** Points confiés à « Les Mains Solidaires », l'association du compte de démo association@wearagain.tn. */
+    private const POINTS_DEMO = ['Borne textile Sousse Centre', 'Conteneur Monastir Marina', 'Conteneur Ennasr', 'Local solidaire Nabeul', 'Borne textile Bizerte Vieux Port'];
+
     public function run(): void
     {
-        $particuliers = User::factory(8)->create();
+        // Relançable sans doublons (db:seed) : la collecte n'est créée qu'une fois.
+        if (PointCollecte::exists()) {
+            return;
+        }
+
+        $associationDemo = Association::where('numero_agrement', 'AGR-2026-0042')->first() ?? Association::factory()->create();
+        $autresAssociations = Association::whereKeyNot($associationDemo->id)->get();
+
+        // Le donateur de démo (donateur@wearagain.tn) dépose aussi des vêtements.
+        $particuliers = User::factory(7)->create();
+        if ($donateur = User::where('email', 'donateur@wearagain.tn')->first()) {
+            $particuliers->push($donateur);
+        }
 
         foreach (self::POINTS as $donnees) {
-            $point = PointCollecte::factory()->create($donnees);
+            $association = in_array($donnees['nom'], self::POINTS_DEMO, true) || $autresAssociations->isEmpty()
+                ? $associationDemo
+                : $autresAssociations->random();
+
+            $point = PointCollecte::factory()->for($association)->create($donnees);
 
             // Des dépôts à chaque étape du parcours, rattachés aux particuliers créés plus haut.
             $repartition = $point->actif
@@ -38,6 +58,15 @@ class CollecteSeeder extends Seeder
             foreach ($repartition as $etat => $nombre) {
                 Depot::factory($nombre)->{$etat}()->for($point)->recycle($particuliers)->create();
             }
+        }
+
+        // Un dépôt de chaque statut pour le donateur de démo, dans les points de l'association de démo.
+        if ($donateur) {
+            $sousse = PointCollecte::where('nom', 'Borne textile Sousse Centre')->firstOrFail();
+            $monastir = PointCollecte::where('nom', 'Conteneur Monastir Marina')->firstOrFail();
+            Depot::factory()->enAttente()->for($sousse)->for($donateur)->create(['vetement_titre' => 'Manteau en laine gris']);
+            Depot::factory()->recu()->for($monastir)->for($donateur)->create(['vetement_titre' => 'Lot de t-shirts enfant']);
+            Depot::factory()->trie()->for($sousse)->for($donateur)->create(['vetement_titre' => "Jean Levi's 501"]);
         }
 
         // Trois dépôts jamais apportés depuis plus d'une semaine : `php artisan depots:expirer` les annule.
