@@ -11,6 +11,7 @@ use Illuminate\View\View;
 
 class DonController extends Controller
 {
+    /** Liste des dons avec filtre par statut. */
     public function index(Request $request): View
     {
         $query = Don::with(['donateur', 'association'])->latest();
@@ -24,19 +25,7 @@ class DonController extends Controller
         return view('dons.index', compact('dons'));
     }
 
-    public function adminIndex(Request $request): View
-    {
-        $query = Don::with(['donateur', 'association'])->latest();
-
-        if ($statut = $request->query('statut')) {
-            $query->where('statut', $statut);
-        }
-
-        $dons = $query->paginate(15)->withQueryString();
-
-        return view('admin.dons.index', compact('dons'));
-    }
-
+    /** Affiche le formulaire pour proposer un don. */
     public function create(Request $request): View
     {
         $donateurs = User::orderBy('name')->get();
@@ -46,6 +35,7 @@ class DonController extends Controller
         return view('dons.create', compact('donateurs', 'associations', 'associationId'));
     }
 
+    /** Enregistre un nouveau don avec le statut « proposé ». */
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
@@ -58,6 +48,7 @@ class DonController extends Controller
             ->with('status', 'Don proposé avec succès.');
     }
 
+    /** Affiche le détail d'un don. */
     public function show(Don $don): View
     {
         $don->load(['donateur', 'association']);
@@ -65,6 +56,7 @@ class DonController extends Controller
         return view('dons.show', compact('don'));
     }
 
+    /** Affiche le formulaire de modification pré-rempli. */
     public function edit(Don $don): View
     {
         $donateurs = User::orderBy('name')->get();
@@ -73,6 +65,7 @@ class DonController extends Controller
         return view('dons.edit', compact('don', 'donateurs', 'associations'));
     }
 
+    /** Enregistre les modifications d'un don. */
     public function update(Request $request, Don $don): RedirectResponse
     {
         $data = $this->validated($request);
@@ -84,6 +77,7 @@ class DonController extends Controller
             ->with('status', 'Don mis à jour.');
     }
 
+    /** Supprime un don. */
     public function destroy(Don $don): RedirectResponse
     {
         $don->delete();
@@ -93,6 +87,7 @@ class DonController extends Controller
             ->with('status', 'Don supprimé.');
     }
 
+    /** Change le statut d'un don (accepté, refusé, remis, annulé). */
     public function updateStatus(Request $request, Don $don): RedirectResponse
     {
         $data = $request->validate([
@@ -106,6 +101,7 @@ class DonController extends Controller
         return back()->with('status', "Statut du don #{$don->id} mis à jour.");
     }
 
+    /** Règles de validation communes à store() et update(). */
     private function validated(Request $request): array
     {
         return $request->validate([

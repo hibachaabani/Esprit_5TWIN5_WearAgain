@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
 use App\Http\Controllers\DonController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,8 +37,16 @@ Route::resource('dons', DonController::class);
 Route::patch('dons/{don}/statut', [DonController::class, 'updateStatus'])->name('dons.statut');
 
 Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('associations', [AssociationController::class, 'adminIndex'])->name('associations.index');
-    Route::patch('associations/{association}/verifier', [AssociationController::class, 'verifier'])->name('associations.verifier');
+    Route::resource('associations', Admin\AssociationController::class)->only('index');
+    Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
-    Route::get('dons', [DonController::class, 'adminIndex'])->name('dons.index');
+    Route::resource('dons', Admin\DonController::class)->only('index');
 });
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
