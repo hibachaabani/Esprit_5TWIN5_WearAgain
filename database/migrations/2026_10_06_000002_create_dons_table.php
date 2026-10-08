@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('dons', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('vetement_id')->nullable();
             $table->string('vetement_titre')->nullable();
             $table->foreignId('donateur_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('association_id')->constrained()->cascadeOnDelete();

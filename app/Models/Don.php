@@ -15,7 +15,6 @@ class Don extends Model
     public const STATUTS = ['propose', 'accepte', 'refuse', 'remis', 'annule'];
 
     protected $fillable = [
-        'vetement_id',
         'vetement_titre',
         'donateur_id',
         'association_id',
