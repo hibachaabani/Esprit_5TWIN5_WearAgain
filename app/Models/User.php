@@ -60,4 +60,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Depot::class);
     }
+
+    public function atelier(): HasOne
+    {
+        return $this->hasOne(Atelier::class);
+    }
 }

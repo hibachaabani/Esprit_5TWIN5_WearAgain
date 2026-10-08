@@ -365,6 +365,12 @@
                 <a href="{{ route('admin.avis.index') }}" @class(['active' => request()->routeIs('admin.avis.*')])>
                     <x-icon name="message" :size="18" /> Avis
                 </a>
+                <a href="{{ route('admin.ateliers.index') }}" @class(['active' => request()->routeIs('admin.ateliers.*')])>
+                    <x-icon name="wrench" :size="18" /> Ateliers
+                </a>
+                <a href="{{ route('admin.transformations.index') }}" @class(['active' => request()->routeIs('admin.transformations.*')])>
+                    <x-icon name="refresh" :size="18" /> Transformations
+                </a>
             </nav>
         </div>
 

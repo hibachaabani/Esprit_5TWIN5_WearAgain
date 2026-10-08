@@ -5,12 +5,13 @@ use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\VetementController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
+use App\Http\Controllers\AtelierController;
 use App\Http\Controllers\DonController;
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\TourneeCollecteController;
+use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin;
 use App\Http\Controllers\ReparationController;
 use Illuminate\Support\Facades\Route;
 
@@ -100,6 +101,22 @@ Route::middleware('auth')->group(function () {
 Route::resource('points-collecte', PointCollecteController::class)
     ->only(['index', 'show'])
     ->parameters(['points-collecte' => 'pointCollecte']);
+
+/*
+| Ateliers & Transformations — front office (Member Atelier)
+*/
+Route::get('/ateliers', [AtelierController::class, 'index'])->name('ateliers.index');
+Route::get('/ateliers/{atelier}', [AtelierController::class, 'show'])->name('ateliers.show');
+Route::get('/transformations', [TransformationController::class, 'index'])->name('transformations.index');
+Route::get('/transformations/{transformation}', [TransformationController::class, 'show'])->name('transformations.show');
+
+/*
+| Back office — gestion des ateliers et des transformations (Member Atelier)
+*/
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::resource('ateliers', Admin\AtelierController::class)->except('show');
+    Route::resource('transformations', Admin\TransformationController::class)->except('show');
+});
 
 require __DIR__.'/auth.php';
 /*
