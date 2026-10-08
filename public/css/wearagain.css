@@ -56,6 +56,23 @@ p { margin: 0 0 1em; }
 .nav a:not(.btn) { color: var(--ink); text-decoration: none; font-weight: 500; }
 .nav a.active { color: var(--maroon); text-decoration: underline; text-underline-offset: 6px; }
 
+/* Menu compte */
+.account-menu { position: relative; }
+.account-trigger { display: flex; align-items: center; gap: .35rem; list-style: none; cursor: pointer; color: var(--ink); border-radius: 999px; padding: 2px; }
+.account-trigger::-webkit-details-marker { display: none; }
+.account-avatar { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--maroon); color: var(--white); font: 600 .85rem var(--font-body); letter-spacing: .02em; }
+.account-trigger:hover .account-avatar { background: var(--maroon-dark); }
+.chevron { transition: transform .15s; }
+.account-menu[open] .chevron { transform: rotate(180deg); }
+.account-panel { position: absolute; right: 0; top: calc(100% + .6rem); min-width: 230px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-sm); box-shadow: 0 12px 28px rgba(34, 31, 28, .12); padding: .4rem; z-index: 20; }
+.account-identity { display: flex; flex-direction: column; padding: .6rem .75rem .7rem; border-bottom: 1px solid var(--line); margin-bottom: .3rem; }
+.account-identity strong { font-weight: 600; }
+.account-identity span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav .account-panel a, .account-logout button { display: block; width: 100%; padding: .55rem .75rem; border-radius: 4px; color: var(--ink); text-decoration: none; font: 500 .95rem var(--font-body); text-align: left; }
+.nav .account-panel a:hover, .account-logout button:hover { background: var(--cream); }
+.account-logout { margin: .3rem 0 0; padding-top: .3rem; border-top: 1px solid var(--line); }
+.account-logout button { background: none; border: 0; cursor: pointer; color: var(--maroon); }
+
 /* Formulaires */
 input[type=text], input[type=search], input[type=number], select, textarea {
   width: 100%; padding: .65rem .85rem; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
@@ -176,12 +193,32 @@ legend, .field > label, .label { display: block; font-weight: 600; margin-bottom
 .footer-links { display: flex; gap: 1.5rem; }
 .footer-links a { color: var(--ink); text-decoration: none; }
 
+/* Cartes (Leaflet) */
+.map { width: 100%; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--white); z-index: 0; }
+.map-lg { height: 380px; margin-bottom: 1.5rem; }
+.map-form { height: 300px; margin: .6rem 0; }
+.map-sm { height: 240px; margin: 1.25rem 0 .5rem; }
+.map-tools { display: flex; align-items: center; gap: 1rem; }
+.map-pin { display: block; width: 22px; height: 22px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--maroon); border: 2px solid var(--white); box-shadow: 0 2px 6px rgba(34, 31, 28, .35); }
+.map-pin.is-verifiee { background: var(--sage); }
+.map-pin.is-moi { border-radius: 50%; transform: none; background: var(--gold); }
+.leaflet-popup-content { font-family: var(--font-body); }
+.btn-reset { background: none; border: 0; padding: 0; color: var(--maroon); text-decoration: underline; cursor: pointer; font: inherit; display: inline-block; margin-top: .75rem; }
+.map-tools .btn-reset { margin-top: 0; }
+.results-count { margin: 0 0 .75rem; }
+.geo-actif { margin-bottom: .6rem; }
+.distance { color: var(--maroon); font-weight: 600; }
+.tags { display: flex; flex-wrap: wrap; gap: .35rem; list-style: none; padding: 0; margin: 0 0 .75rem; }
+.tags li { font-size: .78rem; padding: .15rem .55rem; border-radius: 999px; background: var(--cream); border: 1px solid var(--line); }
+.filters input[type=checkbox] { accent-color: var(--maroon); }
+
 /* Responsive */
 @media (max-width: 900px) {
   .hero-inner, .detail, .browse { grid-template-columns: 1fr; }
   .hero-rack { height: 220px; }
   .hanger { width: 44px; height: calc(130px + var(--i) * 10px); }
   .filters { position: static; }
+  .map-lg { height: 300px; }
   .steps ol { grid-template-columns: 1fr; }
   .admin-layout { flex-direction: column; }
   .admin-sidebar { width: auto; flex-direction: row; align-items: center; flex-wrap: wrap; }
@@ -191,6 +228,6 @@ legend, .field > label, .label { display: block; font-weight: 600; margin-bottom
   .search { order: 3; flex-basis: 100%; }
   .search input { max-width: none; }
   .nav { gap: .9rem; margin-left: auto; }
-  .nav a:not(.btn) { display: none; }
+  .nav > a:not(.btn) { display: none; }
   .field-row { grid-template-columns: 1fr; }
 }
