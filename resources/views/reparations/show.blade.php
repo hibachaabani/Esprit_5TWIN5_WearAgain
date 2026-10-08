@@ -21,7 +21,11 @@
                 <div>
                     <dt>Vêtement</dt>
                     <dd>
-                        <a href="{{ route('vetements.show', $reparation->vetement) }}">{{ $reparation->vetement->titre }}</a>
+                        @if ($reparation->vetement)
+                            <a href="{{ route('vetements.show', $reparation->vetement) }}">{{ $reparation->vetement->titre }}</a>
+                        @else
+                            Vêtement #{{ $reparation->vetement_id ?? $reparation->id }}
+                        @endif
                     </dd>
                 </div>
                 @if (class_exists(\App\Models\Atelier::class))

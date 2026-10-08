@@ -24,14 +24,17 @@ return new class extends Migration
                 'image',
             ]);
 
-            $table->foreignId('vetement_id')->constrained()->cascadeOnDelete();
+            // New columns are nullable at the DB level so that legacy rows
+            // (from before the restructure) can be migrated safely; the
+            // application still enforces their presence via Form Requests.
+            $table->foreignId('vetement_id')->nullable()->constrained()->cascadeOnDelete();
 
             // TODO: add foreign key to ateliers once the Atelier migration is merged
             $table->unsignedBigInteger('atelier_id')->nullable();
 
-            $table->text('description_probleme');
+            $table->text('description_probleme')->nullable();
             $table->decimal('devis', 10, 2)->nullable();
-            $table->dateTime('date_rdv');
+            $table->dateTime('date_rdv')->nullable();
         });
 
         Schema::table('avis', function (Blueprint $table) {
