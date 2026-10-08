@@ -5,15 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAvisRequest;
 use App\Http\Requests\UpdateAvisRequest;
+use App\Models\Atelier;
 use App\Models\Avis;
-use App\Models\Reparation;
 use App\Models\User;
 use Illuminate\Http\Request;
 
 class AvisController extends Controller
 {
     /**
-     * Back office : tableau de bord + liste des avis.
+     * Back office : statistiques + liste paginée des avis.
      */
     public function index(Request $request)
     {
@@ -24,7 +24,11 @@ class AvisController extends Controller
             'faibles' => Avis::where('note', '<', 3)->count(),
         ];
 
-        $query = Avis::query()->with(['reparation', 'user']);
+        $query = Avis::query()->with('user');
+
+        if (class_exists(Atelier::class)) {
+            $query->with('atelier');
+        }
 
         if ($request->filled('note')) {
             $query->where('note', $request->integer('note'));
@@ -35,17 +39,30 @@ class AvisController extends Controller
         return view('admin.avis.index', compact('avis', 'stats'));
     }
 
+    public function show(Avis $avi)
+    {
+        $avi->load('user');
+
+        if (class_exists(Atelier::class)) {
+            $avi->load('atelier');
+        }
+
+        return view('admin.avis.show', compact('avi'));
+    }
+
     public function create()
     {
         return view('admin.avis.create', [
-            'reparations' => Reparation::orderBy('titre')->get(),
             'users' => User::orderBy('name')->get(),
         ]);
     }
 
     public function store(StoreAvisRequest $request)
     {
-        Avis::create($request->validated());
+        $data = $request->validated();
+        $data['date'] = $data['date'] ?? now();
+
+        Avis::create($data);
 
         return redirect()
             ->route('admin.avis.index')
@@ -56,7 +73,6 @@ class AvisController extends Controller
     {
         return view('admin.avis.edit', [
             'avi' => $avi,
-            'reparations' => Reparation::orderBy('titre')->get(),
             'users' => User::orderBy('name')->get(),
         ]);
     }

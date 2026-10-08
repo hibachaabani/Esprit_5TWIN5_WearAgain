@@ -73,8 +73,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('depots', Admin\DepotController::class)->only(['index', 'show', 'destroy']);
 
     // Réparations & avis (membre 5) — back-office
-    Route::resource('reparations', Admin\ReparationController::class)->except('show');
-    Route::resource('avis', Admin\AvisController::class)->except('show');
+    Route::resource('reparations', Admin\ReparationController::class);
+    Route::resource('avis', Admin\AvisController::class);
 });
 
 Route::middleware('auth')->group(function () {
