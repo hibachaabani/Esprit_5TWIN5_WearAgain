@@ -32,15 +32,19 @@ Route::get('/articles/{id}', function (int $id) {
     return view('items.show', ['item' => $item]);
 })->name('items.show');
 
-Route::resource('associations', AssociationController::class);
-Route::resource('dons', DonController::class);
-Route::patch('dons/{don}/statut', [DonController::class, 'updateStatus'])->name('dons.statut');
+Route::resource('associations', AssociationController::class)->except(['index', 'show'])->middleware('auth');
+Route::resource('associations', AssociationController::class)->only(['index', 'show']);
+Route::middleware('auth')->group(function () {
+    Route::resource('dons', DonController::class);
+    Route::patch('dons/{don}/statut', [DonController::class, 'updateStatus'])->name('dons.statut');
+    Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
+});
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('associations', Admin\AssociationController::class)->only('index');
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
-    Route::resource('dons', Admin\DonController::class)->only('index');
+    Route::resource('dons', Admin\DonController::class)->only(['index', 'show']);
 });
 
 Route::middleware('auth')->group(function () {

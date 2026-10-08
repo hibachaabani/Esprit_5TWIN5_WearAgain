@@ -6,7 +6,7 @@
 <div class="container section narrow">
     <h1>{{ $don->vetement_titre }}</h1>
     <p class="lead">
-        Statut : <span class="status-badge status-{{ $don->statut }}">{{ ucfirst($don->statut) }}</span>
+        Statut : <span class="status-badge status-{{ $don->statut }}">{{ \App\Models\Don::LIBELLES_STATUT[$don->statut] }}</span>
     </p>
 
     <p><strong>Donateur :</strong> {{ $don->donateur?->name }}</p>
@@ -19,39 +19,40 @@
         <p><strong>Message :</strong> {{ $don->message }}</p>
     @endif
 
-    <div class="hero-actions" style="margin:1.5rem 0">
-        @if ($don->statut === 'propose')
-            <form method="POST" action="{{ route('dons.statut', $don) }}">
-                @csrf @method('PATCH')
-                <input type="hidden" name="statut" value="accepte">
-                <button class="btn btn-primary" type="submit">Accepter</button>
-            </form>
-            <form method="POST" action="{{ route('dons.statut', $don) }}">
-                @csrf @method('PATCH')
-                <input type="hidden" name="statut" value="refuse">
-                <button class="btn btn-ghost" type="submit">Refuser</button>
-            </form>
-        @elseif ($don->statut === 'accepte')
-            <form method="POST" action="{{ route('dons.statut', $don) }}">
-                @csrf @method('PATCH')
-                <input type="hidden" name="statut" value="remis">
-                <button class="btn btn-primary" type="submit">Marquer comme remis</button>
-            </form>
-        @endif
+    @php
+        $boutons = [
+            'accepte' => ['Accepter', 'btn-primary'],
+            'refuse' => ['Refuser', 'btn-ghost'],
+            'remis' => ['Marquer comme remis', 'btn-primary'],
+            'annule' => ['Annuler le don', 'btn-ghost'],
+        ];
+        $statutsPossibles = $don->statutsPossiblesPour(auth()->user());
+    @endphp
 
-        @if (in_array($don->statut, ['propose', 'accepte']))
-            <form method="POST" action="{{ route('dons.statut', $don) }}">
-                @csrf @method('PATCH')
-                <input type="hidden" name="statut" value="annule">
-                <button class="btn btn-ghost" type="submit">Annuler</button>
-            </form>
-        @endif
+    @if ($statutsPossibles || $don->peutEtreModifiePar(auth()->user()))
+        <div class="hero-actions" style="margin:1.5rem 0">
+            @foreach ($statutsPossibles as $statut)
+                <form method="POST" action="{{ route('dons.statut', $don) }}">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="statut" value="{{ $statut }}">
+                    <button class="btn {{ $boutons[$statut][1] }}" type="submit">{{ $boutons[$statut][0] }}</button>
+                </form>
+            @endforeach
 
-        <a href="{{ route('dons.edit', $don) }}" class="btn btn-ghost">Modifier</a>
-        <form method="POST" action="{{ route('dons.destroy', $don) }}" onsubmit="return confirm('Supprimer ce don ?')">
-            @csrf @method('DELETE')
-            <button class="btn btn-ghost" type="submit">Supprimer</button>
-        </form>
-    </div>
+            @if ($don->peutEtreModifiePar(auth()->user()))
+                <a href="{{ route('dons.edit', $don) }}" class="btn btn-ghost">Modifier</a>
+                <form method="POST" action="{{ route('dons.destroy', $don) }}" onsubmit="return confirm('Supprimer ce don ?')">
+                    @csrf @method('DELETE')
+                    <button class="btn btn-ghost" type="submit">Supprimer</button>
+                </form>
+            @endif
+        </div>
+    @endif
+
+    @if ($don->estRecuPar(auth()->user()) && $don->statut === 'propose')
+        <p class="small muted">Ce don est proposé à votre association : acceptez-le ou refusez-le.</p>
+    @elseif ($don->estDonneePar(auth()->user()) && $don->statut === 'propose')
+        <p class="small muted">En attente de la réponse de l'association.</p>
+    @endif
 </div>
 @endsection
