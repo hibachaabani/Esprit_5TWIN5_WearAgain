@@ -12,6 +12,33 @@
     </h1>
     <p class="lead">{{ $association->ville ?? '' }}{{ $association->adresse ? ' · '.$association->adresse : '' }}</p>
     <p>{{ $association->mission ?? 'Aucune description.' }}</p>
+
+    @if ($association->categoriesLabels())
+        <p><strong>Accepte :</strong></p>
+        <ul class="tags">
+            @foreach ($association->categoriesLabels() as $libelle)
+                <li>{{ $libelle }}</li>
+            @endforeach
+        </ul>
+    @endif
+
+    @if ($association->hasPosition())
+        @include('partials.leaflet')
+        <div id="carte-association" class="map map-sm" role="region" aria-label="Localisation de {{ $association->nom }}"></div>
+        <p class="small">
+            <a href="https://www.openstreetmap.org/directions?to={{ $association->latitude }}%2C{{ $association->longitude }}" target="_blank" rel="noopener">Itinéraire ↗</a>
+        </p>
+
+        @push('scripts')
+        <script>
+            (() => {
+                const pos = [{{ $association->latitude }}, {{ $association->longitude }}];
+                const carte = WACarte.creer('carte-association', pos, 14);
+                L.marker(pos, { icon: WACarte.icone(@json($association->verifiee ? 'is-verifiee' : '')) }).addTo(carte);
+            })();
+        </script>
+        @endpush
+    @endif
     <p><strong>N° d'agrément :</strong> {{ $association->numero_agrement }}</p>
     @if ($association->user)
         <p><strong>Compte lié :</strong> {{ $association->user->name }} ({{ $association->user->email }})</p>

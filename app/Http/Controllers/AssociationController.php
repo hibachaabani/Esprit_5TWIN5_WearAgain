@@ -12,27 +12,41 @@ class AssociationController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Association::withCount('dons')->latest();
+        $filtres = $this->filtres($request);
 
-        if ($q = trim((string) $request->query('q', ''))) {
-            $query->where(function ($w) use ($q) {
-                $w->where('nom', 'like', "%{$q}%")
-                    ->orWhere('ville', 'like', "%{$q}%");
-            });
+        $query = Association::withCount('dons')
+            ->recherche($filtres['q'])
+            ->accepte($filtres['categorie'])
+            ->when($filtres['ville'], fn ($q, $ville) => $q->where('ville', $ville))
+            ->when($filtres['verifiees'], fn ($q) => $q->where('verifiee', true));
+
+        if ($filtres['position']) {
+            $query->procheDe($filtres['lat'], $filtres['lng'], $filtres['rayon']);
+        } else {
+            $query->latest();
         }
+
+        $marqueurs = (clone $query)
+            ->whereNotNull('latitude')
+            ->limit(300)
+            ->get()
+            ->map(fn (Association $a) => [
+                'nom' => $a->nom,
+                'ville' => $a->ville,
+                'lat' => $a->latitude,
+                'lng' => $a->longitude,
+                'verifiee' => $a->verifiee,
+                'url' => route('associations.show', $a),
+            ]);
 
         $associations = $query->paginate(9)->withQueryString();
 
-        return view('associations.index', compact('associations'));
+        $villes = Association::whereNotNull('ville')->distinct()->orderBy('ville')->pluck('ville');
+
+        return view('associations.index', compact('associations', 'filtres', 'marqueurs', 'villes'));
     }
 
-    public function adminIndex(): View
-    {
-        $associations = Association::withCount('dons')->latest()->paginate(12);
-
-        return view('admin.associations.index', compact('associations'));
-    }
-
+    /** Affiche le formulaire de création. */
     public function create(): View
     {
         $users = User::orderBy('name')->get();
@@ -40,17 +54,17 @@ class AssociationController extends Controller
         return view('associations.create', compact('users'));
     }
 
+    /** Valide et enregistre une nouvelle association. */
     public function store(Request $request): RedirectResponse
     {
-        $data = $this->validated($request);
-
-        $association = Association::create($data);
+        $association = Association::create($this->validated($request));
 
         return redirect()
             ->route('associations.show', $association)
             ->with('status', 'Association créée avec succès.');
     }
 
+    /** Affiche le détail d'une association et ses derniers dons. */
     public function show(Association $association): View
     {
         $association->load(['user', 'dons' => fn ($q) => $q->latest()->limit(5)->with('donateur')]);
@@ -58,6 +72,7 @@ class AssociationController extends Controller
         return view('associations.show', compact('association'));
     }
 
+    /** Affiche le formulaire de modification pré-rempli. */
     public function edit(Association $association): View
     {
         $users = User::orderBy('name')->get();
@@ -65,17 +80,17 @@ class AssociationController extends Controller
         return view('associations.edit', compact('association', 'users'));
     }
 
+    /** Valide et enregistre les modifications. */
     public function update(Request $request, Association $association): RedirectResponse
     {
-        $data = $this->validated($request, $association);
-
-        $association->update($data);
+        $association->update($this->validated($request, $association));
 
         return redirect()
             ->route('associations.show', $association)
             ->with('status', 'Association mise à jour.');
     }
 
+    /** Supprime une association (et ses dons, par cascade). */
     public function destroy(Association $association): RedirectResponse
     {
         $association->delete();
@@ -85,26 +100,49 @@ class AssociationController extends Controller
             ->with('status', 'Association supprimée.');
     }
 
-    public function verifier(Association $association): RedirectResponse
-    {
-        $association->update(['verifiee' => ! $association->verifiee]);
-
-        return redirect()
-            ->route('admin.associations.index')
-            ->with('status', $association->verifiee
-                ? "{$association->nom} est maintenant vérifiée."
-                : "Vérification retirée pour {$association->nom}.");
-    }
-
+    /** Règles de validation communes à store() et update(). */
     private function validated(Request $request, ?Association $association = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'user_id' => ['nullable', 'exists:users,id', 'unique:associations,user_id,'.($association?->id).',id'],
             'nom' => ['required', 'string', 'max:255'],
             'mission' => ['nullable', 'string'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['string', 'in:'.implode(',', array_keys(Association::CATEGORIES))],
             'adresse' => ['nullable', 'string', 'max:255'],
             'ville' => ['nullable', 'string', 'max:255'],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'numero_agrement' => ['required', 'string', 'max:255', 'unique:associations,numero_agrement,'.($association?->id)],
         ]);
+
+        $data['categories'] = array_values($data['categories'] ?? []);
+
+        if (! isset($data['latitude']) && ($coords = Association::coordonneesVille($data['ville'] ?? null))) {
+            [$data['latitude'], $data['longitude']] = $coords;
+        }
+
+        return $data;
+    }
+
+    /** Lit et nettoie les filtres de la liste des associations. */
+    private function filtres(Request $request): array
+    {
+        $lat = filter_var($request->query('lat'), FILTER_VALIDATE_FLOAT);
+        $lng = filter_var($request->query('lng'), FILTER_VALIDATE_FLOAT);
+        $position = $lat !== false && $lng !== false && abs($lat) <= 90 && abs($lng) <= 180;
+        $rayon = (int) $request->query('rayon', 25);
+        $categorie = $request->query('categorie');
+
+        return [
+            'q' => trim((string) $request->query('q', '')) ?: null,
+            'ville' => trim((string) $request->query('ville', '')) ?: null,
+            'categorie' => array_key_exists((string) $categorie, Association::CATEGORIES) ? $categorie : null,
+            'verifiees' => $request->boolean('verifiees'),
+            'position' => $position,
+            'lat' => $position ? $lat : null,
+            'lng' => $position ? $lng : null,
+            'rayon' => in_array($rayon, Association::RAYONS_KM, true) ? $rayon : 25,
+        ];
     }
 }
