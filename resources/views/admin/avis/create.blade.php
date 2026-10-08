@@ -3,7 +3,7 @@
 @section('title', 'Nouvel avis')
 
 @section('content')
-    <p class="page-sub">Associez un avis à une réparation, choisissez l'auteur et la note.</p>
+    <p class="page-sub">Choisissez l'auteur, la note et le commentaire de l'avis.</p>
 
     <div class="form-card">
         <form method="POST" action="{{ route('admin.avis.store') }}" class="form" novalidate>

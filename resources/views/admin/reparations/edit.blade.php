@@ -6,7 +6,7 @@
     <p class="page-sub">Réparation n°{{ $reparation->id }} — modifiez puis mettez à jour.</p>
 
     <div class="form-card">
-        <form method="POST" action="{{ route('admin.reparations.update', $reparation) }}" class="form" enctype="multipart/form-data" novalidate>
+        <form method="POST" action="{{ route('admin.reparations.update', $reparation) }}" class="form" novalidate>
             @csrf
             @method('PUT')
             @include('admin.reparations._form')

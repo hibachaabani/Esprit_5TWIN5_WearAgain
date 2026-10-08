@@ -63,11 +63,11 @@ class ReparationController extends Controller
      */
     public function storeAvis(StoreAvisRequest $request, Reparation $reparation)
     {
-        $data = $request->validated();
-
         if (Auth::check()) {
-            $data['user_id'] = Auth::id();
+            $request->merge(['user_id' => Auth::id()]);
         }
+
+        $data = $request->validated();
 
         if (class_exists(Atelier::class) && $reparation->atelier_id) {
             $data['atelier_id'] = $reparation->atelier_id;

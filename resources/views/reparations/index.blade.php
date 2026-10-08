@@ -8,7 +8,7 @@
         <div>
             <p class="eyebrow">WearAgain</p>
             <h1>Réparations</h1>
-            <p class="lead">Donnez une seconde vie à vos vêtements : consultez les réparations proposées et leurs avis.</p>
+            <p class="lead">Donnez une seconde vie à vos vêtements : consultez les réparations proposées et leurs devis.</p>
         </div>
     </div>
 
@@ -47,22 +47,18 @@
                     @foreach ($reparations as $reparation)
                         <a href="{{ route('reparations.show', $reparation) }}" class="item-card">
                             <div class="item-photo" style="--swatch: #E6DECD;">
-                                @if ($reparation->hasImage())
-                                    <img src="{{ $reparation->imageUrl() }}" alt="{{ $reparation->titre }}">
-                                @endif
                                 <span class="condition-badge">{{ $reparation->statutLabel() }}</span>
                             </div>
                             <div class="item-body">
-                                <h3>{{ $reparation->titre }}</h3>
+                                <h3>{{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}</h3>
                                 <p class="small muted">
-                                    {{ $reparation->user->name }} ·
-                                    {{ $reparation->date_reparation->format('d/m/Y') }}
+                                    Vêtement #{{ $reparation->vetement_id }} ·
+                                    {{ optional($reparation->date_rdv)->format('d/m/Y') ?? 'Date à confirmer' }}
                                 </p>
-                                <p class="small">
-                                    <x-stars :note="$reparation->avis_avg_note ?? 0" />
-                                    ({{ $reparation->avis_count }} avis)
-                                </p>
-                                <p class="item-price">{{ number_format((float) $reparation->cout_estime, 2) }} DT</p>
+                                @if (class_exists(\App\Models\Atelier::class))
+                                    <p class="small muted">{{ optional($reparation->atelier)->nom ?? 'Atelier à confirmer' }}</p>
+                                @endif
+                                <p class="item-price">{{ $reparation->devis !== null ? number_format((float) $reparation->devis, 2).' DT' : 'Devis à confirmer' }}</p>
                             </div>
                         </a>
                     @endforeach

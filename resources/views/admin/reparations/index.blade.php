@@ -51,13 +51,14 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Photo</th>
-                        <th>Titre</th>
-                        <th>Membre</th>
+                        <th>Vêtement</th>
+                        <th>Problème</th>
                         <th>Statut</th>
-                        <th>Coût estimé</th>
-                        <th>Date</th>
-                        <th>Avis</th>
+                        <th>Devis</th>
+                        <th>Rendez-vous</th>
+                        @if (class_exists(\App\Models\Atelier::class))
+                            <th>Atelier</th>
+                        @endif
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -66,32 +67,27 @@
                         <tr>
                             <td class="muted">{{ $reparation->id }}</td>
                             <td>
-                                @if ($reparation->hasImage())
-                                    <img src="{{ $reparation->imageUrl() }}" alt="" class="thumb">
-                                @else
-                                    <span class="thumb" style="opacity: .15; align-content: center; text-align: center;"><x-icon name="wrench" :size="16" /></span>
-                                @endif
+                                <a href="{{ route('admin.reparations.show', $reparation) }}">
+                                    {{ $reparation->vetement->titre ?? 'Vêtement #'.$reparation->vetement_id }}
+                                </a>
                             </td>
-                            <td>
-                                <a href="{{ route('reparations.show', $reparation) }}">{{ $reparation->titre }}</a>
-                            </td>
-                            <td>
-                                <span class="cell-user">
-                                    <span class="avatar-sm">{{ strtoupper(substr($reparation->user->name, 0, 1)) }}</span>
-                                    {{ $reparation->user->name }}
-                                </span>
-                            </td>
+                            <td class="muted">{{ \Illuminate\Support\Str::limit($reparation->description_probleme, 60) }}</td>
                             <td><span class="badge badge-{{ $reparation->statut }}">{{ $reparation->statutLabel() }}</span></td>
-                            <td>{{ number_format((float) $reparation->cout_estime, 2) }} DT</td>
-                            <td>{{ $reparation->date_reparation->format('d/m/Y') }}</td>
-                            <td>{{ $reparation->avis_count }}</td>
+                            <td>{{ $reparation->devis !== null ? number_format((float) $reparation->devis, 2).' DT' : '—' }}</td>
+                            <td>{{ optional($reparation->date_rdv)->format('d/m/Y H:i') ?? '—' }}</td>
+                            @if (class_exists(\App\Models\Atelier::class))
+                                <td>{{ optional($reparation->atelier)->nom ?? '—' }}</td>
+                            @endif
                             <td>
                                 <div class="actions">
+                                    <a href="{{ route('admin.reparations.show', $reparation) }}" class="btn btn-outline">
+                                        <x-icon name="eye" :size="14" /> Voir
+                                    </a>
                                     <a href="{{ route('admin.reparations.edit', $reparation) }}" class="btn btn-outline">
                                         <x-icon name="pencil" :size="14" /> Modifier
                                     </a>
                                     <form method="POST" action="{{ route('admin.reparations.destroy', $reparation) }}"
-                                          onsubmit="return confirm('Supprimer la réparation « {{ $reparation->titre }} » et tous ses avis ?')">
+                                          onsubmit="return confirm('Supprimer la réparation n°{{ $reparation->id }} ? Cette action est irréversible.')">
                                         @csrf
                                         @method('DELETE')
                                         <button class="btn btn-danger"><x-icon name="trash" :size="14" /> Supprimer</button>

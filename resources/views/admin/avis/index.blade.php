@@ -57,11 +57,13 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Réparation</th>
                         <th>Membre</th>
                         <th>Note</th>
                         <th>Commentaire</th>
                         <th>Date</th>
+                        @if (class_exists(\App\Models\Atelier::class))
+                            <th>Atelier</th>
+                        @endif
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -70,9 +72,6 @@
                         <tr>
                             <td class="muted">{{ $avi->id }}</td>
                             <td>
-                                <a href="{{ route('reparations.show', $avi->reparation) }}">{{ $avi->reparation->titre }}</a>
-                            </td>
-                            <td>
                                 <span class="cell-user">
                                     <span class="avatar-sm">{{ strtoupper(substr($avi->user->name, 0, 1)) }}</span>
                                     {{ $avi->user->name }}
@@ -80,9 +79,15 @@
                             </td>
                             <td><x-stars :note="$avi->note" /></td>
                             <td class="muted">{{ \Illuminate\Support\Str::limit($avi->commentaire, 60) }}</td>
-                            <td>{{ $avi->created_at->format('d/m/Y') }}</td>
+                            <td>{{ optional($avi->date)->format('d/m/Y') ?? '—' }}</td>
+                            @if (class_exists(\App\Models\Atelier::class))
+                                <td>{{ optional($avi->atelier)->nom ?? '—' }}</td>
+                            @endif
                             <td>
                                 <div class="actions">
+                                    <a href="{{ route('admin.avis.show', $avi) }}" class="btn btn-outline">
+                                        <x-icon name="eye" :size="14" /> Voir
+                                    </a>
                                     <a href="{{ route('admin.avis.edit', $avi) }}" class="btn btn-outline">
                                         <x-icon name="pencil" :size="14" /> Modifier
                                     </a>
