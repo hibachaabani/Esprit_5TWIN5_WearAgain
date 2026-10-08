@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Association;
 use App\Models\Depot;
 use App\Models\PointCollecte;
+use App\Models\User;
 use App\Services\TourneeCollecte;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -38,42 +40,55 @@ class TourneeCollecteTest extends TestCase
         $this->assertEqualsWithDelta($plan['distance'], $plan['etapes']->last()['cumul'], 0.001);
     }
 
-    public function test_la_page_ne_retient_que_les_points_a_vider(): void
+    public function test_la_tournee_est_reservee_aux_associations(): void
     {
-        $aVider = PointCollecte::factory()->create(['nom' => 'Point à vider']);
+        $this->get(route('tournee.index'))->assertRedirect(route('login'));
+        $this->actingAs(User::factory()->create())->get(route('tournee.index'))->assertRedirect(route('depots.index'));
+    }
+
+    public function test_la_tournee_ne_retient_que_les_points_a_vider_de_l_association(): void
+    {
+        $association = Association::factory()->create();
+
+        $aVider = PointCollecte::factory()->for($association)->create(['nom' => 'Point à vider']);
         Depot::factory()->for($aVider)->create(['date_depot' => today()->toDateString()]);
 
-        $vide = PointCollecte::factory()->create(['nom' => 'Point vide']);
+        $vide = PointCollecte::factory()->for($association)->create(['nom' => 'Point vide']);
         Depot::factory()->trie()->for($vide)->create();
 
         // Dépôt prévu dans le futur : le vêtement n'est pas encore dans le point.
-        $futur = PointCollecte::factory()->create(['nom' => 'Point plus tard']);
+        $futur = PointCollecte::factory()->for($association)->create(['nom' => 'Point plus tard']);
         Depot::factory()->for($futur)->create(['date_depot' => today()->addDays(3)->toDateString()]);
 
-        $this->get(route('tournee.index'))
+        // Point d'une autre association : jamais dans cette tournée.
+        $ailleurs = PointCollecte::factory()->create(['nom' => 'Point ailleurs']);
+        Depot::factory()->for($ailleurs)->create(['date_depot' => today()->toDateString()]);
+
+        $this->actingAs($association->user)->get(route('tournee.index'))
             ->assertOk()
             ->assertViewHas('plan', fn (array $plan) => $plan['etapes']->pluck('point.nom')->all() === ['Point à vider'])
-            ->assertSee('Ouvrir l\'itinéraire GPS', false);
+            ->assertSee("Ouvrir l'itinéraire GPS", false);
     }
 
     public function test_le_seuil_de_remplissage_filtre_les_points(): void
     {
-        $presquePlein = PointCollecte::factory()->capacite(4)->create(['nom' => 'Presque plein']);
+        $association = Association::factory()->create();
+        $presquePlein = PointCollecte::factory()->for($association)->capacite(4)->create(['nom' => 'Presque plein']);
         Depot::factory()->count(3)->for($presquePlein)->create(['date_depot' => today()->toDateString()]);
 
-        $peuRempli = PointCollecte::factory()->capacite(10)->create(['nom' => 'Peu rempli']);
+        $peuRempli = PointCollecte::factory()->for($association)->capacite(10)->create(['nom' => 'Peu rempli']);
         Depot::factory()->for($peuRempli)->create(['date_depot' => today()->toDateString()]);
 
-        $this->get(route('tournee.index', ['seuil' => 50]))
+        $this->actingAs($association->user)->get(route('tournee.index', ['seuil' => 50]))
             ->assertViewHas('plan', fn (array $plan) => $plan['etapes']->pluck('point.nom')->all() === ['Presque plein']);
     }
 
     public function test_sans_point_a_vider_la_page_l_indique(): void
     {
-        $this->get(route('tournee.index'))
+        $this->actingAs(Association::factory()->create()->user)->get(route('tournee.index'))
             ->assertOk()
             ->assertViewHas('plan', fn ($plan) => $plan === null)
-            ->assertSee('Aucun point n\'a de vêtements à collecter', false);
+            ->assertSee("Aucun point n'a de vêtements à collecter", false);
     }
 
     public function test_vider_un_point_marque_ses_depots_recus(): void
@@ -83,7 +98,8 @@ class TourneeCollecteTest extends TestCase
         $arrive = Depot::factory()->for($point)->create(['date_depot' => today()->toDateString()]);
         $prevu = Depot::factory()->for($point)->create(['date_depot' => today()->addDay()->toDateString()]);
 
-        $this->from(route('tournee.index'))
+        $this->actingAs($point->association->user)
+            ->from(route('tournee.index'))
             ->post(route('tournee.collecter', $point))
             ->assertRedirect(route('tournee.index'))
             ->assertSessionHas('status');
@@ -92,5 +108,17 @@ class TourneeCollecteTest extends TestCase
         $this->assertNotNull($arrive->fresh()->recu_le);
         $this->assertSame('en_attente', $prevu->fresh()->statut);
         Notification::assertCount(1);
+    }
+
+    public function test_une_association_ne_vide_pas_le_point_d_une_autre(): void
+    {
+        $point = PointCollecte::factory()->create();
+        $depot = Depot::factory()->for($point)->create(['date_depot' => today()->toDateString()]);
+
+        $this->actingAs(Association::factory()->create()->user)
+            ->post(route('tournee.collecter', $point))
+            ->assertForbidden();
+
+        $this->assertSame('en_attente', $depot->fresh()->statut);
     }
 }

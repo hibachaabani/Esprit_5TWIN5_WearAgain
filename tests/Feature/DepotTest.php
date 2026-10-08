@@ -2,21 +2,30 @@
 
 namespace Tests\Feature;
 
+use App\Models\Association;
+use App\Models\Categorie;
 use App\Models\Depot;
 use App\Models\PointCollecte;
 use App\Models\User;
+use App\Models\Vetement;
 use Database\Seeders\CollecteSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class DepotTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Notification::fake();
+    }
+
     private function donneesValides(array $surcharge = []): array
     {
         return array_merge([
-            'user_id' => User::factory()->create()->id,
             'point_collecte_id' => PointCollecte::factory()->create()->id,
             'vetement_titre' => 'Veste en jean taille M',
             'date_depot' => today()->toDateString(),
@@ -24,107 +33,194 @@ class DepotTest extends TestCase
         ], $surcharge);
     }
 
+    private function vetementDe(User $user, string $titre): Vetement
+    {
+        $categorie = Categorie::create(['nom' => 'Vestes '.uniqid()]);
+
+        return Vetement::create(['user_id' => $user->id, 'categorie_id' => $categorie->id, 'titre' => $titre, 'etat' => 'bon']);
+    }
+
+    /* ----- Déclarer un dépôt (particulier connecté) ----- */
+
+    public function test_un_visiteur_doit_se_connecter_pour_deposer(): void
+    {
+        $this->get(route('depots.create'))->assertRedirect(route('login'));
+    }
+
     public function test_le_formulaire_preselectionne_le_point_choisi(): void
     {
         $point = PointCollecte::factory()->create();
 
-        $this->get(route('depots.create', ['point_collecte_id' => $point->id]))
+        $this->actingAs(User::factory()->create())
+            ->get(route('depots.create', ['point_collecte_id' => $point->id]))
             ->assertOk()
             ->assertViewHas('depot', fn (Depot $depot) => $depot->point_collecte_id === $point->id)
-            ->assertSee($point->nom);
+            ->assertSee($point->nom)
+            ->assertDontSee('name="user_id"', false);
     }
 
-    public function test_declarer_un_depot_genere_un_code_de_suivi(): void
+    public function test_declarer_un_depot_au_nom_du_compte_connecte(): void
     {
-        $reponse = $this->post(route('depots.store'), $this->donneesValides());
+        $particulier = User::factory()->create();
+
+        $reponse = $this->actingAs($particulier)->post(route('depots.store'), $this->donneesValides());
 
         $depot = Depot::firstOrFail();
         $reponse->assertRedirect(route('depots.show', $depot))->assertSessionHas('status');
+        $this->assertSame($particulier->id, $depot->user_id);
         $this->assertMatchesRegularExpression('/^DEP-[A-HJ-NP-Z2-9]{6}$/', $depot->code);
         $this->assertSame('en_attente', $depot->statut);
-        $this->assertSame('Veste en jean taille M', $depot->vetement_titre);
+    }
+
+    public function test_deposer_une_de_ses_annonces_reprend_son_titre(): void
+    {
+        $particulier = User::factory()->create();
+        $annonce = $this->vetementDe($particulier, 'Robe en lin bleue');
+
+        $this->actingAs($particulier)->post(route('depots.store'), $this->donneesValides([
+            'vetement_id' => $annonce->id,
+            'vetement_titre' => '',
+        ]))->assertSessionHasNoErrors();
+
+        $depot = Depot::firstOrFail();
+        $this->assertSame($annonce->id, $depot->vetement_id);
+        $this->assertSame('Robe en lin bleue', $depot->vetement_titre);
+    }
+
+    public function test_on_ne_peut_pas_deposer_l_annonce_d_un_autre(): void
+    {
+        $annonceDAutrui = $this->vetementDe(User::factory()->create(), 'Pull volé');
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('depots.store'), $this->donneesValides(['vetement_id' => $annonceDAutrui->id]))
+            ->assertSessionHasErrors(['vetement_id' => 'Choisissez un de vos vêtements publiés.']);
     }
 
     public function test_les_champs_obligatoires_sont_valides(): void
     {
-        $this->post(route('depots.store'), [])
-            ->assertSessionHasErrors(['user_id', 'point_collecte_id', 'vetement_titre', 'date_depot']);
+        $this->actingAs(User::factory()->create())
+            ->post(route('depots.store'), [])
+            ->assertSessionHasErrors(['point_collecte_id', 'vetement_titre', 'date_depot']);
 
         $this->assertDatabaseCount('depots', 0);
     }
 
     public function test_les_saisies_sont_conservees_apres_une_erreur(): void
     {
-        $this->from(route('depots.create'))
+        $this->actingAs(User::factory()->create())
+            ->from(route('depots.create'))
             ->post(route('depots.store'), ['vetement_titre' => 'Manteau rouge'])
             ->assertRedirect(route('depots.create'))
             ->assertSessionHasInput('vetement_titre', 'Manteau rouge');
     }
 
-    public function test_une_date_passee_est_refusee(): void
+    public function test_une_date_passee_ou_trop_lointaine_est_refusee(): void
     {
-        $this->post(route('depots.store'), $this->donneesValides(['date_depot' => today()->subDay()->toDateString()]))
-            ->assertSessionHasErrors(['date_depot' => 'La date de dépôt ne peut pas être dans le passé.']);
-    }
+        $particulier = User::factory()->create();
 
-    public function test_un_depot_dans_plus_de_30_jours_est_refuse(): void
-    {
-        $this->post(route('depots.store'), $this->donneesValides(['date_depot' => today()->addDays(31)->toDateString()]))
+        $this->actingAs($particulier)
+            ->post(route('depots.store'), $this->donneesValides(['date_depot' => today()->subDay()->toDateString()]))
+            ->assertSessionHasErrors(['date_depot' => 'La date de dépôt ne peut pas être dans le passé.']);
+
+        $this->actingAs($particulier)
+            ->post(route('depots.store'), $this->donneesValides(['date_depot' => today()->addDays(31)->toDateString()]))
             ->assertSessionHasErrors('date_depot');
     }
 
-    public function test_un_point_complet_refuse_le_depot(): void
+    public function test_un_point_complet_ou_ferme_refuse_le_depot(): void
     {
-        $point = PointCollecte::factory()->capacite(1)->create();
-        Depot::factory()->for($point)->create();
+        $plein = PointCollecte::factory()->capacite(1)->create();
+        Depot::factory()->for($plein)->create();
+        $ferme = PointCollecte::factory()->ferme()->create();
+        $particulier = User::factory()->create();
 
-        $this->post(route('depots.store'), $this->donneesValides(['point_collecte_id' => $point->id]))
+        $this->actingAs($particulier)
+            ->post(route('depots.store'), $this->donneesValides(['point_collecte_id' => $plein->id]))
             ->assertSessionHasErrors(['point_collecte_id' => 'Ce point de collecte est complet, choisissez-en un autre.']);
 
-        $this->assertSame(1, $point->depots()->count());
-    }
-
-    public function test_un_point_ferme_refuse_le_depot(): void
-    {
-        $point = PointCollecte::factory()->ferme()->create();
-
-        $this->post(route('depots.store'), $this->donneesValides(['point_collecte_id' => $point->id]))
+        $this->actingAs($particulier)
+            ->post(route('depots.store'), $this->donneesValides(['point_collecte_id' => $ferme->id]))
             ->assertSessionHasErrors(['point_collecte_id' => 'Ce point de collecte est fermé pour le moment.']);
     }
 
-    public function test_la_fiche_propose_les_actions_du_statut_courant(): void
-    {
-        $depot = Depot::factory()->create();
+    /* ----- Mes dépôts et droits d'accès ----- */
 
-        $this->get(route('depots.show', $depot))
+    public function test_mes_depots_ne_montre_que_les_miens(): void
+    {
+        $particulier = User::factory()->create();
+        Depot::factory()->for($particulier)->create(['vetement_titre' => 'Mon pull']);
+        Depot::factory()->create(['vetement_titre' => 'Pull du voisin']);
+
+        $this->actingAs($particulier)->get(route('depots.index'))
             ->assertOk()
-            ->assertSee($depot->code)
-            ->assertSee($depot->pointCollecte->nom)
-            ->assertSee('Marquer comme reçu')
-            ->assertSee('Annuler le dépôt')
-            ->assertDontSee('Marquer comme trié');
+            ->assertSee('Mon pull')
+            ->assertDontSee('Pull du voisin');
     }
 
-    public function test_le_parcours_en_attente_recu_trie(): void
+    public function test_seuls_l_auteur_et_l_association_du_point_voient_le_depot(): void
     {
         $depot = Depot::factory()->create();
 
-        $this->patch(route('depots.statut', $depot), ['statut' => 'recu'])->assertSessionHas('status');
-        $depot->refresh();
-        $this->assertSame('recu', $depot->statut);
-        $this->assertNotNull($depot->recu_le);
+        $this->actingAs($depot->user)->get(route('depots.show', $depot))
+            ->assertOk()
+            ->assertSee($depot->code)
+            ->assertSee('Annuler le dépôt')
+            ->assertDontSee('Marquer comme reçu');
 
-        $this->patch(route('depots.statut', $depot), ['statut' => 'trie']);
-        $depot->refresh();
-        $this->assertSame('trie', $depot->statut);
-        $this->assertNotNull($depot->trie_le);
+        $this->actingAs($depot->pointCollecte->association->user)->get(route('depots.show', $depot))
+            ->assertOk()
+            ->assertSee('Marquer comme reçu')
+            ->assertDontSee('Annuler le dépôt');
+
+        $this->actingAs(User::factory()->create())->get(route('depots.show', $depot))->assertForbidden();
+    }
+
+    /* ----- Parcours du dépôt ----- */
+
+    public function test_l_association_recoit_puis_trie_le_depot(): void
+    {
+        $depot = Depot::factory()->create();
+        $association = $depot->pointCollecte->association->user;
+
+        $this->actingAs($association)->patch(route('depots.statut', $depot), ['statut' => 'recu'])->assertSessionHas('status');
+        $this->assertSame('recu', $depot->fresh()->statut);
+        $this->assertNotNull($depot->fresh()->recu_le);
+
+        $this->actingAs($association)->patch(route('depots.statut', $depot), ['statut' => 'trie']);
+        $this->assertSame('trie', $depot->fresh()->statut);
+        $this->assertNotNull($depot->fresh()->trie_le);
+    }
+
+    public function test_chacun_ne_donne_que_les_statuts_de_son_role(): void
+    {
+        $depot = Depot::factory()->create();
+
+        // Le particulier ne peut pas se déclarer « reçu », l'association ne peut pas annuler à sa place.
+        $this->actingAs($depot->user)->patch(route('depots.statut', $depot), ['statut' => 'recu'])->assertForbidden();
+        $this->actingAs($depot->pointCollecte->association->user)->patch(route('depots.statut', $depot), ['statut' => 'annule'])->assertForbidden();
+        // Une autre association ne touche pas aux dépôts des points qu'elle ne gère pas.
+        $this->actingAs(Association::factory()->create()->user)->patch(route('depots.statut', $depot), ['statut' => 'recu'])->assertForbidden();
+
+        $this->assertSame('en_attente', $depot->fresh()->statut);
+    }
+
+    public function test_le_particulier_annule_et_libere_une_place(): void
+    {
+        $point = PointCollecte::factory()->capacite(1)->create();
+        $depot = Depot::factory()->for($point)->create();
+        $this->assertTrue($point->estComplet());
+
+        $this->actingAs($depot->user)->patch(route('depots.statut', $depot), ['statut' => 'annule']);
+
+        $this->assertSame('annule', $depot->fresh()->statut);
+        $this->assertFalse($point->fresh()->estComplet());
     }
 
     public function test_une_transition_interdite_est_refusee(): void
     {
         $depot = Depot::factory()->trie()->create();
 
-        $this->patch(route('depots.statut', $depot), ['statut' => 'annule'])->assertSessionHas('erreur');
+        $this->actingAs($depot->user)->patch(route('depots.statut', $depot), ['statut' => 'annule'])->assertSessionHas('erreur');
 
         $this->assertSame('trie', $depot->fresh()->statut);
     }
@@ -133,20 +229,10 @@ class DepotTest extends TestCase
     {
         $depot = Depot::factory()->create();
 
-        $this->patch(route('depots.statut', $depot), ['statut' => 'perdu'])->assertSessionHasErrors('statut');
+        $this->actingAs($depot->user)->patch(route('depots.statut', $depot), ['statut' => 'perdu'])->assertSessionHasErrors('statut');
     }
 
-    public function test_l_annulation_libere_une_place(): void
-    {
-        $point = PointCollecte::factory()->capacite(1)->create();
-        $depot = Depot::factory()->for($point)->create();
-        $this->assertTrue($point->estComplet());
-
-        $this->patch(route('depots.statut', $depot), ['statut' => 'annule']);
-
-        $this->assertFalse($point->fresh()->estComplet());
-        $this->assertNotNull($depot->fresh()->annule_le);
-    }
+    /* ----- Modification par l'auteur ----- */
 
     public function test_modification_avec_formulaire_pre_rempli(): void
     {
@@ -154,12 +240,11 @@ class DepotTest extends TestCase
         $point = PointCollecte::factory()->capacite(1)->create();
         $depot = Depot::factory()->for($point)->create(['vetement_titre' => 'Robe en lin']);
 
-        $this->get(route('depots.edit', $depot))
+        $this->actingAs($depot->user)->get(route('depots.edit', $depot))
             ->assertOk()
             ->assertSee('value="Robe en lin"', false);
 
-        $this->put(route('depots.update', $depot), [
-            'user_id' => $depot->user_id,
+        $this->actingAs($depot->user)->put(route('depots.update', $depot), [
             'point_collecte_id' => $point->id,
             'vetement_titre' => 'Robe en lin bleue',
             'date_depot' => $depot->date_depot->toDateString(),
@@ -168,60 +253,46 @@ class DepotTest extends TestCase
         $this->assertSame('Robe en lin bleue', $depot->fresh()->vetement_titre);
     }
 
+    public function test_seul_l_auteur_modifie_son_depot(): void
+    {
+        $depot = Depot::factory()->create();
+
+        $this->actingAs(User::factory()->create())->get(route('depots.edit', $depot))->assertForbidden();
+        $this->actingAs(User::factory()->create())->put(route('depots.update', $depot), [
+            'point_collecte_id' => $depot->point_collecte_id,
+            'vetement_titre' => 'Piraté',
+            'date_depot' => $depot->date_depot->toDateString(),
+        ])->assertForbidden();
+    }
+
     public function test_un_depot_archive_n_est_plus_modifiable(): void
     {
         $depot = Depot::factory()->annule()->create();
 
-        $this->get(route('depots.edit', $depot))
+        $this->actingAs($depot->user)->get(route('depots.edit', $depot))
             ->assertRedirect(route('depots.show', $depot))
             ->assertSessionHas('erreur');
     }
 
-    public function test_suppression_d_un_depot(): void
+    /* ----- Espace association ----- */
+
+    public function test_les_depots_recus_ne_montrent_que_les_points_de_l_association(): void
     {
-        $depot = Depot::factory()->create();
+        $association = Association::factory()->create();
+        $monPoint = PointCollecte::factory()->for($association)->create(['nom' => 'Mon point']);
+        Depot::factory()->for($monPoint)->create(['vetement_titre' => 'Blazer noir']);
+        Depot::factory()->create(['vetement_titre' => 'Short ailleurs']);
 
-        $this->delete(route('depots.destroy', $depot))->assertRedirect(route('depots.index'));
-
-        $this->assertModelMissing($depot);
-    }
-
-    public function test_la_liste_se_filtre_par_statut(): void
-    {
-        Depot::factory()->recu()->create(['vetement_titre' => 'Manteau reçu']);
-        Depot::factory()->annule()->create(['vetement_titre' => 'Jupe annulée']);
-
-        $this->get(route('depots.index', ['statut' => 'recu']))
+        $this->actingAs($association->user)->get(route('depots.recus'))
             ->assertOk()
-            ->assertSee('Manteau reçu')
-            ->assertDontSee('Jupe annulée');
-    }
-
-    public function test_la_liste_se_filtre_par_point_et_recherche(): void
-    {
-        $point = PointCollecte::factory()->create();
-        Depot::factory()->for($point)->create(['vetement_titre' => 'Blazer noir']);
-        Depot::factory()->for($point)->create(['vetement_titre' => 'Short en jean']);
-        Depot::factory()->create(['vetement_titre' => 'Blazer gris']);
-
-        $this->get(route('depots.index', ['point_collecte_id' => $point->id, 'q' => 'blazer']))
-            ->assertOk()
+            ->assertSee('Mon point')
             ->assertSee('Blazer noir')
-            ->assertDontSee('Short en jean')
-            ->assertDontSee('Blazer gris');
+            ->assertDontSee('Short ailleurs');
     }
 
-    public function test_export_csv_des_depots(): void
+    public function test_les_depots_recus_sont_reserves_aux_associations(): void
     {
-        $depot = Depot::factory()->create(['vetement_titre' => 'Blazer noir']);
-
-        $reponse = $this->get(route('depots.export'))->assertOk();
-
-        $this->assertStringStartsWith('text/csv', $reponse->headers->get('content-type'));
-        $contenu = $reponse->streamedContent();
-        $this->assertStringContainsString('Code;Vêtement;Particulier', $contenu);
-        $this->assertStringContainsString($depot->code, $contenu);
-        $this->assertStringContainsString('Blazer noir', $contenu);
+        $this->actingAs(User::factory()->create())->get(route('depots.recus'))->assertRedirect(route('depots.index'));
     }
 
     public function test_suivi_public_par_code(): void
@@ -231,7 +302,6 @@ class DepotTest extends TestCase
         $this->get(route('depots.suivi', ['code' => strtolower($depot->code)]))
             ->assertOk()
             ->assertSee($depot->code)
-            ->assertSee($depot->vetement_titre)
             ->assertSee('Reçu');
 
         $this->get(route('depots.suivi', ['code' => 'DEP-ZZZZZZ']))
@@ -239,11 +309,49 @@ class DepotTest extends TestCase
             ->assertSee('Aucun dépôt ne correspond');
     }
 
-    public function test_le_seeder_cree_des_donnees_coherentes(): void
+    /* ----- Back-office ----- */
+
+    public function test_le_back_office_liste_et_filtre_tous_les_depots(): void
     {
+        Depot::factory()->recu()->create(['vetement_titre' => 'Manteau reçu']);
+        Depot::factory()->annule()->create(['vetement_titre' => 'Jupe annulée']);
+
+        $this->get(route('admin.depots.index', ['statut' => 'recu']))
+            ->assertOk()
+            ->assertSee('Manteau reçu')
+            ->assertDontSee('Jupe annulée');
+    }
+
+    public function test_le_back_office_affiche_et_supprime_un_depot(): void
+    {
+        $depot = Depot::factory()->create(['vetement_titre' => 'Blazer noir']);
+
+        $this->get(route('admin.depots.show', $depot))->assertOk()->assertSee('Blazer noir')->assertSee($depot->user->email);
+        $this->delete(route('admin.depots.destroy', $depot))->assertRedirect(route('admin.depots.index'));
+
+        $this->assertModelMissing($depot);
+    }
+
+    public function test_export_csv_des_depots(): void
+    {
+        $depot = Depot::factory()->create(['vetement_titre' => 'Blazer noir']);
+
+        $reponse = $this->get(route('admin.depots.export'))->assertOk();
+
+        $this->assertStringStartsWith('text/csv', $reponse->headers->get('content-type'));
+        $contenu = $reponse->streamedContent();
+        $this->assertStringContainsString('Code;Vêtement;Particulier', $contenu);
+        $this->assertStringContainsString($depot->code, $contenu);
+        $this->assertStringContainsString('Blazer noir', $contenu);
+    }
+
+    public function test_le_seeder_cree_des_donnees_coherentes_et_ne_se_duplique_pas(): void
+    {
+        $this->seed(CollecteSeeder::class);
         $this->seed(CollecteSeeder::class);
 
         $this->assertSame(10, PointCollecte::count());
+        $this->assertSame(0, PointCollecte::whereNull('association_id')->count());
         $this->assertGreaterThan(10, Depot::count());
         $this->assertTrue(PointCollecte::where('nom', 'Conteneur Ennasr')->firstOrFail()->estComplet());
 
