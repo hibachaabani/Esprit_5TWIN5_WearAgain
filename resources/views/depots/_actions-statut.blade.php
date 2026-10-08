@@ -1,4 +1,7 @@
-{{-- Boutons des étapes possibles depuis le statut actuel du dépôt. --}}
+{{--
+    Boutons des étapes possibles du dépôt.
+    Paramètres : $transitions (statuts proposés) et $route (route du changement de statut).
+--}}
 @php
     $actions = [
         'recu' => ['libelle' => 'Marquer comme reçu', 'classe' => 'btn-gold'],
@@ -7,8 +10,8 @@
     ];
 @endphp
 
-@foreach ($depot->transitionsPossibles() as $statut)
-    <form method="POST" action="{{ route('depots.statut', $depot) }}" class="inline-form"
+@foreach ($transitions as $statut)
+    <form method="POST" action="{{ route($route ?? 'depots.statut', $depot) }}" class="inline-form"
           @isset($actions[$statut]['confirmation']) onsubmit="return confirm('{{ $actions[$statut]['confirmation'] }}')" @endisset>
         @csrf
         @method('PATCH')

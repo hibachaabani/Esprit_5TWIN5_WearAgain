@@ -6,6 +6,7 @@
     <title>@yield('title', 'Admin') — WearAgain</title>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/wearagain.css') }}">
+    @stack('styles')
 </head>
 <body class="admin-body">
     <div class="admin-layout">
@@ -24,6 +25,15 @@
                     @endif
                 </a>
                 <a href="{{ route('admin.categories.index') }}" @class(['active' => request()->routeIs('admin.categories.*')])>Catégories</a>
+                <a href="{{ route('admin.points-collecte.index') }}" @class(['active' => request()->routeIs('admin.points-collecte.*')])>Points de collecte</a>
+                <a href="{{ route('admin.depots.index') }}" @class(['active' => request()->routeIs('admin.depots.*')])>
+                    Dépôts
+                    @php $depotsEnRetard = \App\Models\Depot::enRetard()->count(); @endphp
+                    @if ($depotsEnRetard)
+                        <span class="count-badge" title="Dépôts en retard">{{ $depotsEnRetard }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('admin.collecte.statistiques') }}" @class(['active' => request()->routeIs('admin.collecte.*')])>Statistiques collecte</a>
             </nav>
 
             <a href="{{ route('home') }}" class="small" style="margin-top:auto">← Retour au site</a>

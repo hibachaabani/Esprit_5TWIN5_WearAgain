@@ -1,4 +1,4 @@
-@extends('layouts.collecte')
+@extends('layouts.admin')
 
 @section('title', 'Statistiques de la collecte')
 
@@ -10,14 +10,15 @@
     $totalStatuts = $repartition->sum('total');
 @endphp
 
-@section('page')
-<div class="page-head">
+@section('content')
+@include('admin.collecte._entete')
+
+<div class="section-head">
     <div>
-        <p class="eyebrow">Espace association</p>
-        <h1>Statistiques de la collecte</h1>
-        <p class="lead">L'activité des points de collecte et l'impact des vêtements qui ont échappé à la poubelle.</p>
+        <h1 class="h2">Statistiques de la collecte</h1>
+        <p class="small muted">L'activité des points de collecte et l'impact des vêtements qui ont échappé à la poubelle.</p>
     </div>
-    <a href="{{ route('depots.export') }}" class="btn btn-ghost">Exporter les dépôts (CSV)</a>
+    <a href="{{ route('admin.depots.export') }}" class="btn btn-ghost small">Exporter les dépôts (CSV)</a>
 </div>
 
 <section class="panel impact">
@@ -45,7 +46,7 @@
         <strong>{{ $indicateurs['delai_moyen_jours'] !== null ? number_format($indicateurs['delai_moyen_jours'], 1, ',', ' ').' j' : '—' }}</strong>
         <span>délai moyen entre déclaration et tri</span>
     </div>
-    <a class="kpi kpi-lien" href="{{ route('depots.index', ['retard' => 1]) }}">
+    <a class="kpi kpi-lien" href="{{ route('admin.depots.index', ['retard' => 1]) }}">
         <strong>{{ $indicateurs['en_retard'] }}</strong><span>dépôts en retard →</span>
     </a>
 </div>
@@ -177,7 +178,7 @@
                 <h2>Remplissage des points ouverts</h2>
                 <p class="small muted">Alerte à partir de {{ $seuil }} %</p>
             </div>
-            <a href="{{ route('tournee.index', ['seuil' => $seuil >= 80 ? 80 : 50]) }}" class="btn btn-primary btn-sm">Planifier la tournée</a>
+            <a href="{{ route('admin.points-collecte.index') }}" class="btn btn-ghost small">Gérer les points</a>
         </div>
 
         <ul class="remplissage">
