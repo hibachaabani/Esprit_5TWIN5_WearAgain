@@ -59,6 +59,25 @@
                 </div>
             @endforelse
         </div>
+
+        <div>
+            <h2 class="h2">Avis ({{ count($atelier->avis) }})</h2>
+
+            @forelse ($atelier->avis as $avi)
+                <article style="background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem;">
+                    <p style="margin-bottom: .35rem;">
+                        <strong>{{ $avi->user->name }}</strong>
+                        <span class="small muted">— {{ optional($avi->date)->format('d/m/Y') ?? optional($avi->created_at)->format('d/m/Y') }}</span>
+                    </p>
+                    <p style="margin-bottom: .5rem;"><x-stars :note="$avi->note" /></p>
+                    <p style="margin: 0;">{{ $avi->commentaire }}</p>
+                </article>
+            @empty
+                <div class="empty">
+                    <p>Aucun avis pour cet atelier pour le moment.</p>
+                </div>
+            @endforelse
+        </div>
     </div>
 </div>
 @endsection

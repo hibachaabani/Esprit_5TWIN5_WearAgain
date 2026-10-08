@@ -11,7 +11,7 @@
 <body class="admin-body">
     <div class="admin-layout">
         <aside class="admin-sidebar">
-            <a href="{{ route('home') }}" class="logo">Wear<span>Again</span></a>
+            <a href="{{ route('home') }}" class="logo">Wsear<span>Again</span></a>
             <p class="small muted" style="margin-top:-.75rem">Back-office</p>
 
             <nav class="admin-nav">
@@ -36,6 +36,8 @@
                     @endif
                 </a>
                 <a href="{{ route('admin.collecte.statistiques') }}" @class(['active' => request()->routeIs('admin.collecte.*')])>Statistiques collecte</a>
+                <a href="{{ route('admin.reparations.index') }}" @class(['active' => request()->routeIs('admin.reparations.*')])>Réparations</a>
+                <a href="{{ route('admin.avis.index') }}" @class(['active' => request()->routeIs('admin.avis.*')])>Avis</a>
             </nav>
 
             <a href="{{ route('home') }}" class="small" style="margin-top:auto">← Retour au site</a>

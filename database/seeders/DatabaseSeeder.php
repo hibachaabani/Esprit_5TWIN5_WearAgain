@@ -58,6 +58,7 @@ class DatabaseSeeder extends Seeder
 
         User::factory(4)->create();
 
+        // Réparations, avis (membre 5) et transformations — rattachés aux comptes existants.
         $this->call([
             ReparationSeeder::class,
             AvisSeeder::class,

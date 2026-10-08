@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class UpdateAvisRequest extends FormRequest
 {
@@ -13,38 +15,46 @@ class UpdateAvisRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'reparation_id' => ['required', 'exists:reparations,id'],
+        $rules = [
             'user_id' => ['required', 'exists:users,id'],
-            'note' => ['required', 'integer', 'min:1', 'max:5'],
-            'commentaire' => ['required', 'string', 'min:5', 'max:1000'],
+            'atelier_id' => ['nullable'],
+            'note' => ['required', 'integer', 'between:1,5'],
+            'commentaire' => ['required', 'string', 'min:5'],
+            'date' => ['nullable', 'date'],
         ];
+
+        if (Schema::hasTable('ateliers')) {
+            // Le diagramme impose un atelier par avis (Atelier "1" -- "0..*" Avis).
+            $rules['atelier_id'] = ['required', Rule::exists('ateliers', 'id')];
+        }
+
+        return $rules;
     }
 
     public function messages(): array
     {
         return [
-            'reparation_id.required' => 'Veuillez choisir une réparation.',
-            'reparation_id.exists' => 'Cette réparation n\'existe pas.',
             'user_id.required' => 'Veuillez choisir un membre.',
             'user_id.exists' => 'Ce membre n\'existe pas.',
+            'atelier_id.required' => 'L\'atelier est obligatoire.',
+            'atelier_id.exists' => 'Cet atelier n\'existe pas.',
             'note.required' => 'La note est obligatoire.',
             'note.integer' => 'La note doit être un nombre entier.',
-            'note.min' => 'La note minimale est de 1 étoile.',
-            'note.max' => 'La note maximale est de 5 étoiles.',
+            'note.between' => 'La note doit être comprise entre 1 et 5 étoiles.',
             'commentaire.required' => 'Le commentaire est obligatoire.',
             'commentaire.min' => 'Le commentaire doit contenir au moins 5 caractères.',
-            'commentaire.max' => 'Le commentaire ne peut pas dépasser 1000 caractères.',
+            'date.date' => 'La date n\'est pas valide.',
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'reparation_id' => 'réparation',
             'user_id' => 'membre',
+            'atelier_id' => 'atelier',
             'note' => 'note',
             'commentaire' => 'commentaire',
+            'date' => 'date',
         ];
     }
 }

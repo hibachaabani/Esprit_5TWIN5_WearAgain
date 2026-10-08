@@ -354,7 +354,7 @@
 </head>
 <body class="admin-body">
     <aside class="sidebar">
-        <a href="{{ route('home') }}" class="logo side-logo">Wear<span>Again</span><small>Back office</small></a>
+        <a href="{{ route('home') }}" class="logo side-logo">Wessar<span>Again</span><small>Back office</small></a>
 
         <div>
             <p class="side-label">Gestion</p>

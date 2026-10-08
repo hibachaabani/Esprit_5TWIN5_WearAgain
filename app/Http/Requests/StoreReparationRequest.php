@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Reparation;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class StoreReparationRequest extends FormRequest
@@ -15,50 +16,48 @@ class StoreReparationRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
-            'user_id' => ['required', 'exists:users,id'],
-            'titre' => ['required', 'string', 'min:3', 'max:100'],
-            'description' => ['required', 'string', 'min:10'],
-            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+        $rules = [
+            'vetement_id' => ['required', 'exists:vetements,id'],
+            'atelier_id' => ['nullable'],
+            'description_probleme' => ['required', 'string', 'min:10'],
+            'devis' => ['nullable', 'numeric', 'min:0'],
+            'date_rdv' => ['required', 'date'],
             'statut' => ['required', Rule::in(array_keys(Reparation::STATUTS))],
-            'cout_estime' => ['required', 'numeric', 'min:0'],
-            'date_reparation' => ['required', 'date'],
         ];
+
+        if (Schema::hasTable('ateliers')) {
+            $rules['atelier_id'][] = Rule::exists('ateliers', 'id');
+        }
+
+        return $rules;
     }
 
     public function messages(): array
     {
         return [
-            'user_id.required' => 'Veuillez choisir un membre.',
-            'user_id.exists' => 'Ce membre n\'existe pas.',
-            'titre.required' => 'Le titre de la réparation est obligatoire.',
-            'titre.min' => 'Le titre doit contenir au moins 3 caractères.',
-            'titre.max' => 'Le titre ne peut pas dépasser 100 caractères.',
-            'description.required' => 'La description est obligatoire.',
-            'description.min' => 'La description doit contenir au moins 10 caractères.',
-            'image.image' => 'Le fichier doit être une image.',
-            'image.mimes' => 'L\'image doit être au format jpeg, png ou webp.',
-            'image.max' => 'L\'image ne doit pas dépasser 2 Mo.',
+            'vetement_id.required' => 'Veuillez choisir un vêtement.',
+            'vetement_id.exists' => 'Ce vêtement n\'existe pas.',
+            'atelier_id.exists' => 'Cet atelier n\'existe pas.',
+            'description_probleme.required' => 'La description du problème est obligatoire.',
+            'description_probleme.min' => 'La description doit contenir au moins 10 caractères.',
+            'devis.numeric' => 'Le devis doit être un nombre.',
+            'devis.min' => 'Le devis ne peut pas être négatif.',
+            'date_rdv.required' => 'La date de rendez-vous est obligatoire.',
+            'date_rdv.date' => 'La date de rendez-vous n\'est pas valide.',
             'statut.required' => 'Le statut est obligatoire.',
             'statut.in' => 'Le statut doit être : en attente, en cours ou terminée.',
-            'cout_estime.required' => 'Le coût estimé est obligatoire.',
-            'cout_estime.numeric' => 'Le coût estimé doit être un nombre.',
-            'cout_estime.min' => 'Le coût estimé ne peut pas être négatif.',
-            'date_reparation.required' => 'La date de réparation est obligatoire.',
-            'date_reparation.date' => 'La date de réparation n\'est pas valide.',
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'user_id' => 'membre',
-            'titre' => 'titre',
-            'description' => 'description',
-            'image' => 'image',
+            'vetement_id' => 'vêtement',
+            'atelier_id' => 'atelier',
+            'description_probleme' => 'description du problème',
+            'devis' => 'devis',
+            'date_rdv' => 'date de rendez-vous',
             'statut' => 'statut',
-            'cout_estime' => 'coût estimé',
-            'date_reparation' => 'date de réparation',
         ];
     }
 }

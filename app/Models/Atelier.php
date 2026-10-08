@@ -30,4 +30,9 @@ class Atelier extends Model
     {
         return $this->hasMany(Transformation::class);
     }
+
+    public function avis(): HasMany
+    {
+        return $this->hasMany(Avis::class);
+    }
 }

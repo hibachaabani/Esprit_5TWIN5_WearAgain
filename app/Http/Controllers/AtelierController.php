@@ -38,7 +38,7 @@ class AtelierController extends Controller
      */
     public function show(Atelier $atelier)
     {
-        $atelier->load(['user', 'transformations.vetement']);
+        $atelier->load(['user', 'transformations.vetement', 'avis.user']);
 
         return view('ateliers.show', compact('atelier'));
     }

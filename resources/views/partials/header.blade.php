@@ -5,6 +5,7 @@
         ['route' => 'points-collecte.index', 'actif' => ['points-collecte.*', 'depots.*', 'tournee.*'], 'label' => 'Points de collecte'],
         ['route' => 'ateliers.index', 'actif' => ['ateliers.*'], 'label' => 'Ateliers'],
         ['route' => 'transformations.index', 'actif' => ['transformations.*'], 'label' => 'Transformations'],
+        ['route' => 'reparations.index', 'actif' => ['reparations.*'], 'label' => 'Réparations'],
     ];
     if (auth()->check()) {
         $liens[] = ['route' => 'dons.index', 'actif' => ['dons.index', 'dons.show', 'dons.create', 'dons.edit'], 'label' => 'Mes dons'];
@@ -33,21 +34,6 @@
                     @endif
                 </a>
             @endif
-        <form action="{{ route('vetements.index') }}" method="GET" class="search">
-            <label for="q" class="sr-only">Rechercher un article</label>
-            <input id="q" name="q" type="search" placeholder="Jean, robe, baskets…" value="{{ request('q') }}">
-        </form>
-
-        <nav class="nav">
-            <a href="{{ route('vetements.index') }}" @class(['active' => request()->routeIs('vetements.*')])>Parcourir</a>
-            <a href="{{ route('reparations.index') }}" @class(['active' => request()->routeIs('reparations.*')])>Réparations</a>
-            <a href="{{ route('admin.avis.index') }}" @class(['active' => request()->routeIs('admin.*')])>Avis</a>
-            @auth
-                <a href="#">Mon dressing</a>
-            @else
-                <a href="{{ route('login') }}">Se connecter</a>
-            @endauth
-            <a href="{{ route('vetements.create') }}" class="btn btn-primary">Vendre un article</a>
         </nav>
 
         <div class="header-actions">

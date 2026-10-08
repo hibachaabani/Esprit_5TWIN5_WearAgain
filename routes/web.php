@@ -73,6 +73,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('depots/statut', [Admin\DepotController::class, 'changerStatutGroupe'])->name('depots.statut-groupe');
     Route::patch('depots/{depot}/statut', [Admin\DepotController::class, 'changerStatut'])->name('depots.statut');
     Route::resource('depots', Admin\DepotController::class)->only(['index', 'show', 'destroy']);
+
+    // Réparations & avis (membre 5) — back-office
+    Route::resource('reparations', Admin\ReparationController::class);
+    Route::resource('avis', Admin\AvisController::class);
 });
 
 Route::middleware('auth')->group(function () {
@@ -125,11 +129,3 @@ require __DIR__.'/auth.php';
 Route::get('/reparations', [ReparationController::class, 'index'])->name('reparations.index');
 Route::get('/reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show');
 Route::post('/reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
-
-/*
-| Back office — gestion des réparations et des avis (Member 5)
-*/
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::resource('reparations', Admin\ReparationController::class)->except('show');
-    Route::resource('avis', Admin\AvisController::class)->except('show');
-});

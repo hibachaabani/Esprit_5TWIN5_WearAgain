@@ -1,0 +1,25 @@
+/* Back-office — modules Réparations & Avis (membre 5). */
+
+.admin-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: 1.5rem;
+}
+.admin-filters select,
+.admin-filters input { border-radius: 8px; }
+
+.status-en_attente { background: #F1E4C3; color: #6B5310; }
+.status-en_cours    { background: #CDE0F5; color: #1F4E79; }
+.status-terminee    { background: #D9E8D2; color: #2F5D1F; }
+
+.stars { color: var(--gold); letter-spacing: .1em; white-space: nowrap; }
+
+.btn-danger {
+    border: 2px solid #B3261E;
+    color: #B3261E;
+    background: transparent;
+}
+.btn-danger:hover { background: #B3261E; color: var(--white); }
+.inline-form { display: inline; margin: 0; }

@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Reparation extends Model
 {
@@ -18,44 +17,31 @@ class Reparation extends Model
     ];
 
     protected $fillable = [
-        'user_id',
-        'titre',
-        'description',
-        'image',
+        'vetement_id',
+        'atelier_id',
+        'description_probleme',
+        'devis',
+        'date_rdv',
         'statut',
-        'cout_estime',
-        'date_reparation',
     ];
 
     protected $casts = [
-        'cout_estime' => 'decimal:2',
-        'date_reparation' => 'date',
+        'devis' => 'decimal:2',
+        'date_rdv' => 'datetime',
     ];
 
-    public function avis(): HasMany
+    public function vetement(): BelongsTo
     {
-        return $this->hasMany(Avis::class);
+        return $this->belongsTo(Vetement::class);
     }
 
-    public function user(): BelongsTo
+    public function atelier(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(\App\Models\Atelier::class);
     }
 
     public function statutLabel(): string
     {
         return self::STATUTS[$this->statut] ?? $this->statut;
-    }
-
-    public function imageUrl(): ?string
-    {
-        return $this->image ? asset('uploads/reparations/'.$this->image) : null;
-    }
-
-    public function hasImage(): bool
-    {
-        return $this->image !== null
-            && $this->image !== ''
-            && file_exists(public_path('uploads/reparations/'.$this->image));
     }
 }
