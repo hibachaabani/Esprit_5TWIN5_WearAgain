@@ -22,7 +22,11 @@ class Vetement extends Model
         'etat',
         'photo',
         'statut',
+        'signale',
+        'raison_signalement',
     ];
+
+    protected $casts = ['signale' => 'boolean'];
 
     const ETATS = [
         'neuf'         => 'Neuf avec étiquette',

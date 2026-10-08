@@ -16,6 +16,14 @@
             <nav class="admin-nav">
                 <a href="{{ route('admin.associations.index') }}" @class(['active' => request()->routeIs('admin.associations.*')])>Associations</a>
                 <a href="{{ route('admin.dons.index') }}" @class(['active' => request()->routeIs('admin.dons.*')])>Dons</a>
+                <a href="{{ route('admin.vetements.index') }}" @class(['active' => request()->routeIs('admin.vetements.*')])>
+                    Vêtements
+                    @php $signales = \App\Models\Vetement::where('signale', true)->count(); @endphp
+                    @if ($signales)
+                        <span class="count-badge">{{ $signales }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('admin.categories.index') }}" @class(['active' => request()->routeIs('admin.categories.*')])>Catégories</a>
             </nav>
 
             <a href="{{ route('home') }}" class="small" style="margin-top:auto">← Retour au site</a>
@@ -28,5 +36,6 @@
             @yield('content')
         </main>
     </div>
+    @stack('scripts')
 </body>
 </html>

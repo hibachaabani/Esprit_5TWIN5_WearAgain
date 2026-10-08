@@ -9,7 +9,9 @@ class Categorie extends Model
 {
     protected $table = 'categories';
 
-    protected $fillable = ['nom', 'description', 'icone'];
+    protected $fillable = ['nom', 'description', 'icone', 'ordre', 'active'];
+
+    protected $casts = ['active' => 'boolean'];
 
     public function vetements(): HasMany
     {

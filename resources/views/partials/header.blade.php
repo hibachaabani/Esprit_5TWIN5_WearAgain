@@ -1,6 +1,6 @@
 @php
     $liens = [
-        ['route' => 'items.index', 'actif' => ['items.index', 'items.show'], 'label' => 'Parcourir'],
+        ['route' => 'vetements.index', 'actif' => ['vetements.index', 'vetements.show'], 'label' => 'Parcourir'],
         ['route' => 'associations.index', 'actif' => ['associations.*'], 'label' => 'Associations'],
     ];
     if (auth()->check()) {
@@ -14,34 +14,13 @@
     <div class="container header-inner">
         <a href="{{ route('home') }}" class="logo">Wear<span>Again</span></a>
 
-        <form action="{{ route('vetements.index') }}" method="GET" class="search">
-            <label for="q" class="sr-only">Rechercher un article</label>
-            <input id="q" name="q" type="search"
-                   placeholder="Jean, robe, baskets…"
-                   value="{{ request('q') }}">
-        </form>
-
-        <nav class="nav">
-            <a href="{{ route('vetements.index') }}"
-               @class(['active' => request()->routeIs('vetements.*')])>
-                Parcourir
-            </a>
-            <a href="{{ route('categories.index') }}"
-               @class(['active' => request()->routeIs('categories.*')])>
-                Catégories
-            </a>
-            @auth
-                <a href="{{ route('favoris.index') }}"
-                   @class(['active' => request()->routeIs('favoris.*')])
-                   title="Mes favoris">
-                    ♥ Favoris
-                </a>
-                <a href="#">Mon dressing</a>
         <nav class="site-nav" aria-label="Navigation principale">
             @foreach ($liens as $lien)
                 <a href="{{ route($lien['route']) }}" @class(['active' => request()->routeIs(...$lien['actif'])])
                    @if (request()->routeIs(...$lien['actif'])) aria-current="page" @endif>{{ $lien['label'] }}</a>
             @endforeach
+            <a href="{{ route('categories.create') }}" @class(['active' => request()->routeIs('categories.create')])
+               @if (request()->routeIs('categories.create')) aria-current="page" @endif>+ Catégorie</a>
             @if ($associationConnectee)
                 <a href="{{ route('dons.recus') }}" @class(['active' => request()->routeIs('dons.recus')])
                    @if (request()->routeIs('dons.recus')) aria-current="page" @endif>
@@ -54,13 +33,13 @@
         </nav>
 
         <div class="header-actions">
-            <form action="{{ route('items.index') }}" method="GET" class="header-search" role="search">
+            <form action="{{ route('vetements.index') }}" method="GET" class="header-search" role="search">
                 <label for="q" class="sr-only">Rechercher un article</label>
                 <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 <input id="q" name="q" type="search" placeholder="Rechercher…" value="{{ request('q') }}">
             </form>
 
-            <a href="{{ route('items.create') }}" class="btn btn-primary btn-sell" aria-label="Vendre un article">
+            <a href="{{ route('vetements.create') }}" class="btn btn-primary btn-sell" aria-label="Vendre un article">
                 <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
                 <span>Vendre</span>
             </a>
@@ -116,7 +95,7 @@
     {{-- Menu mobile (affiché par le bouton burger) --}}
     <div class="mobile-menu" id="mobile-menu" hidden>
         <div class="container">
-            <form action="{{ route('items.index') }}" method="GET" class="header-search" role="search">
+            <form action="{{ route('vetements.index') }}" method="GET" class="header-search" role="search">
                 <label for="q-mobile" class="sr-only">Rechercher un article</label>
                 <svg class="header-search-icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 <input id="q-mobile" name="q" type="search" placeholder="Jean, robe, baskets…" value="{{ request('q') }}">

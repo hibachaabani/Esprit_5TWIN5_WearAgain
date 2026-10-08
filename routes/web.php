@@ -47,6 +47,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
     Route::resource('dons', Admin\DonController::class)->only(['index', 'show']);
+
+    // Vêtements
+    Route::resource('vetements', Admin\VetementController::class)->only(['index', 'show', 'destroy']);
+    Route::patch('vetements/{vetement}/signalement', [Admin\VetementController::class, 'toggleSignalement'])->name('vetements.signalement');
+
+    // Catégories
+    Route::resource('categories', Admin\CategorieController::class)->only('index');
+    Route::patch('categories/{categorie}/active', [Admin\CategorieController::class, 'toggleActive'])->name('categories.active');
+    Route::post('categories/reorder', [Admin\CategorieController::class, 'reorder'])->name('categories.reorder');
 });
 
 Route::middleware('auth')->group(function () {
