@@ -1,0 +1,88 @@
+/* WearAgain — pages d'authentification (connexion, inscription, mot de passe) */
+.auth {
+  position: relative; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  font-family: var(--font-body); color: var(--ink); background: var(--cream);
+}
+/* Fond : deux halos très doux aux couleurs de la marque */
+.auth::before, .auth::after { content: ""; position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; z-index: 0; }
+.auth::before { width: 520px; height: 520px; top: -220px; right: -160px; background: rgba(107, 26, 42, .10); }
+.auth::after { width: 460px; height: 460px; bottom: -220px; left: -140px; background: rgba(173, 127, 69, .14); }
+.auth > * { position: relative; z-index: 1; }
+
+/* Barre du haut */
+.auth-top { display: flex; align-items: center; justify-content: space-between; width: min(1180px, 100% - 2.5rem); margin-inline: auto; padding-block: 1.4rem; }
+.auth-top .logo { font-size: 1.45rem; }
+.auth-top-link { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .9rem; border-radius: 999px; font-size: .9rem; font-weight: 500; color: var(--ink); text-decoration: none; transition: background .15s; }
+.auth-top-link:hover { background: rgba(34, 31, 28, .06); }
+.auth-top-link svg { width: 16px; height: 16px; }
+
+/* Carte centrale */
+.auth-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem 1.25rem 2.5rem; }
+.auth-card {
+  width: 100%; max-width: 410px; background: var(--white); border: 1px solid var(--line); border-radius: 20px;
+  padding: 2.4rem 2.2rem 2rem; box-shadow: 0 1px 2px rgba(34, 31, 28, .04), 0 24px 48px -28px rgba(34, 31, 28, .28);
+}
+
+.auth-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto 1.1rem; border-radius: 14px; background: var(--maroon); color: var(--cream); }
+.auth-icon svg { width: 24px; height: 24px; }
+.auth-title { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; text-align: center; margin: 0 0 .35rem; letter-spacing: -0.015em; }
+.auth-subtitle { color: var(--muted); text-align: center; font-size: .95rem; margin: 0 0 1.8rem; }
+
+.auth-field { margin-bottom: 1.1rem; }
+.auth-label-row { display: flex; justify-content: space-between; align-items: baseline; }
+.auth-label { display: block; font-weight: 600; font-size: .875rem; margin-bottom: .4rem; }
+.auth-link { color: var(--maroon); font-size: .84rem; font-weight: 500; text-decoration: none; }
+.auth-link:hover { text-decoration: underline; }
+
+/* Champs : s'applique aussi aux composants Breeze des autres pages */
+.auth-card input[type="email"], .auth-card input[type="password"], .auth-card input[type="text"] {
+  width: 100%; padding: .72rem .9rem; border: 1.5px solid var(--line); border-radius: 10px; background: var(--white);
+  font: 400 .97rem var(--font-body); color: var(--ink); box-shadow: none; transition: border-color .15s, box-shadow .15s;
+}
+.auth-card input::placeholder { color: #B4AC9E; }
+.auth-card input[type="email"]:hover, .auth-card input[type="password"]:hover, .auth-card input[type="text"]:hover { border-color: #D6CCB8; }
+.auth-card input[type="email"]:focus, .auth-card input[type="password"]:focus, .auth-card input[type="text"]:focus {
+  outline: none; border-color: var(--maroon); box-shadow: 0 0 0 4px rgba(107, 26, 42, .10);
+}
+.auth-card input[aria-invalid="true"] { border-color: #B3261E; }
+.auth-card input[type="checkbox"], .auth-card input[type="radio"] { accent-color: var(--maroon); color: var(--maroon); }
+
+.auth-password { position: relative; }
+.auth-password input { padding-right: 3rem !important; }
+.auth-eye { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.auth-eye:hover { color: var(--ink); background: var(--cream); }
+.auth-eye svg { width: 19px; height: 19px; }
+
+.auth-remember { display: inline-flex; align-items: center; gap: .5rem; font-size: .9rem; cursor: pointer; margin: .2rem 0 1.4rem; }
+.auth-remember input { width: 1rem; height: 1rem; border-radius: 4px; }
+
+.auth-error { color: #B3261E; font-size: .84rem; margin: .4rem 0 0; }
+.auth-alert { display: flex; gap: .55rem; align-items: flex-start; padding: .7rem .85rem; border-radius: 10px; margin-bottom: 1.2rem; font-size: .88rem; line-height: 1.4; }
+.auth-alert svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
+.auth-alert-error { background: #FBEDEC; color: #8C1D18; border: 1px solid #F3D3D0; }
+.auth-alert-ok { background: #EEF4EC; color: #2E5A32; border: 1px solid #D5E5D1; }
+
+.auth-submit { width: 100%; padding: .8rem 1rem; font-size: .98rem; border-radius: 10px !important; }
+.auth-card button[type="submit"]:not(.auth-eye) { background: var(--maroon); }
+.auth-card button[type="submit"]:not(.auth-eye):hover { background: var(--maroon-dark); }
+
+.auth-switch { text-align: center; font-size: .92rem; color: var(--muted); margin: 1.5rem 0 0; padding-top: 1.3rem; border-top: 1px solid var(--line); }
+.auth-switch a { font-weight: 600; color: var(--maroon); text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }
+
+/* Ligne de confiance sous la carte */
+.auth-trust { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.5rem; margin: 1.6rem 0 0; padding: 0; font-size: .84rem; color: var(--muted); }
+.auth-trust li { display: inline-flex; align-items: center; gap: .4rem; }
+.auth-trust svg { width: 15px; height: 15px; color: var(--maroon); }
+
+.auth-foot { text-align: center; font-size: .8rem; color: var(--muted); padding: 0 1rem 1.4rem; }
+
+/* Composants Breeze (inscription…) : remplace l'indigo par les couleurs du site */
+.auth-card .border-indigo-500 { border-color: var(--maroon) !important; --tw-ring-color: rgba(107, 26, 42, .35); }
+.auth-card .focus\:ring-indigo-500:focus { --tw-ring-color: rgba(107, 26, 42, .35); }
+
+@media (max-width: 480px) {
+  .auth-top-link { font-size: .85rem; padding-inline: .6rem; }
+  .auth-card { padding: 1.9rem 1.3rem 1.6rem; border-radius: 16px; }
+  .auth-title { font-size: 1.4rem; }
+}
