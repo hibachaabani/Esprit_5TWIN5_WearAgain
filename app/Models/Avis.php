@@ -11,23 +11,25 @@ class Avis extends Model
     use HasFactory;
 
     protected $fillable = [
-        'reparation_id',
         'user_id',
+        'atelier_id',
         'note',
         'commentaire',
+        'date',
     ];
 
     protected $casts = [
         'note' => 'integer',
+        'date' => 'datetime',
     ];
-
-    public function reparation(): BelongsTo
-    {
-        return $this->belongsTo(Reparation::class);
-    }
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function atelier(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Atelier::class);
     }
 }
