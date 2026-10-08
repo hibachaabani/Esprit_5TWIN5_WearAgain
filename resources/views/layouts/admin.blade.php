@@ -34,6 +34,8 @@
                     @endif
                 </a>
                 <a href="{{ route('admin.collecte.statistiques') }}" @class(['active' => request()->routeIs('admin.collecte.*')])>Statistiques collecte</a>
+                <a href="{{ route('admin.reparations.index') }}" @class(['active' => request()->routeIs('admin.reparations.*')])>Réparations</a>
+                <a href="{{ route('admin.avis.index') }}" @class(['active' => request()->routeIs('admin.avis.*')])>Avis</a>
             </nav>
 
             <a href="{{ route('home') }}" class="small" style="margin-top:auto">← Retour au site</a>

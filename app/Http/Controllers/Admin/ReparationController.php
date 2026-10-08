@@ -17,11 +17,6 @@ class ReparationController extends Controller
      */
     public function index(Request $request)
     {
-        $compteurs = Reparation::query()
-            ->selectRaw('statut, COUNT(*) as total')
-            ->groupBy('statut')
-            ->pluck('total', 'statut');
-
         $query = Reparation::query()->with('vetement')->latest();
 
         if (class_exists(Atelier::class)) {
@@ -34,7 +29,7 @@ class ReparationController extends Controller
 
         $reparations = $query->paginate(10)->withQueryString();
 
-        return view('admin.reparations.index', compact('reparations', 'compteurs'));
+        return view('admin.reparations.index', compact('reparations'));
     }
 
     public function show(Reparation $reparation)

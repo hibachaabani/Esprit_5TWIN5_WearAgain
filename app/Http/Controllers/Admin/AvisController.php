@@ -17,13 +17,6 @@ class AvisController extends Controller
      */
     public function index(Request $request)
     {
-        $stats = [
-            'total' => Avis::count(),
-            'moyenne' => (float) Avis::query()->avg('note'),
-            'cinq' => Avis::where('note', 5)->count(),
-            'faibles' => Avis::where('note', '<', 3)->count(),
-        ];
-
         $query = Avis::query()->with('user');
 
         if (class_exists(Atelier::class)) {
@@ -36,7 +29,7 @@ class AvisController extends Controller
 
         $avis = $query->latest()->paginate(10)->withQueryString();
 
-        return view('admin.avis.index', compact('avis', 'stats'));
+        return view('admin.avis.index', compact('avis'));
     }
 
     public function show(Avis $avi)
