@@ -89,7 +89,7 @@ class Depot extends Model
     }
 
     /**
-     * Vêtement déposé (module Vetement, membre 1).
+     * Annonce du vêtement déposé, si le particulier l'a publiée (module Vetement, membre 1).
      */
     public function vetement(): BelongsTo
     {
@@ -135,6 +135,45 @@ class Depot extends Model
                 ->where('code', 'like', "%{$terme}%")
                 ->orWhere('vetement_titre', 'like', "%{$terme}%")
                 ->orWhereHas('user', fn (Builder $u) => $u->where('name', 'like', "%{$terme}%"))));
+    }
+
+    /**
+     * Le particulier qui a déposé et l'association qui gère le point voient le dépôt.
+     */
+    public function estVisiblePar(?User $user): bool
+    {
+        return $user !== null
+            && ($this->user_id === $user->id || $this->pointCollecte->estGerePar($user));
+    }
+
+    /**
+     * Statuts que l'utilisateur a le droit de donner : le particulier annule,
+     * l'association qui gère le point reçoit puis trie.
+     *
+     * @return string[]
+     */
+    public function statutsAutorisesPour(?User $user): array
+    {
+        $statuts = [];
+
+        if ($user && $this->user_id === $user->id) {
+            $statuts[] = 'annule';
+        }
+        if ($this->pointCollecte->estGerePar($user)) {
+            array_push($statuts, 'recu', 'trie');
+        }
+
+        return $statuts;
+    }
+
+    /**
+     * Étapes suivantes que cet utilisateur peut déclencher maintenant.
+     *
+     * @return string[]
+     */
+    public function transitionsPour(?User $user): array
+    {
+        return array_values(array_intersect($this->transitionsPossibles(), $this->statutsAutorisesPour($user)));
     }
 
     public function libelleStatut(): string

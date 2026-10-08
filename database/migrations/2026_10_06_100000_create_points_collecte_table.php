@@ -10,9 +10,8 @@ return new class extends Migration
     {
         Schema::create('points_collecte', function (Blueprint $table) {
             $table->id();
-            // La table associations est livrée par le module Association (membre 2) :
-            // colonne indexée sans contrainte pour l'instant, la FK sera ajoutée à l'intégration.
-            $table->unsignedBigInteger('association_id')->nullable()->index();
+            // Association responsable (module Association, membre 2).
+            $table->foreignId('association_id')->nullable()->constrained()->nullOnDelete();
             $table->string('nom');
             $table->string('adresse');
             $table->string('ville')->index();

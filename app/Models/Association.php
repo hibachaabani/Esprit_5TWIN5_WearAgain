@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Str;
 
 class Association extends Model
@@ -56,6 +57,17 @@ class Association extends Model
     public function dons(): HasMany
     {
         return $this->hasMany(Don::class);
+    }
+
+    public function pointsCollecte(): HasMany
+    {
+        return $this->hasMany(PointCollecte::class);
+    }
+
+    /** Dépôts reçus dans les points de collecte de l'association. */
+    public function depots(): HasManyThrough
+    {
+        return $this->hasManyThrough(Depot::class, PointCollecte::class);
     }
 
     /** Vrai si l'utilisateur est le compte qui gère cette association. */

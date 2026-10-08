@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('depots', function (Blueprint $table) {
             $table->id();
             $table->string('code', 12)->unique();
-            // La table vetements est livrée par le module Vetement (membre 1) :
-            // colonne indexée sans contrainte + titre libre en attendant l'intégration.
-            $table->unsignedBigInteger('vetement_id')->nullable()->index();
+            // Vêtement publié par le particulier (module Vetement, membre 1), facultatif :
+            // le titre est recopié pour garder l'historique même si l'annonce disparaît.
+            $table->foreignId('vetement_id')->nullable()->constrained()->nullOnDelete();
             $table->string('vetement_titre');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('point_collecte_id')->constrained('points_collecte')->cascadeOnDelete();

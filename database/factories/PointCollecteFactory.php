@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Association;
 use App\Models\PointCollecte;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -12,10 +13,11 @@ class PointCollecteFactory extends Factory
 {
     public function definition(): array
     {
-        $ville = fake()->randomElement(array_keys(PointCollecte::VILLES));
-        [$latitude, $longitude] = PointCollecte::VILLES[$ville];
+        $ville = fake()->randomElement(['Tunis', 'Ariana', 'Ben Arous', 'Bizerte', 'Nabeul', 'Sousse', 'Monastir', 'Sfax', 'Kairouan']);
+        [$latitude, $longitude] = config('villes')[$ville];
 
         return [
+            'association_id' => Association::factory(),
             'nom' => fake()->randomElement(['Borne textile', 'Point relais', 'Local solidaire', 'Conteneur'])
                 .' '.$ville.' '.fake()->unique()->numberBetween(1, 999),
             'adresse' => fake()->numberBetween(1, 120).', '.fake()->randomElement([

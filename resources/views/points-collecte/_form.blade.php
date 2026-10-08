@@ -16,7 +16,7 @@
         <label for="ville">Ville *</label>
         <input id="ville" name="ville" type="text" value="{{ old('ville', $point->ville) }}" list="villes-connues" required>
         <datalist id="villes-connues">
-            @foreach (array_keys(\App\Models\PointCollecte::VILLES) as $ville)
+            @foreach (array_keys(config('villes')) as $ville)
                 <option value="{{ $ville }}">
             @endforeach
         </datalist>
