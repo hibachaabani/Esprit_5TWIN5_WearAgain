@@ -3,6 +3,7 @@
         ['route' => 'vetements.index', 'actif' => ['vetements.index', 'vetements.show'], 'label' => 'Parcourir'],
         ['route' => 'associations.index', 'actif' => ['associations.*'], 'label' => 'Associations'],
         ['route' => 'points-collecte.index', 'actif' => ['points-collecte.*', 'depots.*', 'tournee.*'], 'label' => 'Points de collecte'],
+        ['route' => 'reparations.index', 'actif' => ['reparations.*'], 'label' => 'Réparations'],
     ];
     if (auth()->check()) {
         $liens[] = ['route' => 'dons.index', 'actif' => ['dons.index', 'dons.show', 'dons.create', 'dons.edit'], 'label' => 'Mes dons'];

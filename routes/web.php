@@ -10,6 +10,7 @@ use App\Http\Controllers\DepotController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReparationController;
 use Illuminate\Support\Facades\Route;
 
 // Page d'accueil — 4 derniers vêtements disponibles
@@ -70,6 +71,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('depots/statut', [Admin\DepotController::class, 'changerStatutGroupe'])->name('depots.statut-groupe');
     Route::patch('depots/{depot}/statut', [Admin\DepotController::class, 'changerStatut'])->name('depots.statut');
     Route::resource('depots', Admin\DepotController::class)->only(['index', 'show', 'destroy']);
+
+    // Réparations & avis (membre 5) — back-office
+    Route::resource('reparations', Admin\ReparationController::class)->except('show');
+    Route::resource('avis', Admin\AvisController::class)->except('show');
 });
 
 Route::middleware('auth')->group(function () {
@@ -98,5 +103,10 @@ Route::middleware('auth')->group(function () {
 Route::resource('points-collecte', PointCollecteController::class)
     ->only(['index', 'show'])
     ->parameters(['points-collecte' => 'pointCollecte']);
+
+// Réparations & avis (membre 5) — front office
+Route::get('/reparations', [ReparationController::class, 'index'])->name('reparations.index');
+Route::get('/reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show');
+Route::post('/reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
 
 require __DIR__.'/auth.php';

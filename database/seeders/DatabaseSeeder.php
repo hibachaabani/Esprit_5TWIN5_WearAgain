@@ -51,5 +51,11 @@ class DatabaseSeeder extends Seeder
 
         // Points de collecte et dépôts, rattachés aux associations et comptes ci-dessus.
         $this->call(CollecteSeeder::class);
+
+        // Réparations et avis (membre 5), rattachés aux comptes existants.
+        $this->call([
+            ReparationSeeder::class,
+            AvisSeeder::class,
+        ]);
     }
 }
