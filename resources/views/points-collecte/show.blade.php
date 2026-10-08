@@ -107,10 +107,10 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const { creer, marqueur, echapper } = window.WearAgainCarte;
+    const { creer, icone, echapper } = window.WACarte;
     const position = [{{ $point->latitude }}, {{ $point->longitude }}];
-    const carte = creer('carte').setView(position, 15);
-    marqueur(position, @json($point->actif ? '#6B1A2A' : '#8C8475'))
+    const carte = creer('carte', position, 15);
+    L.marker(position, { icon: icone(@json($point->actif ? '' : 'is-ferme')) })
         .bindPopup(echapper(@json($point->nom)))
         .addTo(carte);
 });

@@ -128,14 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!etapes.length) return;
 
     const depart = @json($depart);
-    const { creer, marqueur, echapper } = window.WearAgainCarte;
+    const { creer, icone, echapper } = window.WACarte;
     const carte = creer('carte');
     const trace = [depart, ...etapes.map(e => [e.lat, e.lng])];
 
     L.polyline(trace, { color: '#8A2A3B', weight: 2, opacity: .85 }).addTo(carte);
 
     if (@json($maPosition)) {
-        marqueur(depart, '#AD7F45').bindPopup('Départ : ta position').addTo(carte);
+        L.marker(depart, { icon: icone('is-moi'), title: 'Départ' }).bindPopup('Départ : ta position').addTo(carte);
     }
 
     etapes.forEach(e => {

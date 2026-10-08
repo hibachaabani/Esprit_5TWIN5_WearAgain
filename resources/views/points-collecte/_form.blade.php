@@ -66,7 +66,7 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const { creer } = window.WearAgainCarte;
+    const { creer, icone } = window.WACarte;
     const lat = document.getElementById('latitude');
     const lng = document.getElementById('longitude');
     const depart = lat.value && lng.value ? [parseFloat(lat.value), parseFloat(lng.value)] : null;
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let repere = null;
 
     function placer(position, centrer = false) {
-        repere ??= L.marker(position, { draggable: true }).addTo(carte)
+        repere ??= L.marker(position, { draggable: true, icon: icone() }).addTo(carte)
             .on('dragend', e => placer(e.target.getLatLng()));
         repere.setLatLng(position);
         lat.value = Number(position.lat ?? position[0]).toFixed(7);

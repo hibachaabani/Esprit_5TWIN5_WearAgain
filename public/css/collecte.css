@@ -230,6 +230,9 @@ figure.viz { margin: 0; }
 .lecteur { min-height: 260px; border: 2px dashed var(--line); border-radius: var(--radius-lg); overflow: hidden; margin: 1rem 0; }
 .lecteur button { font: 600 .9rem var(--font-body); padding: .5rem 1rem; border-radius: 999px; border: 0; background: var(--maroon); color: var(--white); cursor: pointer; margin: .5rem; }
 
+/* Repère d'un point fermé ou complet (complète .map-pin de wearagain.css) */
+.map-pin.is-ferme { background: var(--muted); }
+
 /* Popups Leaflet aux couleurs du site */
 .leaflet-popup-content { font-family: var(--font-body); }
 .leaflet-popup-content a { color: var(--maroon); font-weight: 600; }

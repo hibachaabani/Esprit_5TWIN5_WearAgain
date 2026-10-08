@@ -96,19 +96,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     const points = @json($carte);
     const position = @json($position);
-    const { creer, marqueur, echapper } = window.WearAgainCarte;
+    const { creer, icone, echapper } = window.WACarte;
     const carte = creer('carte');
     const bornes = [];
 
     points.forEach(p => {
-        marqueur([p.lat, p.lng], p.ouvert ? '#6B1A2A' : '#8C8475')
+        L.marker([p.lat, p.lng], { icon: icone(p.ouvert ? '' : 'is-ferme') })
             .bindPopup(`<strong>${echapper(p.nom)}</strong><br>${echapper(p.adresse)}<br>Rempli à ${p.taux} %<br><a href="${p.url}">Voir le point</a>`)
             .addTo(carte);
         bornes.push([p.lat, p.lng]);
     });
 
     if (position) {
-        marqueur(position, '#AD7F45').bindPopup('Ta position').addTo(carte);
+        L.marker(position, { icon: icone('is-moi'), title: 'Ta position' }).bindPopup('Ta position').addTo(carte);
         bornes.push(position);
     }
 
