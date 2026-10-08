@@ -10,6 +10,8 @@ use App\Http\Controllers\DepotController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin;
+use App\Http\Controllers\ReparationController;
 use Illuminate\Support\Facades\Route;
 
 // Page d'accueil — 4 derniers vêtements disponibles
@@ -100,3 +102,17 @@ Route::resource('points-collecte', PointCollecteController::class)
     ->parameters(['points-collecte' => 'pointCollecte']);
 
 require __DIR__.'/auth.php';
+/*
+| Réparations & Avis — front office (Member 5)
+*/
+Route::get('/reparations', [ReparationController::class, 'index'])->name('reparations.index');
+Route::get('/reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show');
+Route::post('/reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
+
+/*
+| Back office — gestion des réparations et des avis (Member 5)
+*/
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::resource('reparations', Admin\ReparationController::class)->except('show');
+    Route::resource('avis', Admin\AvisController::class)->except('show');
+});
