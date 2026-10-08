@@ -48,5 +48,8 @@ class DatabaseSeeder extends Seeder
                     'association_id' => $association->id,
                 ]);
             });
+
+        // Points de collecte et dépôts, rattachés aux associations et comptes ci-dessus.
+        $this->call(CollecteSeeder::class);
     }
 }

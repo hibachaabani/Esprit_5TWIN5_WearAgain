@@ -2,6 +2,7 @@
     $liens = [
         ['route' => 'vetements.index', 'actif' => ['vetements.index', 'vetements.show'], 'label' => 'Parcourir'],
         ['route' => 'associations.index', 'actif' => ['associations.*'], 'label' => 'Associations'],
+        ['route' => 'points-collecte.index', 'actif' => ['points-collecte.*', 'depots.*', 'tournee.*'], 'label' => 'Points de collecte'],
     ];
     if (auth()->check()) {
         $liens[] = ['route' => 'dons.index', 'actif' => ['dons.index', 'dons.show', 'dons.create', 'dons.edit'], 'label' => 'Mes dons'];
@@ -65,6 +66,7 @@
                         </div>
 
                         <a href="{{ route('profile.edit') }}">Mon profil</a>
+                        <a href="{{ route('depots.index') }}">Mes dépôts</a>
                         @if ($user->association)
                             <a href="{{ route('associations.show', $user->association) }}">Mon association</a>
                             <a href="{{ route('dons.recus') }}" class="account-link-count">
@@ -73,6 +75,7 @@
                                     <span class="count-badge" aria-label="{{ $donsATraiter }} à traiter">{{ $donsATraiter }}</span>
                                 @endif
                             </a>
+                            <a href="{{ route('depots.recus') }}">Dépôts reçus</a>
                         @endif
                         <a href="{{ route('admin.associations.index') }}">Back-office</a>
 

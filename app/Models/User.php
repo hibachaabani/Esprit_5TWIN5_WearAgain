@@ -55,4 +55,9 @@ class User extends Authenticatable
         return $this->belongsToMany(Vetement::class, 'favoris', 'user_id', 'vetement_id')
                     ->withTimestamps();
     }
+
+    public function depots(): HasMany
+    {
+        return $this->hasMany(Depot::class);
+    }
 }
