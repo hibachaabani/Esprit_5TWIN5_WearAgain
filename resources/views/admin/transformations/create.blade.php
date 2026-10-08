@@ -1,19 +1,19 @@
-@extends('layouts.backoffice')
+@extends('layouts.admin')
 
 @section('title', 'Nouvelle transformation')
 
 @section('content')
-    <p class="page-sub">Renseignez les détails de la transformation à proposer.</p>
+<div class="section-head">
+    <h1 class="h2">Nouvelle transformation</h1>
+    <a href="{{ route('admin.transformations.index') }}" class="btn btn-ghost small">← Toutes les transformations</a>
+</div>
 
-    <div class="form-card">
-        <form method="POST" action="{{ route('admin.transformations.store') }}" class="form" enctype="multipart/form-data" novalidate>
-            @csrf
-            @include('admin.transformations._form')
-
-            <div class="form-actions">
-                <button class="btn btn-primary"><x-icon name="check" /> Enregistrer</button>
-                <a href="{{ route('admin.transformations.index') }}" class="btn btn-outline">Annuler</a>
-            </div>
-        </form>
+<form method="POST" action="{{ route('admin.transformations.store') }}" enctype="multipart/form-data" novalidate>
+    @csrf
+    @include('admin.transformations._form')
+    <div style="margin-top:1rem">
+        <button class="btn btn-primary small">Enregistrer</button>
+        <a href="{{ route('admin.transformations.index') }}" class="btn btn-ghost small">Annuler</a>
     </div>
+</form>
 @endsection

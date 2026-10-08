@@ -61,6 +61,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ReparationSeeder::class,
             AvisSeeder::class,
+            AtelierTransformationSeeder::class,
         ]);
     }
 }

@@ -16,6 +16,8 @@
 
             <nav class="admin-nav">
                 <a href="{{ route('admin.associations.index') }}" @class(['active' => request()->routeIs('admin.associations.*')])>Associations</a>
+                <a href="{{ route('admin.ateliers.index') }}" @class(['active' => request()->routeIs('admin.ateliers.*')])>Ateliers</a>
+                <a href="{{ route('admin.transformations.index') }}" @class(['active' => request()->routeIs('admin.transformations.*')])>Transformations</a>
                 <a href="{{ route('admin.dons.index') }}" @class(['active' => request()->routeIs('admin.dons.*')])>Dons</a>
                 <a href="{{ route('admin.vetements.index') }}" @class(['active' => request()->routeIs('admin.vetements.*')])>
                     Vêtements

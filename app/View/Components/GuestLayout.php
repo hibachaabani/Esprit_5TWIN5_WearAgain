@@ -7,6 +7,11 @@ use Illuminate\View\View;
 
 class GuestLayout extends Component
 {
+    /** Titre de la page, affiché dans l'onglet du navigateur. */
+    public function __construct(public ?string $title = null)
+    {
+    }
+
     /**
      * Get the view / contents that represents the component.
      */
