@@ -120,14 +120,3 @@
     <input id="numero_agrement" name="numero_agrement" type="text" placeholder="AGR-2026-0001" value="{{ old('numero_agrement', $association->numero_agrement ?? '') }}" required>
     @error('numero_agrement') <p class="error">{{ $message }}</p> @enderror
 </div>
-
-<div class="field">
-    <label for="user_id">Compte utilisateur lié</label>
-    <select id="user_id" name="user_id">
-        <option value="">— Aucun —</option>
-        @foreach ($users as $user)
-            <option value="{{ $user->id }}" @selected((int) old('user_id', $association->user_id ?? null) === $user->id)>{{ $user->name }} ({{ $user->email }})</option>
-        @endforeach
-    </select>
-    @error('user_id') <p class="error">{{ $message }}</p> @enderror
-</div>

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Association;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -47,17 +46,25 @@ class AssociationController extends Controller
     }
 
     /** Affiche le formulaire de création. */
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
-        $users = User::orderBy('name')->get();
+        if ($association = $request->user()->association) {
+            return redirect()->route('associations.show', $association)
+                ->with('status', 'Votre compte gère déjà cette association.');
+        }
 
-        return view('associations.create', compact('users'));
+        return view('associations.create');
     }
 
     /** Valide et enregistre une nouvelle association. */
     public function store(Request $request): RedirectResponse
     {
-        $association = Association::create($this->validated($request));
+        if ($association = $request->user()->association) {
+            return redirect()->route('associations.show', $association)
+                ->with('status', 'Votre compte gère déjà cette association.');
+        }
+
+        $association = $request->user()->association()->create($this->validated($request));
 
         return redirect()
             ->route('associations.show', $association)
@@ -73,16 +80,18 @@ class AssociationController extends Controller
     }
 
     /** Affiche le formulaire de modification pré-rempli. */
-    public function edit(Association $association): View
+    public function edit(Request $request, Association $association): View
     {
-        $users = User::orderBy('name')->get();
+        abort_unless($association->estGereePar($request->user()), 403);
 
-        return view('associations.edit', compact('association', 'users'));
+        return view('associations.edit', compact('association'));
     }
 
     /** Valide et enregistre les modifications. */
     public function update(Request $request, Association $association): RedirectResponse
     {
+        abort_unless($association->estGereePar($request->user()), 403);
+
         $association->update($this->validated($request, $association));
 
         return redirect()
@@ -91,8 +100,10 @@ class AssociationController extends Controller
     }
 
     /** Supprime une association (et ses dons, par cascade). */
-    public function destroy(Association $association): RedirectResponse
+    public function destroy(Request $request, Association $association): RedirectResponse
     {
+        abort_unless($association->estGereePar($request->user()), 403);
+
         $association->delete();
 
         return redirect()
@@ -104,7 +115,6 @@ class AssociationController extends Controller
     private function validated(Request $request, ?Association $association = null): array
     {
         $data = $request->validate([
-            'user_id' => ['nullable', 'exists:users,id', 'unique:associations,user_id,'.($association?->id).',id'],
             'nom' => ['required', 'string', 'max:255'],
             'mission' => ['nullable', 'string'],
             'categories' => ['nullable', 'array'],

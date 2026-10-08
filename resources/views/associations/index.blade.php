@@ -13,7 +13,11 @@
             <h1 class="h2">Associations partenaires</h1>
             <p class="lead">Donnez une seconde vie à vos vêtements en les confiant à une association.</p>
         </div>
-        <a href="{{ route('associations.create') }}" class="btn btn-primary">Inscrire une association</a>
+        @if (auth()->user()?->association)
+            <a href="{{ route('associations.show', auth()->user()->association) }}" class="btn btn-ghost">Mon association</a>
+        @else
+            <a href="{{ route('associations.create') }}" class="btn btn-primary">Inscrire mon association</a>
+        @endif
     </div>
 
     <div class="browse">
@@ -114,7 +118,9 @@
                             <p class="small muted">{{ $association->dons_count }} don(s) reçu(s)</p>
                             <div class="hero-actions">
                                 <a href="{{ route('associations.show', $association) }}" class="btn btn-ghost">Voir</a>
-                                <a href="{{ route('dons.create', ['association_id' => $association->id]) }}" class="btn btn-primary">Faire un don</a>
+                                @if ($association->peutRecevoirDesDons() && ! $association->estGereePar(auth()->user()))
+                                    <a href="{{ route('dons.create', ['association_id' => $association->id]) }}" class="btn btn-primary">Faire un don</a>
+                                @endif
                             </div>
                         </article>
                     @endforeach
@@ -130,7 +136,9 @@
                         <a href="{{ route('associations.index') }}" class="btn btn-primary">Voir toutes les associations</a>
                     @else
                         <p>Aucune association pour le moment.</p>
-                        <a href="{{ route('associations.create') }}" class="btn btn-primary">Inscrire une association</a>
+                        @unless (auth()->user()?->association)
+                            <a href="{{ route('associations.create') }}" class="btn btn-primary">Inscrire mon association</a>
+                        @endunless
                     @endif
                 </div>
             @endif

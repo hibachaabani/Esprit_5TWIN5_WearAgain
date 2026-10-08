@@ -58,6 +58,24 @@ class Association extends Model
         return $this->hasMany(Don::class);
     }
 
+    /** Vrai si l'utilisateur est le compte qui gère cette association. */
+    public function estGereePar(?User $user): bool
+    {
+        return $user !== null && $this->user_id === $user->id;
+    }
+
+    /** Une association peut recevoir des dons si elle est vérifiée et gérée par un compte. */
+    public function peutRecevoirDesDons(): bool
+    {
+        return $this->verifiee && $this->user_id !== null;
+    }
+
+    /** Associations qui peuvent recevoir des dons (vérifiées et gérées par un compte). */
+    public function scopeRecoitDesDons(Builder $query): Builder
+    {
+        return $query->where('verifiee', true)->whereNotNull('user_id');
+    }
+
     public function hasPosition(): bool
     {
         return $this->latitude !== null && $this->longitude !== null;
