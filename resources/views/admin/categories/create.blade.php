@@ -1,13 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Nouvelle catégorie')
 
 @section('content')
-<div class="container section narrow">
-    <a href="{{ route('categories.index') }}" class="small">← Retour aux catégories</a>
+<div class="narrow">
+    <a href="{{ route('admin.categories.index') }}" class="small">← Retour aux catégories</a>
     <h1 style="margin-top:.5rem">Nouvelle catégorie</h1>
 
-    <form method="POST" action="{{ route('categories.store') }}" class="form">
+    <form method="POST" action="{{ route('admin.categories.store') }}" class="form">
         @csrf
 
         <div class="field">

@@ -1,13 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Modifier — '.$categorie->nom)
 
 @section('content')
-<div class="container section narrow">
-    <a href="{{ route('categories.index') }}" class="small">← Retour aux catégories</a>
+<div class="narrow">
+    <a href="{{ route('admin.categories.index') }}" class="small">← Retour aux catégories</a>
     <h1 style="margin-top:.5rem">Modifier « {{ $categorie->nom }} »</h1>
 
-    <form method="POST" action="{{ route('categories.update', $categorie) }}" class="form">
+    <form method="POST" action="{{ route('admin.categories.update', $categorie) }}" class="form">
         @csrf @method('PUT')
 
         <div class="field">
@@ -30,7 +30,7 @@
 
         <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem">
             <button type="submit" class="btn btn-primary btn-lg">Enregistrer</button>
-            <a href="{{ route('categories.index') }}" class="btn btn-ghost btn-lg">Annuler</a>
+            <a href="{{ route('admin.categories.index') }}" class="btn btn-ghost btn-lg">Annuler</a>
         </div>
     </form>
 </div>

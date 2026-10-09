@@ -5,7 +5,7 @@
 @section('content')
 <div class="section-head">
     <h1 class="h2">Catégories</h1>
-    <a href="{{ route('categories.create') }}" class="btn btn-primary small">+ Nouvelle catégorie</a>
+    <a href="{{ route('admin.categories.create') }}" class="btn btn-primary small">+ Nouvelle catégorie</a>
 </div>
 
 <p class="small muted" style="margin-bottom:1rem">
@@ -35,15 +35,14 @@
                     <td>{{ $categorie->nom }}</td>
                     <td>{{ $categorie->vetements_count }}</td>
                     <td>
-                        <form method="POST" action="{{ route('admin.categories.active', $categorie) }}">
-                            @csrf @method('PATCH')
-                            <button type="submit" class="btn btn-ghost small">
-                                {{ $categorie->active ? '✓ Active' : '✗ Inactive' }}
-                            </button>
-                        </form>
+                        {{-- Formulaire déclaré hors du tableau : un formulaire imbriqué dans celui de l'ordre serait ignoré. --}}
+                        <button type="submit" form="activer-categorie-{{ $categorie->id }}" class="btn btn-ghost small">
+                            {{ $categorie->active ? '✓ Active' : '✗ Inactive' }}
+                        </button>
                     </td>
                     <td>
-                        <a href="{{ route('categories.edit', $categorie) }}" class="btn btn-ghost small">Modifier</a>
+                        <a href="{{ route('admin.categories.edit', $categorie) }}" class="btn btn-ghost small">Modifier</a>
+                        <button type="submit" form="supprimer-categorie-{{ $categorie->id }}" class="btn btn-ghost small" style="color:#B3261E;border-color:#B3261E">Supprimer</button>
                     </td>
                 </tr>
             @endforeach
@@ -55,6 +54,17 @@
 
     <button type="submit" class="btn btn-primary" style="margin-top:1rem">Enregistrer l'ordre</button>
 </form>
+@foreach ($categories as $categorie)
+    <form method="POST" action="{{ route('admin.categories.active', $categorie) }}" id="activer-categorie-{{ $categorie->id }}" hidden>
+        @csrf
+        @method('PATCH')
+    </form>
+    <form method="POST" action="{{ route('admin.categories.destroy', $categorie) }}" id="supprimer-categorie-{{ $categorie->id }}"
+          onsubmit="return confirm('Supprimer la catégorie « {{ $categorie->nom }} » ?')" hidden>
+        @csrf
+        @method('DELETE')
+    </form>
+@endforeach
 @endsection
 
 @push('scripts')
