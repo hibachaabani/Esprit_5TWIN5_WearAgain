@@ -24,9 +24,6 @@ class CollecteSeeder extends Seeder
         ['nom' => 'Borne textile Bizerte Vieux Port', 'adresse' => 'Quai Tarak Ibn Ziad', 'ville' => 'Bizerte', 'latitude' => 37.2720, 'longitude' => 9.8730, 'horaires' => 'Fermé pour travaux', 'capacite' => 40, 'actif' => false],
     ];
 
-    /** Points confiés à « Les Mains Solidaires », l'association du compte de démo association@wearagain.tn. */
-    private const POINTS_DEMO = ['Borne textile Sousse Centre', 'Conteneur Monastir Marina', 'Conteneur Ennasr', 'Local solidaire Nabeul', 'Borne textile Bizerte Vieux Port'];
-
     public function run(): void
     {
         // Relançable sans doublons (db:seed) : la collecte n'est créée qu'une fois.
@@ -34,8 +31,9 @@ class CollecteSeeder extends Seeder
             return;
         }
 
+        // Tous les points sont gérés par « Les Mains Solidaires » (compte association@wearagain.tn) :
+        // quel que soit le point choisi par le donateur, le dépôt arrive dans l'espace de cette association.
         $associationDemo = Association::where('numero_agrement', 'AGR-2026-0042')->first() ?? Association::factory()->create();
-        $autresAssociations = Association::whereKeyNot($associationDemo->id)->get();
 
         // Le donateur de démo (donateur@wearagain.tn) dépose aussi des vêtements.
         $particuliers = User::factory(7)->create();
@@ -44,11 +42,7 @@ class CollecteSeeder extends Seeder
         }
 
         foreach (self::POINTS as $donnees) {
-            $association = in_array($donnees['nom'], self::POINTS_DEMO, true) || $autresAssociations->isEmpty()
-                ? $associationDemo
-                : $autresAssociations->random();
-
-            $point = PointCollecte::factory()->for($association)->create($donnees);
+            $point = PointCollecte::factory()->for($associationDemo)->create($donnees);
 
             // Des dépôts à chaque étape du parcours, rattachés aux particuliers créés plus haut.
             $repartition = $point->actif
