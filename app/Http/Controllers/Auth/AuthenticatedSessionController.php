@@ -24,7 +24,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('home', absolute: false));
+        // Chacun arrive sur « Mon espace » (l'administrateur sur le back-office).
+        return redirect()->intended(route('espace', absolute: false));
     }
 
     /** Déconnecte l'utilisateur et vide sa session. */

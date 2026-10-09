@@ -1,0 +1,49 @@
+/* WearAgain — tableaux de bord « Mon espace » (particulier, association) et back-office */
+
+.espace-intro { max-width: 62ch; }
+.espace-etapes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; list-style: none; margin: 1.5rem 0 2.5rem; padding: 0; counter-reset: etape; }
+.espace-etapes li { counter-increment: etape; padding: 1rem 1.1rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); font-size: .92rem; }
+.espace-etapes li::before { content: counter(etape); display: grid; place-items: center; width: 1.8rem; height: 1.8rem; margin-bottom: .5rem; border-radius: 50%; background: var(--maroon); color: var(--white); font-weight: 700; }
+.espace-etapes strong { display: block; margin-bottom: .2rem; }
+
+.espace-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; }
+.espace-card { display: flex; flex-direction: column; gap: .5rem; padding: 1.4rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.espace-card h2, .espace-card h3 { font: 700 1.2rem var(--font-display); margin: 0; }
+.espace-card p { margin: 0; color: var(--muted); font-size: .92rem; }
+.espace-chiffre { font: 600 2rem/1 var(--font-body); color: var(--ink); }
+.espace-chiffre small { font-size: .9rem; font-weight: 500; color: var(--muted); margin-left: .35rem; }
+.espace-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: auto; padding-top: .75rem; }
+.espace-actions .btn { padding: .45rem .9rem; font-size: .88rem; }
+
+.espace-section { margin-top: 2.75rem; }
+.espace-section > .section-head { margin-bottom: 1rem; }
+
+.badge-etat { display: inline-block; padding: .2rem .65rem; border-radius: 999px; font: 600 .78rem var(--font-body); }
+.badge-ok { background: #DDEEE2; color: #2B6340; }
+.badge-attente { background: #F6EBD9; color: #7A5527; }
+
+.table-simple { width: 100%; border-collapse: collapse; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; font-size: .95rem; }
+.table-simple th, .table-simple td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table-simple th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: #FBF8F2; }
+.table-simple tr:last-child td { border-bottom: 0; }
+.table-simple .actions-ligne { display: flex; flex-wrap: wrap; gap: .4rem; }
+.table-simple .actions-ligne .btn, .table-simple .actions-ligne button { padding: .35rem .75rem; font-size: .82rem; }
+.table-simple form { margin: 0; }
+.btn-supprimer { border-color: #B3261E; color: #B3261E; background: transparent; }
+.btn-supprimer:hover { background: #B3261E; color: var(--white); }
+
+/* Back-office : cartes du tableau de bord */
+.admin-cartes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.admin-carte { display: block; padding: 1.1rem 1.25rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); color: var(--ink); text-decoration: none; transition: border-color .15s; }
+.admin-carte:hover { border-color: var(--maroon); }
+.admin-carte strong { display: block; font: 600 1.9rem/1.1 var(--font-body); }
+.admin-carte span { color: var(--muted); font-size: .9rem; }
+.admin-carte em { display: block; margin-top: .35rem; font-style: normal; font-size: .82rem; color: var(--maroon); font-weight: 600; }
+
+@media (max-width: 900px) {
+  .espace-etapes { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .espace-etapes { grid-template-columns: 1fr; }
+  .table-simple th:nth-child(3), .table-simple td:nth-child(3) { display: none; }
+}

@@ -8,6 +8,7 @@ use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\DonController;
 use App\Http\Controllers\EspaceAtelierController;
+use App\Http\Controllers\EspaceController;
 use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
@@ -40,6 +41,9 @@ Route::get('/', function () {
 | Tout compte connecté
 */
 Route::middleware('auth')->group(function () {
+    // Page d'arrivée après connexion : le tableau de bord du rôle.
+    Route::get('mon-espace', [EspaceController::class, 'index'])->name('espace');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -59,6 +63,7 @@ Route::middleware('auth')->group(function () {
 | Particulier : vêtements, dons, dépôts, demandes de réparation / transformation, avis
 */
 Route::middleware('role:particulier')->group(function () {
+    Route::get('mes-annonces', [VetementController::class, 'mes'])->name('vetements.mes');
     Route::resource('vetements', VetementController::class)->only(['create', 'store']);
 
     Route::resource('dons', DonController::class)->except('show');
@@ -69,6 +74,8 @@ Route::middleware('role:particulier')->group(function () {
     Route::post('reparations', [ReparationController::class, 'store'])->name('reparations.store');
     Route::delete('reparations/{reparation}', [ReparationController::class, 'destroy'])->name('reparations.destroy');
     Route::post('reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
+    Route::get('avis/{avis}/modifier', [AvisController::class, 'edit'])->name('avis.edit');
+    Route::put('avis/{avis}', [AvisController::class, 'update'])->name('avis.update');
     Route::delete('avis/{avis}', [AvisController::class, 'destroy'])->name('avis.destroy');
 
     Route::get('mes-transformations', [TransformationController::class, 'mes'])->name('transformations.mes');
@@ -108,14 +115,6 @@ Route::middleware('role:atelier')->prefix('mon-atelier')->name('mon-atelier.')->
 });
 
 /*
-| Catégories : seul l'admin les crée, modifie et supprime
-*/
-Route::resource('categories', CategorieController::class)
-    ->except(['index', 'show'])
-    ->parameters(['categories' => 'categorie'])
-    ->middleware('role:admin');
-
-/*
 | Public (visiteurs compris)
 */
 Route::resource('vetements', VetementController::class)->only(['index', 'show']);
@@ -134,6 +133,9 @@ Route::get('transformations/{transformation}', [TransformationController::class,
 | Back-office : administrateur uniquement
 */
 Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
+    Route::get('/', Admin\TableauDeBordController::class)->name('dashboard');
+    Route::get('utilisateurs', [Admin\UtilisateurController::class, 'index'])->name('utilisateurs.index');
+
     Route::resource('associations', Admin\AssociationController::class)->only('index');
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
@@ -142,7 +144,7 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     // Vêtements et catégories (membre 1)
     Route::resource('vetements', Admin\VetementController::class)->only(['index', 'show', 'destroy']);
     Route::patch('vetements/{vetement}/signalement', [Admin\VetementController::class, 'toggleSignalement'])->name('vetements.signalement');
-    Route::resource('categories', Admin\CategorieController::class)->only('index');
+    Route::resource('categories', Admin\CategorieController::class)->except('show')->parameters(['categories' => 'categorie']);
     Route::patch('categories/{categorie}/active', [Admin\CategorieController::class, 'toggleActive'])->name('categories.active');
     Route::post('categories/reorder', [Admin\CategorieController::class, 'reorder'])->name('categories.reorder');
 

@@ -17,6 +17,8 @@
 
     if ($user?->estParticulier()) {
         $espace = [
+            $lien('espace', 'Mon espace', ['espace']),
+            $lien('vetements.mes', 'Mes annonces', ['vetements.mes', 'vetements.create', 'vetements.edit']),
             $lien('dons.index', 'Mes dons', ['dons.index', 'dons.create', 'dons.edit']),
             $lien('depots.index', 'Mes dépôts', ['depots.index', 'depots.create', 'depots.edit']),
             $lien('reparations.index', 'Mes réparations', ['reparations.index', 'reparations.create']),
@@ -24,16 +26,16 @@
             $lien('favoris.index', 'Mes favoris', ['favoris.index']),
         ];
         $liens[] = $espace[0];
-        $liens[] = $espace[2];
     } elseif ($user?->estAssociation()) {
         $association = $user->association;
         $donsATraiter = $association?->dons()->where('statut', 'propose')->count() ?? 0;
         $espace = array_values(array_filter([
-            $association ? $lien('associations.show', 'Mon association', ['associations.edit'], [$association]) : null,
+            $lien('espace', 'Mon espace', ['espace'], [], $donsATraiter),
+            $association ? $lien('associations.show', 'Ma page publique', [], [$association]) : null,
             $lien('dons.recus', 'Dons reçus', ['dons.recus'], [], $donsATraiter),
             $lien('depots.recus', 'Dépôts reçus', ['depots.recus', 'depots.reception', 'tournee.*', 'points-collecte.create', 'points-collecte.edit']),
         ]));
-        $liens[] = $lien('dons.recus', 'Dons reçus', ['dons.recus'], [], $donsATraiter);
+        $liens[] = $espace[0];
     } elseif ($user?->estAtelier()) {
         $atelierConnecte = $user->atelier;
         $demandesATraiter = $atelierConnecte
@@ -47,8 +49,8 @@
         $liens[] = $espace[0];
     } elseif ($user?->isAdmin()) {
         $espace = [
-            $lien('admin.associations.index', 'Back-office', ['admin.*']),
-            $lien('categories.create', '+ Catégorie', ['categories.create']),
+            $lien('admin.dashboard', 'Back-office', ['admin.*']),
+            $lien('admin.categories.create', '+ Catégorie', ['admin.categories.create']),
         ];
         $liens[] = $espace[0];
     }

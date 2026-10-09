@@ -47,12 +47,60 @@
     @endif
 </section>
 
-<section class="container section steps">
-    <h2>Comment ça marche</h2>
-    <ol>
-        <li><strong>Prends une photo</strong><span>Lumière du jour, fond simple, l'article à plat.</span></li>
-        <li><strong>Décris ton article</strong><span>Taille, matière, état — plus c'est précis, plus ça part vite.</span></li>
-        <li><strong>Rencontre l'acheteur</strong><span>Remise en main propre ou envoi, à vous de voir.</span></li>
-    </ol>
+<section class="container section">
+    <h2>Comment ça marche ?</h2>
+    <p class="lead">Trois types de comptes travaillent ensemble pour donner une seconde vie aux vêtements. Choisissez le vôtre à l'inscription.</p>
+
+    <div class="espace-grid" style="margin-top: 1.5rem">
+        <article class="espace-card">
+            <h3>Particulier</h3>
+            <p>Vous publiez vos vêtements, puis vous choisissez : les donner à une association, les déposer dans un point de collecte, ou les faire réparer ou transformer par un atelier.</p>
+            <div class="espace-actions">
+                @auth
+                    @if (auth()->user()->estParticulier())
+                        <a href="{{ route('espace') }}" class="btn btn-primary">Mon espace</a>
+                    @endif
+                @else
+                    <a href="{{ route('register') }}" class="btn btn-primary">Créer un compte</a>
+                @endauth
+                <a href="{{ route('vetements.index') }}" class="btn btn-ghost">Voir les vêtements</a>
+            </div>
+        </article>
+
+        <article class="espace-card">
+            <h3>Association</h3>
+            <p>Une fois vérifiée par l'administrateur, elle reçoit les dons de vêtements et gère ses points de collecte, où elle réceptionne puis trie les dépôts.</p>
+            <div class="espace-actions">
+                @auth
+                    @if (auth()->user()->estAssociation())
+                        <a href="{{ route('espace') }}" class="btn btn-primary">Mon espace</a>
+                    @endif
+                @else
+                    <a href="{{ route('register') }}" class="btn btn-primary">Inscrire mon association</a>
+                @endauth
+                <a href="{{ route('associations.index') }}" class="btn btn-ghost">Voir les associations</a>
+            </div>
+        </article>
+
+        <article class="espace-card">
+            <h3>Atelier</h3>
+            <p>Couturier ou créateur, il reçoit les demandes de réparation et de transformation, propose un devis ou un prix et fait avancer chaque demande jusqu'au bout.</p>
+            <div class="espace-actions">
+                @auth
+                    @if (auth()->user()->estAtelier())
+                        <a href="{{ route('mon-atelier.index') }}" class="btn btn-primary">Mon atelier</a>
+                    @endif
+                @else
+                    <a href="{{ route('register') }}" class="btn btn-primary">Inscrire mon atelier</a>
+                @endauth
+                <a href="{{ route('ateliers.index') }}" class="btn btn-ghost">Voir les ateliers</a>
+            </div>
+        </article>
+    </div>
+    <p class="small muted" style="margin-top: 1rem">L'administrateur, lui, supervise la plateforme depuis le back-office : il vérifie les associations, modère les annonces et les avis, et gère les catégories.</p>
 </section>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/espaces.css') }}">
+@endpush

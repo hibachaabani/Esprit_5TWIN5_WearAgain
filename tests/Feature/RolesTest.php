@@ -35,7 +35,7 @@ class RolesTest extends TestCase
 
     public function test_inscription_d_un_particulier(): void
     {
-        $this->post('/register', $this->inscription(['type' => 'particulier']))->assertRedirect(route('home'));
+        $this->post('/register', $this->inscription(['type' => 'particulier']))->assertRedirect(route('espace'));
 
         $this->assertSame('particulier', User::firstWhere('email', 'nouveau@example.com')->role);
     }
@@ -137,19 +137,39 @@ class RolesTest extends TestCase
         $this->assertSame('atelier', $futurGerant->fresh()->role);
     }
 
-    /* ----- Catégories : gérées par l'admin seulement ----- */
+    /* ----- Catégories : gérées par l'admin, dans le back-office ----- */
 
     public function test_seul_l_admin_gere_les_categories(): void
     {
         $categorie = Categorie::create(['nom' => 'Robes']);
 
-        $this->get(route('categories.create'))->assertRedirect(route('login'));
-        $this->actingAs(User::factory()->create())->post(route('categories.store'), ['nom' => 'Pirate'])->assertForbidden();
-        $this->actingAs(User::factory()->create())->delete(route('categories.destroy', $categorie))->assertForbidden();
+        $this->get(route('admin.categories.create'))->assertRedirect(route('login'));
+        $this->actingAs(User::factory()->create())->post(route('admin.categories.store'), ['nom' => 'Pirate'])->assertForbidden();
+        $this->actingAs(User::factory()->create())->delete(route('admin.categories.destroy', $categorie))->assertForbidden();
         $this->assertModelExists($categorie);
 
-        $this->get(route('categories.index'))->assertOk()->assertSee('Robes')->assertDontSee('Nouvelle catégorie');
-        $this->enAdmin()->get(route('categories.index'))->assertSee('Nouvelle catégorie');
+        // Le front ne sert plus qu'à consulter.
+        $this->get('/categories/create')->assertNotFound();
+        $this->get(route('categories.index'))->assertOk()->assertSee('Robes')->assertDontSee('Gérer dans le back-office');
+    }
+
+    public function test_crud_des_categories_dans_le_back_office(): void
+    {
+        $this->enAdmin()->get(route('admin.categories.create'))->assertOk();
+        $this->enAdmin()->post(route('admin.categories.store'), ['nom' => 'Manteaux', 'icone' => '🧥'])
+            ->assertRedirect(route('admin.categories.index'));
+        $categorie = Categorie::firstWhere('nom', 'Manteaux');
+
+        $this->enAdmin()->get(route('admin.categories.edit', $categorie))->assertOk()->assertSee('value="Manteaux"', false);
+        $this->enAdmin()->put(route('admin.categories.update', $categorie), ['nom' => 'Manteaux et vestes'])
+            ->assertRedirect(route('admin.categories.index'));
+        $this->assertSame('Manteaux et vestes', $categorie->fresh()->nom);
+
+        $this->enAdmin()->post(route('admin.categories.store'), ['nom' => 'Manteaux et vestes'])
+            ->assertSessionHasErrors(['nom' => 'Une catégorie porte déjà ce nom.']);
+
+        $this->enAdmin()->delete(route('admin.categories.destroy', $categorie))->assertRedirect(route('admin.categories.index'));
+        $this->assertModelMissing($categorie);
     }
 
     /* ----- Vêtements : seul le propriétaire (ou l'admin) gère son annonce ----- */
@@ -166,7 +186,10 @@ class RolesTest extends TestCase
         $this->assertModelExists($vetement);
 
         $this->actingAs($proprietaire)->get(route('vetements.edit', $vetement))->assertOk();
-        $this->enAdmin()->delete(route('vetements.destroy', $vetement))->assertRedirect(route('vetements.index'));
+
+        // L'administrateur modère depuis le back-office, pas depuis les pages du particulier.
+        $this->enAdmin()->get(route('vetements.edit', $vetement))->assertForbidden();
+        $this->enAdmin()->delete(route('admin.vetements.destroy', $vetement))->assertRedirect();
         $this->assertModelMissing($vetement);
     }
 

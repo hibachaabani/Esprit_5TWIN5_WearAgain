@@ -77,11 +77,12 @@ class RegisteredUserController extends Controller
 
         if ($user->association) {
             return redirect()
-                ->route('associations.show', $user->association)
+                ->route('espace')
                 ->with('status', 'Bienvenue ! Votre association pourra recevoir des dons une fois vérifiée par notre équipe.');
         }
 
-        return redirect(route('home', absolute: false))
+        return redirect()
+            ->route('espace')
             ->with('status', "Bienvenue {$user->name}, votre compte est créé.");
     }
 }

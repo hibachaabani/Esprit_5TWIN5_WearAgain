@@ -54,6 +54,9 @@ class DatabaseSeeder extends Seeder
                         'donateur_id' => User::where('role', 'particulier')->inRandomOrder()->value('id'),
                     ]);
                 });
+
+            // Une association attend toujours sa vérification : l'admin peut montrer la validation.
+            Association::latest('id')->first()->update(['verifiee' => false]);
         }
 
         // Ordre important : les réparations et avis s'appuient sur les ateliers et vêtements.
