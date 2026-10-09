@@ -50,6 +50,15 @@ Mot de passe commun : **Wearagain2026**
 | Atelier | `atelier@wearagain.tn` | « Atelier Éco-Couture » : demandes reçues, devis, statut, photo du résultat, fiche de l'atelier |
 | Admin | `admin@wearagain.tn` | back-office complet (`/admin`) |
 
+## Comment utiliser l'application
+
+Après la connexion, chacun arrive sur **« Mon espace »** (lien en haut de chaque page), qui rassemble ses actions :
+
+- **Particulier** : publier ses vêtements (« Mes annonces » : ajouter, voir, modifier, supprimer), puis les **donner** à une association, les **déposer** dans un point de collecte, ou demander leur **réparation** ou leur **transformation** à un atelier. Chaque demande a un statut ; à la fin d'une réparation, il note l'atelier (avis modifiable et supprimable).
+- **Association** : « Mon espace » suit 4 étapes. ① Sa fiche (voir, modifier, supprimer). ② L'admin la vérifie. ③ Ses points de collecte (ajouter, voir, modifier, supprimer). ④ Elle traite les dons reçus (accepter, refuser, remis) et les dépôts reçus (reçu, trié), scanne les bons de dépôt et planifie sa tournée.
+- **Atelier** : « Mon atelier » liste les demandes reçues. Il fixe le devis, le rendez-vous ou le prix, fait avancer le statut et ajoute la photo du résultat ; il modifie aussi la fiche de son atelier.
+- **Admin** : il n'utilise que le **back-office** (`/admin`), où il arrive directement. On y trouve un tableau de bord par module, les utilisateurs par rôle, la vérification des associations, la modération des vêtements et des avis, le CRUD des catégories, des ateliers, des transformations et des réparations, et le suivi de la collecte.
+
 ## Rôles et droits
 
 | Action | Visiteur | Particulier | Association | Atelier | Admin |
@@ -60,7 +69,7 @@ Mot de passe commun : **Wearagain2026**
 | Demander une réparation / une transformation, laisser un avis | | ✔ | | | |
 | Recevoir les dons, gérer ses points de collecte et les dépôts reçus | | | ✔ | | |
 | Traiter les réparations et transformations reçues, gérer sa fiche | | | | ✔ | |
-| Catégories (création, modification, suppression) | | | | | ✔ |
+| Catégories (CRUD dans le back-office) | | | | | ✔ |
 | Back-office `/admin` | | | | | ✔ |
 
 Mise en œuvre : middleware `role:…` (`app/Http/Middleware/VerifierRole.php`), gate `admin`, directive Blade `@particulier`, et des contrôles de propriété dans les contrôleurs (on ne modifie que ses propres annonces, dons, dépôts, demandes…). Le rôle est choisi à l'inscription (particulier, association ou atelier) et n'est jamais rempli depuis un formulaire.
@@ -79,7 +88,7 @@ Mise en œuvre : middleware `role:…` (`app/Http/Middleware/VerifierRole.php`),
 php artisan test
 ```
 
-119 tests sur une base SQLite en mémoire : authentification, rôles et droits d'accès, CRUD et validation de chaque module, parcours des dépôts, réparations, transformations et avis.
+128 tests sur une base SQLite en mémoire : authentification, rôles et droits d'accès, CRUD et validation de chaque module, parcours des dépôts, réparations, transformations et avis.
 
 ## Commandes utiles
 
