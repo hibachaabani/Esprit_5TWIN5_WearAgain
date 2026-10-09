@@ -202,7 +202,7 @@ class DepotController extends Controller
     private function listes(Request $request): array
     {
         return [
-            'points' => PointCollecte::withCount('depotsActifs')->orderBy('ville')->orderBy('nom')->get(),
+            'points' => PointCollecte::with('association:id,nom')->withCount('depotsActifs')->orderBy('ville')->orderBy('nom')->get(),
             'vetements' => Vetement::where('user_id', $request->user()->id)->orderBy('titre')->get(['id', 'titre']),
         ];
     }

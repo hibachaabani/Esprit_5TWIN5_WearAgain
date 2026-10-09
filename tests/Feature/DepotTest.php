@@ -59,6 +59,17 @@ class DepotTest extends TestCase
             ->assertDontSee('name="user_id"', false);
     }
 
+    public function test_le_formulaire_indique_l_association_qui_gere_chaque_point(): void
+    {
+        $association = Association::factory()->create(['nom' => 'Les Mains Solidaires']);
+        PointCollecte::factory()->for($association)->create(['nom' => 'Conteneur Monastir Marina']);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('depots.create'))
+            ->assertOk()
+            ->assertSee('Conteneur Monastir Marina · Les Mains Solidaires');
+    }
+
     public function test_declarer_un_depot_au_nom_du_compte_connecte(): void
     {
         $particulier = User::factory()->create();
@@ -352,6 +363,8 @@ class DepotTest extends TestCase
 
         $this->assertSame(10, PointCollecte::count());
         $this->assertSame(0, PointCollecte::whereNull('association_id')->count());
+        // Une seule association (celle du compte de démo) gère tous les points : chaque dépôt arrive dans son espace.
+        $this->assertSame(1, PointCollecte::distinct()->count('association_id'));
         $this->assertGreaterThan(10, Depot::count());
         $this->assertTrue(PointCollecte::where('nom', 'Conteneur Ennasr')->firstOrFail()->estComplet());
 

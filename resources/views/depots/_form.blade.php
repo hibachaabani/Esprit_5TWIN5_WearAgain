@@ -14,12 +14,12 @@
             <option value="{{ $point->id }}"
                     @selected((int) old('point_collecte_id', $depot->point_collecte_id) === $point->id)
                     @disabled(! $point->accepteDepots() && ! $estPointActuel)>
-                {{ $point->ville }} — {{ $point->nom }} ({{ $disponibilite }})
+                {{ $point->ville }} — {{ $point->nom }} · {{ $point->association?->nom ?? 'sans association' }} ({{ $disponibilite }})
             </option>
         @endforeach
     </select>
     @error('point_collecte_id') <p class="error">{{ $message }}</p> @enderror
-    <p class="small muted">Pas sûr du lieu ? <a href="{{ route('points-collecte.index') }}">Voir la carte des points</a></p>
+    <p class="small muted">L'association qui gère le point reçoit puis trie votre vêtement. Pas sûr du lieu ? <a href="{{ route('points-collecte.index') }}">Voir la carte des points</a></p>
 </div>
 
 @if ($vetements->isNotEmpty())

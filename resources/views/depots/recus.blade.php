@@ -7,7 +7,7 @@
     <div>
         <p class="eyebrow">{{ $association->nom }}</p>
         <h1>Dépôts reçus</h1>
-        <p class="lead">Les vêtements déposés dans tes points de collecte : reçois-les, puis trie-les.</p>
+        <p class="lead">Les vêtements déposés dans tes points de collecte : reçois-les, puis trie-les. Un dépôt fait dans le point d'une autre association n'apparaît pas ici.</p>
     </div>
     <div class="actions">
         <a href="{{ route('depots.reception') }}" class="btn btn-ghost">Scanner un bon</a>
