@@ -46,7 +46,9 @@
 
     <div class="hero-actions" style="margin:1.5rem 0">
         @if ($association->peutRecevoirDesDons() && ! $association->estGereePar(auth()->user()))
-            <a href="{{ route('dons.create', ['association_id' => $association->id]) }}" class="btn btn-primary">Faire un don</a>
+            @particulier
+                <a href="{{ route('dons.create', ['association_id' => $association->id]) }}" class="btn btn-primary">Faire un don</a>
+            @endparticulier
         @endif
         @if ($association->estGereePar(auth()->user()))
             <a href="{{ route('associations.edit', $association) }}" class="btn btn-ghost">Modifier</a>

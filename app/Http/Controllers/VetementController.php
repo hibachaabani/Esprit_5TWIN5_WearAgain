@@ -125,6 +125,8 @@ class VetementController extends Controller
 
     public function edit(Vetement $vetement): View
     {
+        $this->autoriserGestion($vetement);
+
         $vetement->load('photos');
         $categories = Categorie::orderBy('nom')->get();
         $etats      = Vetement::ETATS;
@@ -135,6 +137,8 @@ class VetementController extends Controller
 
     public function update(Request $request, Vetement $vetement): RedirectResponse
     {
+        $this->autoriserGestion($vetement);
+
         $data = $request->validate([
             'categorie_id'      => 'required|exists:categories,id',
             'titre'             => 'required|string|max:150',
@@ -195,6 +199,8 @@ class VetementController extends Controller
 
     public function destroy(Vetement $vetement): RedirectResponse
     {
+        $this->autoriserGestion($vetement);
+
         // Supprimer toutes les photos du disque
         foreach ($vetement->photos as $photo) {
             Storage::disk('public')->delete($photo->chemin);
@@ -209,5 +215,13 @@ class VetementController extends Controller
 
         return redirect()->route('vetements.index')
             ->with('status', 'Article supprimé.');
+    }
+
+    /** Seuls le propriétaire de l'annonce et l'administrateur peuvent la gérer. */
+    private function autoriserGestion(Vetement $vetement): void
+    {
+        $user = auth()->user();
+
+        abort_unless($user && ($vetement->user_id === $user->id || $user->isAdmin()), 403, 'Seul le propriétaire de cette annonce peut la modifier.');
     }
 }

@@ -15,13 +15,17 @@
                 <p class="lead">{{ $categorie->description }}</p>
             @endif
         </div>
-        <a href="{{ route('vetements.create') }}" class="btn btn-primary">+ Ajouter un article</a>
+        @particulier
+            <a href="{{ route('vetements.create') }}" class="btn btn-primary">+ Ajouter un article</a>
+        @endparticulier
     </div>
 
     @if ($vetements->isEmpty())
         <div class="empty">
             <p>Aucun article dans cette catégorie pour l'instant.</p>
-            <a href="{{ route('vetements.create') }}" class="btn btn-ghost">Publier le premier</a>
+            @particulier
+                <a href="{{ route('vetements.create') }}" class="btn btn-ghost">Publier le premier</a>
+            @endparticulier
         </div>
     @else
         <div class="grid">

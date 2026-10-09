@@ -16,6 +16,9 @@
         @if (session('status'))
             <div class="container"><p class="flash">{{ session('status') }}</p></div>
         @endif
+        @if (session('erreur'))
+            <div class="container"><p class="flash flash-erreur" role="alert">{{ session('erreur') }}</p></div>
+        @endif
         @yield('content')
     </main>
 

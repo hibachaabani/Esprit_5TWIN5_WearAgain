@@ -119,7 +119,9 @@
                             <div class="hero-actions">
                                 <a href="{{ route('associations.show', $association) }}" class="btn btn-ghost">Voir</a>
                                 @if ($association->peutRecevoirDesDons() && ! $association->estGereePar(auth()->user()))
-                                    <a href="{{ route('dons.create', ['association_id' => $association->id]) }}" class="btn btn-primary">Faire un don</a>
+                                    @particulier
+                                        <a href="{{ route('dons.create', ['association_id' => $association->id]) }}" class="btn btn-primary">Faire un don</a>
+                                    @endparticulier
                                 @endif
                             </div>
                         </article>
