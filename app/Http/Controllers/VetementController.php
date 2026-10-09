@@ -70,6 +70,17 @@ class VetementController extends Controller
         return view('vetements.index', compact('vetements', 'categories', 'couleurs'));
     }
 
+    /** « Mes annonces » : les vêtements publiés par le particulier connecté. */
+    public function mes(Request $request): View
+    {
+        $vetements = $request->user()->vetements()
+            ->with(['categorie', 'photos'])
+            ->latest()
+            ->paginate(12);
+
+        return view('vetements.mes', compact('vetements'));
+    }
+
     public function create(): View
     {
         $categories = Categorie::orderBy('nom')->get();
@@ -217,11 +228,9 @@ class VetementController extends Controller
             ->with('status', 'Article supprimé.');
     }
 
-    /** Seuls le propriétaire de l'annonce et l'administrateur peuvent la gérer. */
+    /** Seul le propriétaire gère son annonce (l'administrateur modère depuis le back-office). */
     private function autoriserGestion(Vetement $vetement): void
     {
-        $user = auth()->user();
-
-        abort_unless($user && ($vetement->user_id === $user->id || $user->isAdmin()), 403, 'Seul le propriétaire de cette annonce peut la modifier.');
+        abort_unless($vetement->user_id === auth()->id(), 403, 'Seul le propriétaire de cette annonce peut la modifier.');
     }
 }

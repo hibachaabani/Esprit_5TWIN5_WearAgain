@@ -93,6 +93,7 @@
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-ghost small">Supprimer mon avis</button>
                             </form>
+                            <a href="{{ route('avis.edit', $monAvis) }}" class="btn btn-ghost small">Modifier mon avis</a>
                         @elseif ($reparation->statut !== 'terminee')
                             <p class="muted" style="margin: 0">Vous pourrez noter l'atelier une fois la réparation terminée.</p>
                         @else
