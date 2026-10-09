@@ -292,7 +292,7 @@ class DepotTest extends TestCase
 
     public function test_les_depots_recus_sont_reserves_aux_associations(): void
     {
-        $this->actingAs(User::factory()->create())->get(route('depots.recus'))->assertRedirect(route('depots.index'));
+        $this->actingAs(User::factory()->create())->get(route('depots.recus'))->assertForbidden();
     }
 
     public function test_suivi_public_par_code(): void
@@ -316,7 +316,7 @@ class DepotTest extends TestCase
         Depot::factory()->recu()->create(['vetement_titre' => 'Manteau reçu']);
         Depot::factory()->annule()->create(['vetement_titre' => 'Jupe annulée']);
 
-        $this->get(route('admin.depots.index', ['statut' => 'recu']))
+        $this->enAdmin()->get(route('admin.depots.index', ['statut' => 'recu']))
             ->assertOk()
             ->assertSee('Manteau reçu')
             ->assertDontSee('Jupe annulée');
@@ -326,8 +326,8 @@ class DepotTest extends TestCase
     {
         $depot = Depot::factory()->create(['vetement_titre' => 'Blazer noir']);
 
-        $this->get(route('admin.depots.show', $depot))->assertOk()->assertSee('Blazer noir')->assertSee($depot->user->email);
-        $this->delete(route('admin.depots.destroy', $depot))->assertRedirect(route('admin.depots.index'));
+        $this->enAdmin()->get(route('admin.depots.show', $depot))->assertOk()->assertSee('Blazer noir')->assertSee($depot->user->email);
+        $this->enAdmin()->delete(route('admin.depots.destroy', $depot))->assertRedirect(route('admin.depots.index'));
 
         $this->assertModelMissing($depot);
     }
@@ -336,7 +336,7 @@ class DepotTest extends TestCase
     {
         $depot = Depot::factory()->create(['vetement_titre' => 'Blazer noir']);
 
-        $reponse = $this->get(route('admin.depots.export'))->assertOk();
+        $reponse = $this->enAdmin()->get(route('admin.depots.export'))->assertOk();
 
         $this->assertStringStartsWith('text/csv', $reponse->headers->get('content-type'));
         $contenu = $reponse->streamedContent();

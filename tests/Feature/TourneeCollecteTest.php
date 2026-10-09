@@ -43,7 +43,7 @@ class TourneeCollecteTest extends TestCase
     public function test_la_tournee_est_reservee_aux_associations(): void
     {
         $this->get(route('tournee.index'))->assertRedirect(route('login'));
-        $this->actingAs(User::factory()->create())->get(route('tournee.index'))->assertRedirect(route('depots.index'));
+        $this->actingAs(User::factory()->create())->get(route('tournee.index'))->assertForbidden();
     }
 
     public function test_la_tournee_ne_retient_que_les_points_a_vider_de_l_association(): void
