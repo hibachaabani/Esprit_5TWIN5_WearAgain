@@ -15,8 +15,8 @@
     @if (class_exists(\App\Models\Atelier::class))
         <div class="field">
             <label for="atelier_id">Atelier</label>
-            <select name="atelier_id" id="atelier_id">
-                <option value="">— Aucun atelier —</option>
+            <select name="atelier_id" id="atelier_id" required>
+                <option value="">— Choisir un atelier —</option>
                 @foreach (\App\Models\Atelier::orderBy('nom')->get() as $atelier)
                     <option value="{{ $atelier->id }}" @selected((string) old('atelier_id', $avi->atelier_id ?? '') === (string) $atelier->id)>
                         {{ $atelier->nom }}

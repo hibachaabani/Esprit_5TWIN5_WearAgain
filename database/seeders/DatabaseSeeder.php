@@ -51,11 +51,19 @@ class DatabaseSeeder extends Seeder
 
         // Points de collecte et dépôts, rattachés aux associations et comptes ci-dessus.
         $this->call(CollecteSeeder::class);
+        User::factory()->create([
+            'name' => 'Test User',
+            'email' => 'test@example.com',
+        ]);
 
-        // Réparations et avis (membre 5), rattachés aux comptes existants.
+        User::factory(4)->create();
+
+        // Réparations, avis (membre 5) et transformations — rattachés aux comptes existants.
         $this->call([
+            AdminSeeder::class,
             ReparationSeeder::class,
             AvisSeeder::class,
+            AtelierTransformationSeeder::class,
         ]);
     }
 }

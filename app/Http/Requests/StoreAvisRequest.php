@@ -24,10 +24,19 @@ class StoreAvisRequest extends FormRequest
         ];
 
         if (Schema::hasTable('ateliers')) {
-            $rules['atelier_id'][] = Rule::exists('ateliers', 'id');
+            // Le diagramme impose un atelier par avis (Atelier "1" -- "0..*" Avis).
+            $rules['atelier_id'] = ['required', Rule::exists('ateliers', 'id')];
         }
 
         return $rules;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Front office : l'atelier est repris de la réparation liée (route /reparations/{reparation}/avis).
+        if (($reparation = $this->route('reparation')) instanceof \App\Models\Reparation) {
+            $this->merge(['atelier_id' => $reparation->atelier_id]);
+        }
     }
 
     public function messages(): array
@@ -35,6 +44,7 @@ class StoreAvisRequest extends FormRequest
         return [
             'user_id.required' => 'Veuillez choisir un membre.',
             'user_id.exists' => 'Ce membre n\'existe pas.',
+            'atelier_id.required' => 'L\'atelier est obligatoire.',
             'atelier_id.exists' => 'Cet atelier n\'existe pas.',
             'note.required' => 'La note est obligatoire.',
             'note.integer' => 'La note doit être un nombre entier.',

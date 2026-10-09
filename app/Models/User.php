@@ -20,6 +20,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     protected $hidden = [
@@ -59,5 +60,22 @@ class User extends Authenticatable
     public function depots(): HasMany
     {
         return $this->hasMany(Depot::class);
+    }
+
+    public function atelier(): HasOne
+    {
+        return $this->hasOne(Atelier::class);
+    }
+
+    /** Rôles disponibles dans l'application. */
+    public const ROLES = [
+        'member' => 'Membre',
+        'admin'  => 'Administrateur',
+    ];
+
+    /** Vrai si l'utilisateur est administrateur (accès back-office). */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
     }
 }

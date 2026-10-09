@@ -11,7 +11,9 @@
         <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
         {{-- Tailwind reste chargé pour les composants Breeze des autres pages (inscription, mot de passe…) --}}
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @if (file_exists(public_path('build/manifest.json')))
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endif
         <link rel="stylesheet" href="{{ asset('css/wearagain.css') }}">
         <link rel="stylesheet" href="{{ asset('css/auth.css') }}">
     </head>

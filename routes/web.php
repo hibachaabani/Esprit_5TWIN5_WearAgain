@@ -5,10 +5,12 @@ use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\VetementController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
+use App\Http\Controllers\AtelierController;
 use App\Http\Controllers\DonController;
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\TourneeCollecteController;
+use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReparationController;
 use Illuminate\Support\Facades\Route;
@@ -46,7 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
     Route::resource('associations', Admin\AssociationController::class)->only('index');
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
@@ -104,9 +106,26 @@ Route::resource('points-collecte', PointCollecteController::class)
     ->only(['index', 'show'])
     ->parameters(['points-collecte' => 'pointCollecte']);
 
-// Réparations & avis (membre 5) — front office
+/*
+| Ateliers & Transformations — front office (Member Atelier)
+*/
+Route::get('/ateliers', [AtelierController::class, 'index'])->name('ateliers.index');
+Route::get('/ateliers/{atelier}', [AtelierController::class, 'show'])->name('ateliers.show');
+Route::get('/transformations', [TransformationController::class, 'index'])->name('transformations.index');
+Route::get('/transformations/{transformation}', [TransformationController::class, 'show'])->name('transformations.show');
+
+/*
+| Back office — gestion des ateliers et des transformations (Member Atelier)
+*/
+Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
+    Route::resource('ateliers', Admin\AtelierController::class)->except('show');
+    Route::resource('transformations', Admin\TransformationController::class)->except('show');
+});
+
+require __DIR__.'/auth.php';
+/*
+| Réparations & Avis — front office (Member 5)
+*/
 Route::get('/reparations', [ReparationController::class, 'index'])->name('reparations.index');
 Route::get('/reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show');
 Route::post('/reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
-
-require __DIR__.'/auth.php';

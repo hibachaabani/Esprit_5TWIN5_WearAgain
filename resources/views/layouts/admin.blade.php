@@ -11,11 +11,13 @@
 <body class="admin-body">
     <div class="admin-layout">
         <aside class="admin-sidebar">
-            <a href="{{ route('home') }}" class="logo">Wear<span>Again</span></a>
+            <a href="{{ route('home') }}" class="logo">Wsear<span>Again</span></a>
             <p class="small muted" style="margin-top:-.75rem">Back-office</p>
 
             <nav class="admin-nav">
                 <a href="{{ route('admin.associations.index') }}" @class(['active' => request()->routeIs('admin.associations.*')])>Associations</a>
+                <a href="{{ route('admin.ateliers.index') }}" @class(['active' => request()->routeIs('admin.ateliers.*')])>Ateliers</a>
+                <a href="{{ route('admin.transformations.index') }}" @class(['active' => request()->routeIs('admin.transformations.*')])>Transformations</a>
                 <a href="{{ route('admin.dons.index') }}" @class(['active' => request()->routeIs('admin.dons.*')])>Dons</a>
                 <a href="{{ route('admin.vetements.index') }}" @class(['active' => request()->routeIs('admin.vetements.*')])>
                     Vêtements

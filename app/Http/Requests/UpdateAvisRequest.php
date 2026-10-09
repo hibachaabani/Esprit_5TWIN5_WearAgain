@@ -24,7 +24,8 @@ class UpdateAvisRequest extends FormRequest
         ];
 
         if (Schema::hasTable('ateliers')) {
-            $rules['atelier_id'][] = Rule::exists('ateliers', 'id');
+            // Le diagramme impose un atelier par avis (Atelier "1" -- "0..*" Avis).
+            $rules['atelier_id'] = ['required', Rule::exists('ateliers', 'id')];
         }
 
         return $rules;
@@ -35,6 +36,7 @@ class UpdateAvisRequest extends FormRequest
         return [
             'user_id.required' => 'Veuillez choisir un membre.',
             'user_id.exists' => 'Ce membre n\'existe pas.',
+            'atelier_id.required' => 'L\'atelier est obligatoire.',
             'atelier_id.exists' => 'Cet atelier n\'existe pas.',
             'note.required' => 'La note est obligatoire.',
             'note.integer' => 'La note doit être un nombre entier.',

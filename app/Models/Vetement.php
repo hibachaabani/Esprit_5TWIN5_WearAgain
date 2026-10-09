@@ -69,6 +69,11 @@ class Vetement extends Model
                     ->withTimestamps();
     }
 
+    public function transformations(): HasMany
+    {
+        return $this->hasMany(Transformation::class);
+    }
+
     /* ------------------------------------------------------------------ */
     /* Accesseurs                                                           */
     /* ------------------------------------------------------------------ */
