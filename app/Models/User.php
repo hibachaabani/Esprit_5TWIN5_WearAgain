@@ -16,11 +16,15 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    // « role » n'est volontairement pas assignable en masse : il ne vient jamais d'un formulaire.
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
+    ];
+
+    protected $attributes = [
+        'role' => 'particulier',
     ];
 
     protected $hidden = [
@@ -62,20 +66,58 @@ class User extends Authenticatable
         return $this->hasMany(Depot::class);
     }
 
+    public function vetements(): HasMany
+    {
+        return $this->hasMany(Vetement::class);
+    }
+
+    public function avis(): HasMany
+    {
+        return $this->hasMany(Avis::class);
+    }
+
     public function atelier(): HasOne
     {
         return $this->hasOne(Atelier::class);
     }
 
-    /** Rôles disponibles dans l'application. */
+    /** Rôles de l'application (guide des entités). */
     public const ROLES = [
-        'member' => 'Membre',
-        'admin'  => 'Administrateur',
+        'particulier' => 'Particulier',
+        'atelier'     => 'Atelier',
+        'association' => 'Association',
+        'admin'       => 'Administrateur',
     ];
+
+    /** Vrai si l'utilisateur a l'un des rôles donnés. */
+    public function aLeRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
 
     /** Vrai si l'utilisateur est administrateur (accès back-office). */
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->aLeRole('admin');
+    }
+
+    public function estParticulier(): bool
+    {
+        return $this->aLeRole('particulier');
+    }
+
+    public function estAtelier(): bool
+    {
+        return $this->aLeRole('atelier');
+    }
+
+    public function estAssociation(): bool
+    {
+        return $this->aLeRole('association');
+    }
+
+    public function libelleRole(): string
+    {
+        return self::ROLES[$this->role] ?? $this->role;
     }
 }

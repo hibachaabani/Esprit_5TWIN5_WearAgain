@@ -1,19 +1,29 @@
 <?php
 
-use App\Http\Controllers\CategorieController;
-use App\Http\Controllers\FavoriController;
-use App\Http\Controllers\VetementController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
 use App\Http\Controllers\AtelierController;
-use App\Http\Controllers\DonController;
+use App\Http\Controllers\AvisController;
+use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DepotController;
+use App\Http\Controllers\DonController;
+use App\Http\Controllers\EspaceAtelierController;
+use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\PointCollecteController;
-use App\Http\Controllers\TourneeCollecteController;
-use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReparationController;
+use App\Http\Controllers\TourneeCollecteController;
+use App\Http\Controllers\TransformationController;
+use App\Http\Controllers\VetementController;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Rôles : particulier, atelier, association, admin (middleware role:…)
+|--------------------------------------------------------------------------
+| Les routes « create » et autres chemins fixes sont déclarés avant les
+| routes publiques à paramètre ({vetement}, {atelier}…) qui les captureraient.
+*/
 
 // Page d'accueil — 4 derniers vêtements disponibles
 Route::get('/', function () {
@@ -26,39 +36,112 @@ Route::get('/', function () {
     return view('home', compact('items'));
 })->name('home');
 
-// Vêtements
-Route::resource('vetements', VetementController::class);
-
-// Catégories
-Route::resource('categories', CategorieController::class)->parameters(['categories' => 'categorie']);
-
-// Favoris
-Route::post('favoris/{vetement}/toggle', [FavoriController::class, 'toggle'])->name('favoris.toggle');
-Route::get('favoris', [FavoriController::class, 'index'])->name('favoris.index');
-Route::get('/articles/{id}', function (int $id) {
-    $item = collect(demoItems())->firstWhere('id', $id) ?? abort(404);
-    return view('items.show', ['item' => $item]);
-})->name('items.show');
-
-Route::resource('associations', AssociationController::class)->except(['index', 'show'])->middleware('auth');
-Route::resource('associations', AssociationController::class)->only(['index', 'show']);
+/*
+| Tout compte connecté
+*/
 Route::middleware('auth')->group(function () {
-    Route::resource('dons', DonController::class);
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('favoris', [FavoriController::class, 'index'])->name('favoris.index');
+    Route::post('favoris/{vetement}/toggle', [FavoriController::class, 'toggle'])->name('favoris.toggle');
+
+    // Le détail et le changement de statut vérifient que l'utilisateur est concerné.
+    Route::get('dons/{don}', [DonController::class, 'show'])->name('dons.show')->whereNumber('don');
     Route::patch('dons/{don}/statut', [DonController::class, 'updateStatus'])->name('dons.statut');
-    Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
+    Route::get('depots/{depot}', [DepotController::class, 'show'])->name('depots.show')->whereNumber('depot');
+    Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
+    Route::get('reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show')->whereNumber('reparation');
 });
 
+/*
+| Particulier : vêtements, dons, dépôts, demandes de réparation / transformation, avis
+*/
+Route::middleware('role:particulier')->group(function () {
+    Route::resource('vetements', VetementController::class)->only(['create', 'store']);
+
+    Route::resource('dons', DonController::class)->except('show');
+    Route::resource('depots', DepotController::class)->except(['show', 'destroy']);
+
+    Route::get('reparations', [ReparationController::class, 'index'])->name('reparations.index');
+    Route::get('reparations/create', [ReparationController::class, 'create'])->name('reparations.create');
+    Route::post('reparations', [ReparationController::class, 'store'])->name('reparations.store');
+    Route::delete('reparations/{reparation}', [ReparationController::class, 'destroy'])->name('reparations.destroy');
+    Route::post('reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
+    Route::delete('avis/{avis}', [AvisController::class, 'destroy'])->name('avis.destroy');
+
+    Route::get('mes-transformations', [TransformationController::class, 'mes'])->name('transformations.mes');
+    Route::get('transformations/create', [TransformationController::class, 'create'])->name('transformations.create');
+    Route::post('transformations', [TransformationController::class, 'store'])->name('transformations.store');
+    Route::delete('transformations/{transformation}', [TransformationController::class, 'destroy'])->name('transformations.destroy');
+});
+
+// Le propriétaire (ou l'admin) modifie et supprime son annonce : vérifié dans le contrôleur.
+Route::resource('vetements', VetementController::class)->only(['edit', 'update', 'destroy'])->middleware('auth');
+
+/*
+| Association : sa fiche, ses dons reçus, ses points de collecte, la réception et la tournée
+*/
+Route::middleware('role:association')->group(function () {
+    Route::resource('associations', AssociationController::class)->except(['index', 'show']);
+    Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
+
+    Route::resource('points-collecte', PointCollecteController::class)
+        ->except(['index', 'show'])
+        ->parameters(['points-collecte' => 'pointCollecte']);
+    Route::get('depots-recus', [DepotController::class, 'recus'])->name('depots.recus');
+    Route::get('depots/reception', [DepotController::class, 'reception'])->name('depots.reception');
+    Route::get('tournee-collecte', [TourneeCollecteController::class, 'index'])->name('tournee.index');
+    Route::post('tournee-collecte/{pointCollecte}/collecter', [TourneeCollecteController::class, 'collecter'])->name('tournee.collecter');
+});
+
+/*
+| Atelier : son profil et les demandes de réparation / transformation reçues
+*/
+Route::middleware('role:atelier')->prefix('mon-atelier')->name('mon-atelier.')->group(function () {
+    Route::get('/', [EspaceAtelierController::class, 'index'])->name('index');
+    Route::get('modifier', [EspaceAtelierController::class, 'edit'])->name('edit');
+    Route::put('/', [EspaceAtelierController::class, 'update'])->name('update');
+    Route::patch('reparations/{reparation}', [EspaceAtelierController::class, 'traiterReparation'])->name('reparations.update');
+    Route::post('transformations/{transformation}', [EspaceAtelierController::class, 'traiterTransformation'])->name('transformations.update');
+});
+
+/*
+| Catégories : seul l'admin les crée, modifie et supprime
+*/
+Route::resource('categories', CategorieController::class)
+    ->except(['index', 'show'])
+    ->parameters(['categories' => 'categorie'])
+    ->middleware('role:admin');
+
+/*
+| Public (visiteurs compris)
+*/
+Route::resource('vetements', VetementController::class)->only(['index', 'show']);
+Route::resource('categories', CategorieController::class)->only(['index', 'show'])->parameters(['categories' => 'categorie']);
+Route::resource('associations', AssociationController::class)->only(['index', 'show']);
+Route::resource('points-collecte', PointCollecteController::class)
+    ->only(['index', 'show'])
+    ->parameters(['points-collecte' => 'pointCollecte']);
+Route::get('depots/suivi', [DepotController::class, 'suivi'])->name('depots.suivi');
+Route::get('ateliers', [AtelierController::class, 'index'])->name('ateliers.index');
+Route::get('ateliers/{atelier}', [AtelierController::class, 'show'])->name('ateliers.show');
+Route::get('transformations', [TransformationController::class, 'index'])->name('transformations.index');
+Route::get('transformations/{transformation}', [TransformationController::class, 'show'])->name('transformations.show');
+
+/*
+| Back-office : administrateur uniquement
+*/
 Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
     Route::resource('associations', Admin\AssociationController::class)->only('index');
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
     Route::resource('dons', Admin\DonController::class)->only(['index', 'show']);
 
-    // Vêtements
+    // Vêtements et catégories (membre 1)
     Route::resource('vetements', Admin\VetementController::class)->only(['index', 'show', 'destroy']);
     Route::patch('vetements/{vetement}/signalement', [Admin\VetementController::class, 'toggleSignalement'])->name('vetements.signalement');
-
-    // Catégories
     Route::resource('categories', Admin\CategorieController::class)->only('index');
     Route::patch('categories/{categorie}/active', [Admin\CategorieController::class, 'toggleActive'])->name('categories.active');
     Route::post('categories/reorder', [Admin\CategorieController::class, 'reorder'])->name('categories.reorder');
@@ -74,58 +157,13 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     Route::patch('depots/{depot}/statut', [Admin\DepotController::class, 'changerStatut'])->name('depots.statut');
     Route::resource('depots', Admin\DepotController::class)->only(['index', 'show', 'destroy']);
 
-    // Réparations & avis (membre 5) — back-office
+    // Ateliers et transformations (membre 4)
+    Route::resource('ateliers', Admin\AtelierController::class)->except('show');
+    Route::resource('transformations', Admin\TransformationController::class)->except('show');
+
+    // Réparations et avis (membre 5)
     Route::resource('reparations', Admin\ReparationController::class);
     Route::resource('avis', Admin\AvisController::class);
 });
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-// Collecte (membre 3) — front office : carte des points et suivi public d'un dépôt
-Route::get('depots/suivi', [DepotController::class, 'suivi'])->name('depots.suivi');
-
-Route::middleware('auth')->group(function () {
-    // Particulier : ses dépôts ; association : ses points, les dépôts reçus, la réception et la tournée
-    Route::resource('points-collecte', PointCollecteController::class)
-        ->except(['index', 'show'])
-        ->parameters(['points-collecte' => 'pointCollecte']);
-    Route::get('tournee-collecte', [TourneeCollecteController::class, 'index'])->name('tournee.index');
-    Route::post('tournee-collecte/{pointCollecte}/collecter', [TourneeCollecteController::class, 'collecter'])->name('tournee.collecter');
-
-    Route::get('depots-recus', [DepotController::class, 'recus'])->name('depots.recus');
-    Route::get('depots/reception', [DepotController::class, 'reception'])->name('depots.reception');
-    Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
-    Route::resource('depots', DepotController::class)->except('destroy');
-});
-
-Route::resource('points-collecte', PointCollecteController::class)
-    ->only(['index', 'show'])
-    ->parameters(['points-collecte' => 'pointCollecte']);
-
-/*
-| Ateliers & Transformations — front office (Member Atelier)
-*/
-Route::get('/ateliers', [AtelierController::class, 'index'])->name('ateliers.index');
-Route::get('/ateliers/{atelier}', [AtelierController::class, 'show'])->name('ateliers.show');
-Route::get('/transformations', [TransformationController::class, 'index'])->name('transformations.index');
-Route::get('/transformations/{transformation}', [TransformationController::class, 'show'])->name('transformations.show');
-
-/*
-| Back office — gestion des ateliers et des transformations (Member Atelier)
-*/
-Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
-    Route::resource('ateliers', Admin\AtelierController::class)->except('show');
-    Route::resource('transformations', Admin\TransformationController::class)->except('show');
-});
-
 require __DIR__.'/auth.php';
-/*
-| Réparations & Avis — front office (Member 5)
-*/
-Route::get('/reparations', [ReparationController::class, 'index'])->name('reparations.index');
-Route::get('/reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show');
-Route::post('/reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');

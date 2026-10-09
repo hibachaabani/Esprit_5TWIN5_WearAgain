@@ -10,7 +10,9 @@
             <h1>Ton dressing a encore des choses à dire.</h1>
             <p class="lead">Vends ou échange les vêtements que tu ne portes plus avec des gens près de chez toi.</p>
             <div class="hero-actions">
-                <a href="{{ route('vetements.create') }}" class="btn btn-primary btn-lg">Vendre un article</a>
+                @particulier
+                    <a href="{{ route('vetements.create') }}" class="btn btn-primary btn-lg">Vendre un article</a>
+                @endparticulier
                 <a href="{{ route('vetements.index') }}" class="btn btn-ghost btn-lg">Parcourir les articles</a>
             </div>
         </div>
@@ -32,7 +34,9 @@
     @if($items->isEmpty())
         <div class="empty">
             <p>Aucun article pour l'instant.</p>
-            <a href="{{ route('vetements.create') }}" class="btn btn-ghost">Publier le premier</a>
+            @particulier
+                <a href="{{ route('vetements.create') }}" class="btn btn-ghost">Publier le premier</a>
+            @endparticulier
         </div>
     @else
         <div class="grid">

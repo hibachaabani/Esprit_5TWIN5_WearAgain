@@ -29,9 +29,27 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'member',
+            'role' => 'particulier',
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /** Compte qui gère une association. */
+    public function association(): static
+    {
+        return $this->state(['role' => 'association']);
+    }
+
+    /** Compte qui gère un atelier. */
+    public function atelier(): static
+    {
+        return $this->state(['role' => 'atelier']);
+    }
+
+    /** Administrateur (back-office). */
+    public function admin(): static
+    {
+        return $this->state(['role' => 'admin']);
     }
 
     /**

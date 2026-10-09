@@ -78,7 +78,9 @@
                 <div class="actions">
                     <a href="{{ route('points-collecte.show', $point) }}" class="btn btn-ghost btn-sm">Détails</a>
                     @if ($point->accepteDepots())
-                        <a href="{{ route('depots.create', ['point_collecte_id' => $point->id]) }}" class="btn btn-primary btn-sm">Déposer ici</a>
+                        @particulier
+                            <a href="{{ route('depots.create', ['point_collecte_id' => $point->id]) }}" class="btn btn-primary btn-sm">Déposer ici</a>
+                        @endparticulier
                     @endif
                     <a href="{{ $point->lienItineraire() }}" class="small" target="_blank" rel="noopener">Itinéraire</a>
                 </div>

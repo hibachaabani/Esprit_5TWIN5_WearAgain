@@ -31,6 +31,25 @@ class Atelier extends Model
         return $this->hasMany(Transformation::class);
     }
 
+    public function reparations(): HasMany
+    {
+        return $this->hasMany(Reparation::class);
+    }
+
+    /** Vrai si l'utilisateur est le compte qui gère cet atelier. */
+    public function estGerePar(?User $user): bool
+    {
+        return $user !== null && $this->user_id === $user->id;
+    }
+
+    /** Note moyenne des avis (null sans avis). */
+    public function noteMoyenne(): ?float
+    {
+        $moyenne = $this->avis()->avg('note');
+
+        return $moyenne === null ? null : round((float) $moyenne, 1);
+    }
+
     public function avis(): HasMany
     {
         return $this->hasMany(Avis::class);

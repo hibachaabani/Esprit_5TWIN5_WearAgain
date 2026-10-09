@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DemandeTransformationRequest;
+use App\Models\Atelier;
 use App\Models\Transformation;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class TransformationController extends Controller
 {
@@ -39,5 +43,48 @@ class TransformationController extends Controller
         $transformation->load(['atelier.user', 'vetement']);
 
         return view('transformations.show', compact('transformation'));
+    }
+
+    /** « Mes transformations » : les demandes d'upcycling du particulier connecté. */
+    public function mes(Request $request): View
+    {
+        $transformations = Transformation::with(['atelier', 'vetement'])
+            ->whereHas('vetement', fn ($q) => $q->where('user_id', $request->user()->id))
+            ->latest()
+            ->paginate(6);
+
+        return view('transformations.mes', compact('transformations'));
+    }
+
+    /** Formulaire de demande ; l'atelier peut être présélectionné depuis sa fiche. */
+    public function create(Request $request): View
+    {
+        return view('transformations.create', [
+            'vetements' => $request->user()->vetements()->orderBy('titre')->get(['id', 'titre']),
+            'ateliers' => Atelier::orderBy('nom')->get(['id', 'nom', 'ville']),
+            'atelierId' => $request->integer('atelier_id') ?: null,
+        ]);
+    }
+
+    /** La demande part « en attente » ; l'atelier fixera le prix. */
+    public function store(DemandeTransformationRequest $request): RedirectResponse
+    {
+        $transformation = Transformation::create($request->validated() + ['statut' => 'en_attente', 'prix' => 0]);
+
+        return redirect()
+            ->route('transformations.mes')
+            ->with('status', "Demande de transformation « {$transformation->type} » envoyée à l'atelier.");
+    }
+
+    /** Le particulier retire sa demande tant que l'atelier ne l'a pas commencée. */
+    public function destroy(Request $request, Transformation $transformation): RedirectResponse
+    {
+        abort_unless($transformation->estAnnulablePar($request->user()), 403);
+
+        $transformation->delete();
+
+        return redirect()
+            ->route('transformations.mes')
+            ->with('status', 'Demande de transformation annulée.');
     }
 }

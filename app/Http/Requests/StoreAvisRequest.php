@@ -34,8 +34,9 @@ class StoreAvisRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         // Front office : l'atelier est repris de la réparation liée (route /reparations/{reparation}/avis).
+        // L'auteur est toujours le membre connecté : il n'est jamais choisi dans le formulaire.
         if (($reparation = $this->route('reparation')) instanceof \App\Models\Reparation) {
-            $this->merge(['atelier_id' => $reparation->atelier_id]);
+            $this->merge(['atelier_id' => $reparation->atelier_id, 'user_id' => $this->user()?->id]);
         }
     }
 

@@ -1,15 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'Réparations')
+@section('title', 'Mes réparations')
 
 @section('content')
 <div class="container section">
     <div class="section-head">
         <div>
-            <p class="eyebrow">WearAgain</p>
-            <h1>Réparations</h1>
-            <p class="lead">Donnez une seconde vie à vos vêtements : consultez les réparations proposées et leurs devis.</p>
+            <p class="eyebrow">Mon espace</p>
+            <h1>Mes réparations</h1>
+            <p class="lead">Donnez une seconde vie à vos vêtements : suivez vos demandes, les devis et les rendez-vous des ateliers.</p>
         </div>
+        <a href="{{ route('reparations.create') }}" class="btn btn-primary">Demander une réparation</a>
     </div>
 
     <div class="browse">
@@ -69,8 +70,12 @@
                 </div>
             @else
                 <div class="empty">
-                    <p>Aucune réparation ne correspond à votre recherche.</p>
-                    <a href="{{ route('reparations.index') }}" class="btn btn-ghost">Effacer les filtres</a>
+                    <p>{{ request()->hasAny(['q', 'statut']) ? 'Aucune réparation ne correspond à votre recherche.' : 'Vous n’avez encore demandé aucune réparation.' }}</p>
+                    @if (request()->hasAny(['q', 'statut']))
+                        <a href="{{ route('reparations.index') }}" class="btn btn-ghost">Effacer les filtres</a>
+                    @else
+                        <a href="{{ route('reparations.create') }}" class="btn btn-primary">Demander une réparation</a>
+                    @endif
                 </div>
             @endif
         </section>

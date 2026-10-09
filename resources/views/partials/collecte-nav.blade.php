@@ -3,9 +3,11 @@
     <a href="{{ route('depots.suivi') }}" @class(['active' => request()->routeIs('depots.suivi')])>Suivre un dépôt</a>
 
     @auth
-        <a href="{{ route('depots.index') }}" @class(['active' => request()->routeIs('depots.index', 'depots.show', 'depots.edit')])>Mes dépôts</a>
+        @if (auth()->user()->estParticulier())
+            <a href="{{ route('depots.index') }}" @class(['active' => request()->routeIs('depots.index', 'depots.show', 'depots.edit')])>Mes dépôts</a>
+        @endif
 
-        @if (auth()->user()->association)
+        @if (auth()->user()->estAssociation() && auth()->user()->association)
             <span class="subnav-label">{{ auth()->user()->association->nom }}</span>
             <a href="{{ route('depots.recus') }}" @class(['active' => request()->routeIs('depots.recus')])>Dépôts reçus</a>
             <a href="{{ route('depots.reception') }}" @class(['active' => request()->routeIs('depots.reception')])>Réception</a>
@@ -13,5 +15,7 @@
         @endif
     @endauth
 
-    <a href="{{ route('depots.create') }}" class="btn btn-primary">Déposer un vêtement</a>
+    @if (! auth()->check() || auth()->user()->estParticulier())
+        <a href="{{ route('depots.create') }}" class="btn btn-primary">Déposer un vêtement</a>
+    @endif
 </nav>

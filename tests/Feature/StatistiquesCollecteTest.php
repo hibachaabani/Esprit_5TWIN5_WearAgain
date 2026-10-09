@@ -18,7 +18,7 @@ class StatistiquesCollecteTest extends TestCase
         Depot::factory()->count(2)->trie()->for($point)->create();
         Depot::factory()->recu()->for($point)->create();
 
-        $this->get(route('admin.collecte.statistiques'))
+        $this->enAdmin()->get(route('admin.collecte.statistiques'))
             ->assertOk()
             ->assertSee('Dépôts par mois')
             ->assertSee('Répartition par statut')
@@ -28,7 +28,7 @@ class StatistiquesCollecteTest extends TestCase
 
     public function test_le_tableau_de_bord_fonctionne_sans_donnees(): void
     {
-        $this->get(route('admin.collecte.statistiques'))
+        $this->enAdmin()->get(route('admin.collecte.statistiques'))
             ->assertOk()
             ->assertSee('Aucun dépôt pour l\'instant', false);
     }

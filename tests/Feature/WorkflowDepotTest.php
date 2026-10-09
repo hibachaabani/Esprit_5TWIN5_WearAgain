@@ -57,7 +57,7 @@ class WorkflowDepotTest extends TestCase
         $enAttente = Depot::factory()->count(2)->create();
         $dejaTrie = Depot::factory()->trie()->create();
 
-        $this->from(route('admin.depots.index'))
+        $this->enAdmin()->from(route('admin.depots.index'))
             ->patch(route('admin.depots.statut-groupe'), [
                 'depots' => [...$enAttente->pluck('id'), $dejaTrie->id],
                 'statut' => 'recu',
@@ -72,7 +72,7 @@ class WorkflowDepotTest extends TestCase
 
     public function test_action_groupee_sans_selection_est_refusee(): void
     {
-        $this->patch(route('admin.depots.statut-groupe'), ['statut' => 'recu'])
+        $this->enAdmin()->patch(route('admin.depots.statut-groupe'), ['statut' => 'recu'])
             ->assertSessionHasErrors(['depots' => 'Cochez au moins un dépôt.']);
     }
 
@@ -112,7 +112,7 @@ class WorkflowDepotTest extends TestCase
         Depot::factory()->create(['vetement_titre' => 'Pull oublié', 'date_depot' => today()->subDays(2)->toDateString()]);
         Depot::factory()->create(['vetement_titre' => 'Veste prévue', 'date_depot' => today()->addDays(2)->toDateString()]);
 
-        $this->get(route('admin.depots.index', ['retard' => 1]))
+        $this->enAdmin()->get(route('admin.depots.index', ['retard' => 1]))
             ->assertOk()
             ->assertSee('Pull oublié')
             ->assertDontSee('Veste prévue');

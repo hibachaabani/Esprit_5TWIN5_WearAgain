@@ -14,7 +14,7 @@ class AssociationFactory extends Factory
         [$lat, $lng] = config('villes')[$ville];
 
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->association(),
             'nom' => fake()->company().' Solidaire',
             'mission' => fake()->sentence(14),
             'categories' => fake()->randomElements(array_keys(Association::CATEGORIES), random_int(2, 5)),

@@ -5,7 +5,7 @@
         <!-- Type de compte -->
         <fieldset class="mb-4">
             <legend class="block font-medium text-sm text-gray-700">{{ __('I am') }}</legend>
-            <div class="mt-2 grid grid-cols-2 gap-3">
+            <div class="mt-2 grid grid-cols-3 gap-3">
                 <label class="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 cursor-pointer" :class="type === 'particulier' && 'border-indigo-500 ring-1 ring-indigo-500'">
                     <input type="radio" name="type" value="particulier" x-model="type" class="text-indigo-600 focus:ring-indigo-500">
                     <span class="text-sm text-gray-700">{{ __('An individual') }}</span>
@@ -13,6 +13,10 @@
                 <label class="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 cursor-pointer" :class="type === 'association' && 'border-indigo-500 ring-1 ring-indigo-500'">
                     <input type="radio" name="type" value="association" x-model="type" class="text-indigo-600 focus:ring-indigo-500">
                     <span class="text-sm text-gray-700">{{ __('An association') }}</span>
+                </label>
+                <label class="flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 cursor-pointer" :class="type === 'atelier' && 'border-indigo-500 ring-1 ring-indigo-500'">
+                    <input type="radio" name="type" value="atelier" x-model="type" class="text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm text-gray-700">{{ __('A workshop') }}</span>
                 </label>
             </div>
             <x-input-error :messages="$errors->get('type')" class="mt-2" />
@@ -33,6 +37,28 @@
             </div>
 
             <p class="text-sm text-gray-600">{{ __('Your association will be visible once verified by our team.') }}</p>
+        </div>
+
+        <!-- Champs atelier -->
+        <div x-show="type === 'atelier'" x-cloak class="mb-4 space-y-4">
+            <div>
+                <x-input-label for="atelier_nom" :value="__('Workshop name')" />
+                <x-text-input id="atelier_nom" class="block mt-1 w-full" type="text" name="atelier_nom" :value="old('atelier_nom')" x-bind:required="type === 'atelier'" />
+                <x-input-error :messages="$errors->get('atelier_nom')" class="mt-2" />
+            </div>
+
+            <div>
+                <x-input-label for="atelier_ville" :value="__('City')" />
+                <x-text-input id="atelier_ville" class="block mt-1 w-full" type="text" name="atelier_ville" :value="old('atelier_ville')" list="villes-atelier" />
+                <datalist id="villes-atelier">
+                    @foreach (array_keys(config('villes')) as $ville)
+                        <option value="{{ $ville }}">
+                    @endforeach
+                </datalist>
+                <x-input-error :messages="$errors->get('atelier_ville')" class="mt-2" />
+            </div>
+
+            <p class="text-sm text-gray-600">{{ __('You can complete your workshop profile (specialties, opening hours) after signing up.') }}</p>
         </div>
 
         <!-- Name -->

@@ -2,38 +2,36 @@
 
 namespace Database\Seeders;
 
-use App\Models\Atelier;
 use App\Models\Avis;
 use App\Models\Reparation;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class AvisSeeder extends Seeder
 {
     /**
-     * Chaque réparation reçoit des avis d'utilisateurs différents.
+     * Le propriétaire du vêtement note l'atelier après une réparation terminée
+     * (un avis par client et par atelier).
      */
     public function run(): void
     {
-        if (User::count() === 0) {
-            $this->command->warn('Aucun utilisateur : les avis ne sont pas créés.');
+        if (Avis::exists()) {
             return;
         }
 
-        $reparations = Reparation::all();
+        $reparations = Reparation::with('vetement')->where('statut', 'terminee')->whereNotNull('atelier_id')->get()
+            ->unique(fn (Reparation $reparation) => $reparation->vetement?->user_id.'-'.$reparation->atelier_id);
 
         if ($reparations->isEmpty()) {
-            $this->command->warn('Aucune réparation : les avis ne sont pas créés.');
+            $this->command?->warn('Aucune réparation terminée : les avis ne sont pas créés.');
+
             return;
         }
 
-        $atelierActif = class_exists(Atelier::class);
-
         foreach ($reparations as $reparation) {
-            foreach (User::inRandomOrder()->limit(rand(2, 4))->get() as $user) {
+            if ($reparation->vetement?->user_id) {
                 Avis::factory()->create([
-                    'user_id' => $user->id,
-                    'atelier_id' => $atelierActif ? $reparation->atelier_id : null,
+                    'user_id' => $reparation->vetement->user_id,
+                    'atelier_id' => $reparation->atelier_id,
                 ]);
             }
         }

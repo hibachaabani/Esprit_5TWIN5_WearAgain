@@ -56,6 +56,16 @@ class Vetement extends Model
         return $this->belongsTo(User::class)->withDefault(['name' => 'Anonyme']);
     }
 
+    public function reparations(): HasMany
+    {
+        return $this->hasMany(Reparation::class);
+    }
+
+    public function depots(): HasMany
+    {
+        return $this->hasMany(Depot::class);
+    }
+
     /** Toutes les photos, triées par ordre */
     public function photos(): HasMany
     {

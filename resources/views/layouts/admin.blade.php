@@ -11,7 +11,7 @@
 <body class="admin-body">
     <div class="admin-layout">
         <aside class="admin-sidebar">
-            <a href="{{ route('home') }}" class="logo">Wsear<span>Again</span></a>
+            <a href="{{ route('home') }}" class="logo">Wear<span>Again</span></a>
             <p class="small muted" style="margin-top:-.75rem">Back-office</p>
 
             <nav class="admin-nav">
@@ -46,6 +46,9 @@
         <main class="admin-content">
             @if (session('status'))
                 <p class="flash">{{ session('status') }}</p>
+            @endif
+            @if (session('erreur'))
+                <p class="flash flash-erreur" role="alert">{{ session('erreur') }}</p>
             @endif
             @yield('content')
         </main>

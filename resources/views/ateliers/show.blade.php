@@ -36,6 +36,15 @@
 
             <h2 class="h4">Description</h2>
             <p>{{ $atelier->description ?? 'Aucune description pour le moment.' }}</p>
+
+            @if ($atelier->estGerePar(auth()->user()))
+                <a href="{{ route('mon-atelier.index') }}" class="btn btn-primary">Gérer mon atelier</a>
+            @elseif (auth()->guest() || auth()->user()->estParticulier())
+                <div class="hero-actions">
+                    <a href="{{ route('reparations.create', ['atelier_id' => $atelier->id]) }}" class="btn btn-primary">Demander une réparation</a>
+                    <a href="{{ route('transformations.create', ['atelier_id' => $atelier->id]) }}" class="btn btn-ghost">Demander une transformation</a>
+                </div>
+            @endif
         </div>
 
         <div>

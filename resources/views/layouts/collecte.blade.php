@@ -9,10 +9,6 @@
 <div class="container section collecte">
     @include('partials.collecte-nav')
 
-    @if (session('erreur'))
-        <p class="flash flash-erreur" role="alert">{{ session('erreur') }}</p>
-    @endif
-
     @yield('page')
 </div>
 @endsection

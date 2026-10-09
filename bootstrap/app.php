@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // role:particulier, role:atelier, role:association, role:admin (plusieurs séparés par des virgules)
+        $middleware->alias([
+            'role' => \App\Http\Middleware\VerifierRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

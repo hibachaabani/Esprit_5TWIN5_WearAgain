@@ -101,8 +101,7 @@ class PointCollecteTest extends TestCase
     {
         $particulier = User::factory()->create();
 
-        $this->actingAs($particulier)->get(route('points-collecte.create'))
-            ->assertRedirect(route('points-collecte.index'));
+        $this->actingAs($particulier)->get(route('points-collecte.create'))->assertForbidden();
         $this->actingAs($particulier)->post(route('points-collecte.store'), $this->donneesValides())
             ->assertForbidden();
 
@@ -237,13 +236,13 @@ class PointCollecteTest extends TestCase
         PointCollecte::factory()->for($association)->create(['nom' => 'Borne du centre']);
         PointCollecte::factory()->ferme()->create(['nom' => 'Borne fermée']);
 
-        $this->get(route('admin.points-collecte.index'))
+        $this->enAdmin()->get(route('admin.points-collecte.index'))
             ->assertOk()
             ->assertSee('Borne du centre')
             ->assertSee('Les Mains Solidaires')
             ->assertSee('Borne fermée');
 
-        $this->get(route('admin.points-collecte.index', ['etat' => 'fermes']))
+        $this->enAdmin()->get(route('admin.points-collecte.index', ['etat' => 'fermes']))
             ->assertSee('Borne fermée')
             ->assertDontSee('Borne du centre');
     }
@@ -252,10 +251,10 @@ class PointCollecteTest extends TestCase
     {
         $point = PointCollecte::factory()->create();
 
-        $this->patch(route('admin.points-collecte.actif', $point))->assertSessionHas('status');
+        $this->enAdmin()->patch(route('admin.points-collecte.actif', $point))->assertSessionHas('status');
         $this->assertFalse($point->fresh()->actif);
 
-        $this->patch(route('admin.points-collecte.actif', $point));
+        $this->enAdmin()->patch(route('admin.points-collecte.actif', $point));
         $this->assertTrue($point->fresh()->actif);
     }
 
@@ -265,8 +264,8 @@ class PointCollecteTest extends TestCase
         Depot::factory()->for($avecDepot)->create();
         $vide = PointCollecte::factory()->create();
 
-        $this->delete(route('admin.points-collecte.destroy', $avecDepot))->assertSessionHas('erreur');
-        $this->delete(route('admin.points-collecte.destroy', $vide))->assertRedirect(route('admin.points-collecte.index'));
+        $this->enAdmin()->delete(route('admin.points-collecte.destroy', $avecDepot))->assertSessionHas('erreur');
+        $this->enAdmin()->delete(route('admin.points-collecte.destroy', $vide))->assertRedirect(route('admin.points-collecte.index'));
 
         $this->assertModelExists($avecDepot);
         $this->assertModelMissing($vide);

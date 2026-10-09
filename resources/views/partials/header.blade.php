@@ -1,26 +1,59 @@
 @php
+    /*
+    | Navigation selon le rôle : liens publics, puis l'espace du compte connecté
+    | (particulier, association, atelier ou administrateur).
+    */
+    $user = auth()->user();
+    $lien = fn (string $route, string $label, array $actif, array $params = [], int $badge = 0) =>
+        ['url' => route($route, $params), 'label' => $label, 'actif' => $actif, 'badge' => $badge];
+
     $liens = [
-        ['route' => 'vetements.index', 'actif' => ['vetements.index', 'vetements.show'], 'label' => 'Parcourir'],
-        ['route' => 'associations.index', 'actif' => ['associations.*'], 'label' => 'Associations'],
-        ['route' => 'ateliers.index', 'actif' => ['ateliers.*'], 'label' => 'Ateliers'],
+        $lien('vetements.index', 'Parcourir', ['vetements.index', 'vetements.show']),
+        $lien('associations.index', 'Associations', ['associations.index', 'associations.show']),
+        $lien('ateliers.index', 'Ateliers', ['ateliers.*']),
+        $lien('points-collecte.index', 'Points de collecte', ['points-collecte.index', 'points-collecte.show', 'depots.suivi']),
     ];
+    $espace = [];
 
-    if (auth()->check()) {
-        $liens[] = [
-            'route' => 'dons.index',
-            'actif' => ['dons.index', 'dons.show', 'dons.create', 'dons.edit'],
-            'label' => 'Mes dons'
+    if ($user?->estParticulier()) {
+        $espace = [
+            $lien('dons.index', 'Mes dons', ['dons.index', 'dons.create', 'dons.edit']),
+            $lien('depots.index', 'Mes dépôts', ['depots.index', 'depots.create', 'depots.edit']),
+            $lien('reparations.index', 'Mes réparations', ['reparations.index', 'reparations.create']),
+            $lien('transformations.mes', 'Mes transformations', ['transformations.mes', 'transformations.create']),
+            $lien('favoris.index', 'Mes favoris', ['favoris.index']),
         ];
-
-        $liens[] = [
-            'route' => 'reparations.index',
-            'actif' => ['reparations.*'],
-            'label' => 'Mes réparations'
+        $liens[] = $espace[0];
+        $liens[] = $espace[2];
+    } elseif ($user?->estAssociation()) {
+        $association = $user->association;
+        $donsATraiter = $association?->dons()->where('statut', 'propose')->count() ?? 0;
+        $espace = array_values(array_filter([
+            $association ? $lien('associations.show', 'Mon association', ['associations.edit'], [$association]) : null,
+            $lien('dons.recus', 'Dons reçus', ['dons.recus'], [], $donsATraiter),
+            $lien('depots.recus', 'Dépôts reçus', ['depots.recus', 'depots.reception', 'tournee.*', 'points-collecte.create', 'points-collecte.edit']),
+        ]));
+        $liens[] = $lien('dons.recus', 'Dons reçus', ['dons.recus'], [], $donsATraiter);
+    } elseif ($user?->estAtelier()) {
+        $atelierConnecte = $user->atelier;
+        $demandesATraiter = $atelierConnecte
+            ? $atelierConnecte->reparations()->where('statut', 'en_attente')->count()
+                + $atelierConnecte->transformations()->where('statut', 'en_attente')->count()
+            : 0;
+        $espace = [
+            $lien('mon-atelier.index', 'Mon atelier', ['mon-atelier.index'], [], $demandesATraiter),
+            $lien('mon-atelier.edit', 'Fiche de l’atelier', ['mon-atelier.edit']),
         ];
+        $liens[] = $espace[0];
+    } elseif ($user?->isAdmin()) {
+        $espace = [
+            $lien('admin.associations.index', 'Back-office', ['admin.*']),
+            $lien('categories.create', '+ Catégorie', ['categories.create']),
+        ];
+        $liens[] = $espace[0];
     }
 
-    $associationConnectee = auth()->user()?->association;
-    $donsATraiter = $associationConnectee?->dons()->where('statut', 'propose')->count() ?? 0;
+    $peutVendre = ! $user || $user->estParticulier();
 @endphp
 
 <header class="site-header" id="site-header">
@@ -31,33 +64,16 @@
         </a>
 
         <nav class="site-nav" aria-label="Navigation principale">
-            @foreach ($liens as $lien)
-                <a href="{{ route($lien['route']) }}"
-                   @class(['active' => request()->routeIs(...$lien['actif'])])
-                   @if (request()->routeIs(...$lien['actif'])) aria-current="page" @endif>
-                    {{ $lien['label'] }}
-                </a>
-            @endforeach
-
-            <a href="{{ route('categories.create') }}"
-               @class(['active' => request()->routeIs('categories.create')])
-               @if (request()->routeIs('categories.create')) aria-current="page" @endif>
-                + Catégorie
-            </a>
-
-            @if ($associationConnectee)
-                <a href="{{ route('dons.recus') }}"
-                   @class(['active' => request()->routeIs('dons.recus')])
-                   @if (request()->routeIs('dons.recus')) aria-current="page" @endif>
-                    Dons reçus
-
-                    @if ($donsATraiter)
-                        <span class="count-badge" aria-label="{{ $donsATraiter }} à traiter">
-                            {{ $donsATraiter }}
-                        </span>
+            @foreach ($liens as $item)
+                <a href="{{ $item['url'] }}"
+                   @class(['active' => request()->routeIs(...$item['actif'])])
+                   @if (request()->routeIs(...$item['actif'])) aria-current="page" @endif>
+                    {{ $item['label'] }}
+                    @if ($item['badge'])
+                        <span class="count-badge" aria-label="{{ $item['badge'] }} à traiter">{{ $item['badge'] }}</span>
                     @endif
                 </a>
-            @endif
+            @endforeach
         </nav>
 
         <div class="header-actions">
@@ -96,6 +112,7 @@
                        value="{{ request('q') }}">
             </form>
 
+            @if ($peutVendre)
             <a href="{{ route('vetements.create') }}"
                class="btn btn-primary btn-sell"
                aria-label="Vendre un article">
@@ -113,6 +130,7 @@
 
                 <span>Vendre</span>
             </a>
+            @endif
 
             @auth
                 @php
@@ -159,42 +177,20 @@
                             </span>
                         </div>
 
+                        <span class="small muted">Compte {{ mb_strtolower($user->libelleRole()) }}</span>
+
                         <a href="{{ route('profile.edit') }}">
                             Mon profil
                         </a>
 
-                        <a href="{{ route('depots.index') }}">
-                            Mes dépôts
-                        </a>
-
-                        @if ($user->association)
-
-                            <a href="{{ route('associations.show', $user->association) }}">
-                                Mon association
-                            </a>
-
-                            <a href="{{ route('dons.recus') }}"
-                               class="account-link-count">
-
-                                Dons reçus
-
-                                @if ($donsATraiter)
-                                    <span class="count-badge"
-                                          aria-label="{{ $donsATraiter }} à traiter">
-                                        {{ $donsATraiter }}
-                                    </span>
+                        @foreach ($espace as $item)
+                            <a href="{{ $item['url'] }}" @class(['account-link-count' => $item['badge']])>
+                                {{ $item['label'] }}
+                                @if ($item['badge'])
+                                    <span class="count-badge" aria-label="{{ $item['badge'] }} à traiter">{{ $item['badge'] }}</span>
                                 @endif
                             </a>
-
-                            <a href="{{ route('depots.recus') }}">
-                                Dépôts reçus
-                            </a>
-
-                        @endif
-
-                        <a href="{{ route('admin.associations.index') }}">
-                            Back-office
-                        </a>
+                        @endforeach
 
                         <form method="POST"
                               action="{{ route('logout') }}"
@@ -278,36 +274,15 @@
             <nav class="mobile-nav"
                  aria-label="Navigation mobile">
 
-                @foreach ($liens as $lien)
-
-                    <a href="{{ route($lien['route']) }}"
-                       @class(['active' => request()->routeIs(...$lien['actif'])])>
-                        {{ $lien['label'] }}
-                    </a>
-
-                @endforeach
-
-                <a href="{{ route('categories.create') }}"
-                   @class(['active' => request()->routeIs('categories.create')])>
-                    + Catégorie
-                </a>
-
-                @if ($associationConnectee)
-
-                    <a href="{{ route('dons.recus') }}"
-                       @class(['active' => request()->routeIs('dons.recus')])>
-
-                        Dons reçus
-
-                        @if ($donsATraiter)
-                            <span class="count-badge">
-                                {{ $donsATraiter }}
-                            </span>
+                @foreach (collect($liens)->merge($espace)->unique('url') as $item)
+                    <a href="{{ $item['url'] }}"
+                       @class(['active' => request()->routeIs(...$item['actif'])])>
+                        {{ $item['label'] }}
+                        @if ($item['badge'])
+                            <span class="count-badge">{{ $item['badge'] }}</span>
                         @endif
-
                     </a>
-
-                @endif
+                @endforeach
 
             </nav>
 

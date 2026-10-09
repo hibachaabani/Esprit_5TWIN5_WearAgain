@@ -6,13 +6,17 @@
 <div class="container section">
     <div class="section-head">
         <h1 class="h2">Catégories</h1>
-        <a href="{{ route('categories.create') }}" class="btn btn-primary">+ Nouvelle catégorie</a>
+        @can('admin')
+            <a href="{{ route('categories.create') }}" class="btn btn-primary">+ Nouvelle catégorie</a>
+        @endcan
     </div>
 
     @if ($categories->isEmpty())
         <div class="empty">
             <p>Aucune catégorie pour l'instant.</p>
-            <a href="{{ route('categories.create') }}" class="btn btn-ghost">Créer la première</a>
+            @can('admin')
+                <a href="{{ route('categories.create') }}" class="btn btn-ghost">Créer la première</a>
+            @endcan
         </div>
     @else
         <div class="grid" style="--min: 200px;">
@@ -28,11 +32,13 @@
                     </div>
                     <div class="categorie-actions">
                         <a href="{{ route('categories.show', $cat) }}" class="btn btn-ghost">Voir</a>
-                        <a href="{{ route('categories.edit', $cat) }}" class="btn btn-ghost">Modifier</a>
-                        <form method="POST" action="{{ route('categories.destroy', $cat) }}" onsubmit="return confirm('Supprimer cette catégorie ?')">
-                            @csrf @method('DELETE')
-                            <button class="btn btn-ghost" style="color:#B3261E;border-color:#B3261E">Supprimer</button>
-                        </form>
+                        @can('admin')
+                            <a href="{{ route('categories.edit', $cat) }}" class="btn btn-ghost">Modifier</a>
+                            <form method="POST" action="{{ route('categories.destroy', $cat) }}" onsubmit="return confirm('Supprimer cette catégorie ?')">
+                                @csrf @method('DELETE')
+                                <button class="btn btn-ghost" style="color:#B3261E;border-color:#B3261E">Supprimer</button>
+                            </form>
+                        @endcan
                     </div>
                 </div>
             @endforeach

@@ -40,7 +40,8 @@ class AtelierController extends Controller
 
     public function store(StoreAtelierRequest $request)
     {
-        Atelier::create($request->validated());
+        $atelier = Atelier::create($request->validated());
+        $this->donnerRoleAtelier($atelier);
 
         return redirect()
             ->route('admin.ateliers.index')
@@ -58,6 +59,7 @@ class AtelierController extends Controller
     public function update(UpdateAtelierRequest $request, Atelier $atelier)
     {
         $atelier->update($request->validated());
+        $this->donnerRoleAtelier($atelier);
 
         return redirect()
             ->route('admin.ateliers.index')
@@ -71,5 +73,15 @@ class AtelierController extends Controller
         return redirect()
             ->route('admin.ateliers.index')
             ->with('status', 'Atelier supprimé avec succès.');
+    }
+
+    /** Le compte qui gère l'atelier reçoit le rôle « atelier » (sauf un administrateur). */
+    private function donnerRoleAtelier(Atelier $atelier): void
+    {
+        $gerant = $atelier->user;
+
+        if ($gerant && ! $gerant->isAdmin() && ! $gerant->estAtelier()) {
+            $gerant->forceFill(['role' => 'atelier'])->save();
+        }
     }
 }
