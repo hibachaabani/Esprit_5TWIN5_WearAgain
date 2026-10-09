@@ -12,19 +12,20 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /** Remplit la base avec des données de démonstration. */
+    /**
+     * Remplit la base avec des données de démonstration.
+     * Un compte par rôle (mot de passe : Wearagain2026) :
+     *   particulier  donateur@wearagain.tn
+     *   association  association@wearagain.tn
+     *   atelier      atelier@wearagain.tn
+     *   admin        admin@wearagain.tn
+     */
     public function run(): void
     {
-        // Comptes de démo (mot de passe : Wearagain2026), recréés seulement s'ils n'existent pas.
-        User::firstOrCreate(
-            ['email' => 'donateur@wearagain.tn'],
-            ['name' => 'Ahmed Trabelsi', 'password' => 'Wearagain2026'],
-        );
-
-        $responsable = User::firstOrCreate(
-            ['email' => 'association@wearagain.tn'],
-            ['name' => 'Sana Ben Ali', 'password' => 'Wearagain2026'],
-        );
+        $this->compte('donateur@wearagain.tn', 'Ahmed Trabelsi', 'particulier');
+        $responsable = $this->compte('association@wearagain.tn', 'Sana Ben Ali', 'association');
+        $this->compte('atelier@wearagain.tn', 'Karim Ben Salah', 'atelier');
+        $this->compte('test@example.com', 'Test User', 'particulier');
 
         Association::firstOrCreate(
             ['numero_agrement' => 'AGR-2026-0042'],
@@ -37,33 +38,43 @@ class DatabaseSeeder extends Seeder
                 'ville' => 'Sousse',
                 'latitude' => 35.8256,
                 'longitude' => 10.6084,
+                'verifiee' => true,
             ],
         );
 
-        // Associations et dons générés par les factories (avec leurs relations).
-        Association::factory(6)
-            ->create()
-            ->each(function (Association $association) {
-                Don::factory(random_int(1, 4))->create([
-                    'association_id' => $association->id,
-                ]);
-            });
+        // Associations et dons générés par les factories (avec leurs relations), une seule fois.
+        if (Association::count() < 2) {
+            User::factory(4)->create();
 
-        // Points de collecte et dépôts, rattachés aux associations et comptes ci-dessus.
-        $this->call(CollecteSeeder::class);
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+            Association::factory(6)
+                ->create()
+                ->each(function (Association $association) {
+                    Don::factory(random_int(1, 4))->create([
+                        'association_id' => $association->id,
+                        'donateur_id' => User::where('role', 'particulier')->inRandomOrder()->value('id'),
+                    ]);
+                });
+        }
 
-        User::factory(4)->create();
-
-        // Réparations, avis (membre 5) et transformations — rattachés aux comptes existants.
+        // Ordre important : les réparations et avis s'appuient sur les ateliers et vêtements.
         $this->call([
             AdminSeeder::class,
+            CollecteSeeder::class,
+            AtelierTransformationSeeder::class,
             ReparationSeeder::class,
             AvisSeeder::class,
-            AtelierTransformationSeeder::class,
         ]);
+    }
+
+    /** Compte de démo créé s'il n'existe pas, avec le bon rôle. */
+    private function compte(string $email, string $nom, string $role): User
+    {
+        $user = User::firstOrCreate(['email' => $email], ['name' => $nom, 'password' => 'Wearagain2026']);
+
+        if ($user->role !== $role) {
+            $user->forceFill(['role' => $role])->save();
+        }
+
+        return $user;
     }
 }

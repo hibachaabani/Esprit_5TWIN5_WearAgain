@@ -13,7 +13,7 @@ class AtelierFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->atelier(),
             'nom' => fake()->randomElement([
                 'Atelier Éco-Couture',
                 'Les Ciseaux d’Or',
