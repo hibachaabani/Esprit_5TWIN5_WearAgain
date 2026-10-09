@@ -60,6 +60,7 @@ class DatabaseSeeder extends Seeder
 
         // Réparations, avis (membre 5) et transformations — rattachés aux comptes existants.
         $this->call([
+            AdminSeeder::class,
             ReparationSeeder::class,
             AvisSeeder::class,
             AtelierTransformationSeeder::class,

@@ -48,7 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
     Route::resource('associations', Admin\AssociationController::class)->only('index');
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
@@ -117,7 +117,7 @@ Route::get('/transformations/{transformation}', [TransformationController::class
 /*
 | Back office — gestion des ateliers et des transformations (Member Atelier)
 */
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
     Route::resource('ateliers', Admin\AtelierController::class)->except('show');
     Route::resource('transformations', Admin\TransformationController::class)->except('show');
 });
