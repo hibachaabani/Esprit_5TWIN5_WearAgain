@@ -66,6 +66,16 @@ class User extends Authenticatable
         return $this->hasMany(Depot::class);
     }
 
+    public function vetements(): HasMany
+    {
+        return $this->hasMany(Vetement::class);
+    }
+
+    public function avis(): HasMany
+    {
+        return $this->hasMany(Avis::class);
+    }
+
     public function atelier(): HasOne
     {
         return $this->hasOne(Atelier::class);

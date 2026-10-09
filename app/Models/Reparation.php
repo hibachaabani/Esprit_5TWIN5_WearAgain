@@ -40,6 +40,19 @@ class Reparation extends Model
         return $this->belongsTo(\App\Models\Atelier::class);
     }
 
+    /** Le propriétaire du vêtement et l'atelier concerné voient la demande. */
+    public function estVisiblePar(?User $user): bool
+    {
+        return $user !== null
+            && ($this->vetement?->user_id === $user->id || $this->atelier?->user_id === $user->id);
+    }
+
+    /** Le particulier peut retirer sa demande tant que l'atelier ne l'a pas commencée. */
+    public function estAnnulablePar(?User $user): bool
+    {
+        return $user !== null && $this->statut === 'en_attente' && $this->vetement?->user_id === $user->id;
+    }
+
     public function statutLabel(): string
     {
         return self::STATUTS[$this->statut] ?? $this->statut;

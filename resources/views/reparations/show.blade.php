@@ -4,7 +4,11 @@
 
 @section('content')
 <div class="container section">
-    <a href="{{ route('reparations.index') }}" class="small">← Retour aux réparations</a>
+    @if ($estAtelier)
+        <a href="{{ route('mon-atelier.index') }}" class="small">← Mon atelier</a>
+    @elseif ($estProprietaire)
+        <a href="{{ route('reparations.index') }}" class="small">← Mes réparations</a>
+    @endif
 
     <div class="detail" style="margin-top: 1.5rem;">
         <div>
@@ -46,6 +50,17 @@
 
             <h2 class="h4">Description du problème</h2>
             <p>{{ $reparation->description_probleme }}</p>
+
+            @if ($estAtelier)
+                <a href="{{ route('mon-atelier.index') }}" class="btn btn-primary">Traiter la demande dans mon atelier</a>
+            @elseif ($reparation->estAnnulablePar(auth()->user()))
+                <form method="POST" action="{{ route('reparations.destroy', $reparation) }}"
+                      onsubmit="return confirm('Annuler cette demande de réparation ?')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-ghost">Annuler ma demande</button>
+                </form>
+            @endif
         </div>
 
         <div>
@@ -67,51 +82,51 @@
                     </div>
                 @endforelse
 
-                <div class="avis-form" style="margin-top: 1.5rem;">
-                    <h3 class="h4">Laisser un avis</h3>
-
-                    <form method="POST" action="{{ route('reparations.avis.store', $reparation) }}">
-                        @csrf
-
-                        @auth
-                            <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                @if ($estProprietaire)
+                    <div class="avis-form" style="margin-top: 1.5rem;">
+                        @if ($monAvis)
+                            <h3 class="h4">Votre avis</h3>
+                            <p><x-stars :note="$monAvis->note" /> {{ $monAvis->commentaire }}</p>
+                            <form method="POST" action="{{ route('avis.destroy', $monAvis) }}"
+                                  onsubmit="return confirm('Supprimer votre avis sur cet atelier ?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-ghost small">Supprimer mon avis</button>
+                            </form>
+                        @elseif ($reparation->statut !== 'terminee')
+                            <p class="muted" style="margin: 0">Vous pourrez noter l'atelier une fois la réparation terminée.</p>
                         @else
-                            <div class="field">
-                                <label for="avis_user_id">Votre nom</label>
-                                <select name="user_id" id="avis_user_id" required>
-                                    <option value="">— Choisir un membre —</option>
-                                    @foreach ($users as $user)
-                                        <option value="{{ $user->id }}" @selected(old('user_id') == $user->id)>{{ $user->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('user_id')<p class="error">{{ $message }}</p>@enderror
-                            </div>
-                        @endauth
+                            <h3 class="h4">Laisser un avis</h3>
 
-                        <div class="field">
-                            <label>Votre note</label>
-                            <div class="rating">
-                                @for ($i = 5; $i >= 1; $i--)
-                                    <input type="radio" name="note" id="note-{{ $i }}" value="{{ $i }}"
-                                           @checked((string) old('note', 5) === (string) $i)>
-                                    <label for="note-{{ $i }}" title="{{ $i }} étoile{{ $i > 1 ? 's' : '' }}">★</label>
-                                @endfor
-                            </div>
-                            @error('note')<p class="error">{{ $message }}</p>@enderror
-                        </div>
+                            <form method="POST" action="{{ route('reparations.avis.store', $reparation) }}">
+                                @csrf
 
-                        <div class="field">
-                            <label for="commentaire">Votre commentaire</label>
-                            <textarea name="commentaire" id="commentaire" rows="4"
-                                      placeholder="Partagez votre expérience avec cet atelier…">{{ old('commentaire') }}</textarea>
-                            @error('commentaire')<p class="error">{{ $message }}</p>@enderror
-                        </div>
+                                <div class="field">
+                                    <label>Votre note</label>
+                                    <div class="rating">
+                                        @for ($i = 5; $i >= 1; $i--)
+                                            <input type="radio" name="note" id="note-{{ $i }}" value="{{ $i }}"
+                                                   @checked((string) old('note', 5) === (string) $i)>
+                                            <label for="note-{{ $i }}" title="{{ $i }} étoile{{ $i > 1 ? 's' : '' }}">★</label>
+                                        @endfor
+                                    </div>
+                                    @error('note')<p class="error">{{ $message }}</p>@enderror
+                                </div>
 
-                        <button class="btn" style="background: var(--maroon); color: var(--white); border-radius: var(--radius-sm); padding: .7rem 1.5rem;">
-                            <x-icon name="message" /> Publier mon avis
-                        </button>
-                    </form>
-                </div>
+                                <div class="field">
+                                    <label for="commentaire">Votre commentaire</label>
+                                    <textarea name="commentaire" id="commentaire" rows="4"
+                                              placeholder="Partagez votre expérience avec cet atelier…">{{ old('commentaire') }}</textarea>
+                                    @error('commentaire')<p class="error">{{ $message }}</p>@enderror
+                                </div>
+
+                                <button class="btn" style="background: var(--maroon); color: var(--white); border-radius: var(--radius-sm); padding: .7rem 1.5rem;">
+                                    <x-icon name="message" /> Publier mon avis
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
             @else
                 <h2 class="h2">Avis</h2>
                 <div class="empty">
