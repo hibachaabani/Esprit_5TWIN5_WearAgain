@@ -44,25 +44,34 @@
             </div>
 
             @if (count($reparations))
-                <div class="grid">
+                <div class="rep-list">
                     @foreach ($reparations as $reparation)
-                        <a href="{{ route('reparations.show', $reparation) }}" class="item-card">
-                            <div class="item-photo" style="--swatch: #E6DECD;">
-                                @php $s = $reparation->statut; @endphp
-                                <span class="status-pill @if($s==='en_attente') status-en_attente @elseif($s==='en_cours') status-en_cours @elseif($s==='terminee') status-terminee @endif">
-                                    {{ $reparation->statutLabel() }}
-                                </span>
-                            </div>
-                            <div class="item-body">
-                                <h3>{{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}</h3>
-                                <p class="small muted">
-                                    Vêtement #{{ $reparation->vetement_id }} ·
-                                    {{ optional($reparation->date_rdv)->format('d/m/Y') ?? 'Date à confirmer' }}
+                        @php
+                            $s = $reparation->statut;
+                            $etape = $reparation->etapeParcours();
+                        @endphp
+                        <a href="{{ route('reparations.show', $reparation) }}" class="rep-card s-{{ $s }}">
+                            <div class="rep-body">
+                                <h3 class="rep-title">{{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}</h3>
+                                <p class="rep-meta">
+                                    <span>{{ optional($reparation->atelier)->nom ?? 'Atelier à confirmer' }}</span>
+                                    <span>{{ optional($reparation->date_rdv)->format('d/m/Y') ?? 'Date à confirmer' }}</span>
+                                    @if ($reparation->estEnRetard()) <span class="retard-badge">En retard</span>@endif
                                 </p>
-                                @if (class_exists(\App\Models\Atelier::class))
-                                    <p class="small muted">{{ optional($reparation->atelier)->nom ?? 'Atelier à confirmer' }}</p>
+                                @if ($s !== 'annulee')
+                                    <div class="rep-steps" aria-hidden="true">
+                                        @foreach (\App\Models\Reparation::PARCOURS as $i => $cle)
+                                            <span class="{{ $i + 1 <= $etape ? 'on' : '' }}"></span>
+                                        @endforeach
+                                    </div>
                                 @endif
-                                <p class="item-price">{{ $reparation->devis !== null ? number_format((float) $reparation->devis, 2).' DT' : 'Devis à confirmer' }}</p>
+                            </div>
+                            <div class="rep-side">
+                                <span class="status-pill status-{{ $s }}">{{ $reparation->statutLabel() }}</span>
+                                <span class="rep-price">
+                                    {{ $reparation->devis !== null ? number_format((float) $reparation->devis, 2).' DT' : '—' }}
+                                    <small>{{ $reparation->devis !== null ? 'Devis' : 'Devis à confirmer' }}</small>
+                                </span>
                             </div>
                         </a>
                     @endforeach

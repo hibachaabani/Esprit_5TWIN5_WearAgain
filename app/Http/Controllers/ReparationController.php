@@ -9,6 +9,7 @@ use App\Models\Avis;
 use App\Models\Reparation;
 use App\Services\IA\DiagnosticReparationIA;
 use App\Services\IA\RecommandationAteliers;
+use App\Services\ReparationWorkflow;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,7 @@ class ReparationController extends Controller
     public function __construct(
         private readonly DiagnosticReparationIA $diagnosticIA,
         private readonly RecommandationAteliers $recommandationAteliers,
+        private readonly ReparationWorkflow $workflow,
     ) {
     }
 
@@ -72,6 +74,14 @@ class ReparationController extends Controller
         $diagnostic = $this->diagnosticIA->analyser((string) $reparation->description_probleme);
         $reparation->update($diagnostic->toReparationAttributes());
 
+        // Première étape du journal : la demande est en attente.
+        $reparation->suivis()->create([
+            'auteur_id' => $request->user()->id,
+            'ancien_statut' => null,
+            'nouveau_statut' => 'en_attente',
+            'commentaire' => 'Demande créée par le client.',
+        ]);
+
         return redirect()
             ->route('reparations.show', $reparation)
             ->with('status', "Demande envoyée à l'atelier : il vous proposera un devis et un rendez-vous.");
@@ -112,7 +122,7 @@ class ReparationController extends Controller
     public function show(Request $request, Reparation $reparation): View
     {
         $user = $request->user();
-        $reparation->load(['vetement', 'atelier.avis.user']);
+        $reparation->load(['vetement', 'atelier.avis.user', 'suivis.auteur']);
 
         abort_unless($reparation->estVisiblePar($user) || $user->isAdmin(), 403);
 
@@ -121,6 +131,7 @@ class ReparationController extends Controller
             'estProprietaire' => $reparation->vetement?->user_id === $user->id,
             'estAtelier' => (bool) $reparation->atelier?->estGerePar($user),
             'monAvis' => $reparation->atelier?->avis->firstWhere('user_id', $user->id),
+            'transitions' => $this->workflow->autorisees($reparation, $user),
         ]);
     }
 

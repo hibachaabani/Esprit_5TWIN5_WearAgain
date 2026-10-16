@@ -15,6 +15,7 @@ use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReparationController;
+use App\Http\Controllers\ReparationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\VetementController;
@@ -59,6 +60,18 @@ Route::middleware('auth')->group(function () {
     Route::get('depots/{depot}', [DepotController::class, 'show'])->name('depots.show')->whereNumber('depot');
     Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
     Route::get('reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show')->whereNumber('reparation');
+});
+
+/*
+| Cycle de vie d'une réparation : devis, avancement et annulation (membre 5).
+| L'acteur attendu (atelier ou client) est vérifié par la policy, pas le rôle.
+*/
+Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations.')->whereNumber('reparation')->group(function () {
+    Route::post('devis', [ReparationWorkflowController::class, 'proposerDevis'])->name('devis.proposer');
+    Route::post('devis/accepter', [ReparationWorkflowController::class, 'accepter'])->name('devis.accepter');
+    Route::post('devis/refuser', [ReparationWorkflowController::class, 'refuser'])->name('devis.refuser');
+    Route::post('terminer', [ReparationWorkflowController::class, 'terminer'])->name('terminer');
+    Route::post('annuler', [ReparationWorkflowController::class, 'annuler'])->name('annuler');
 });
 
 /*

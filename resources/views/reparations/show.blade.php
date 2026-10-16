@@ -3,27 +3,50 @@
 @section('title', $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id)
 
 @section('content')
+@php
+    $s = $reparation->statut;
+    $etape = $reparation->etapeParcours();
+@endphp
 <div class="container section">
-    @if ($estAtelier)
-        <a href="{{ route('mon-atelier.index') }}" class="small">← Mon atelier</a>
-    @elseif ($estProprietaire)
-        <a href="{{ route('reparations.index') }}" class="small">← Mes réparations</a>
-    @endif
+    <div class="rep-topbar">
+        @if ($estAtelier)
+            <a href="{{ route('mon-atelier.index') }}" class="small">← Mon atelier</a>
+        @elseif ($estProprietaire)
+            <a href="{{ route('reparations.index') }}" class="small">← Mes réparations</a>
+        @endif
+    </div>
 
-    <div class="detail" style="margin-top: 1.5rem;">
-        <div>
-            <p class="eyebrow">Réparation n°{{ $reparation->id }}</p>
+    <header class="rep-hero">
+        <p class="eyebrow">Réparation n°{{ $reparation->id }}</p>
+        <div class="rep-hero-head">
             <h1>{{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}</h1>
+            <span class="rep-hero-status">
+                <span class="status-pill status-{{ $s }}">{{ $reparation->statutLabel() }}</span>
+                @if ($reparation->estEnRetard())
+                    <span class="retard-badge">En retard</span>
+                @endif
+            </span>
+        </div>
 
-            <p>
-                @php $s = $reparation->statut; @endphp
-                <span class="status-pill @if($s==='en_attente') status-en_attente @elseif($s==='en_cours') status-en_cours @elseif($s==='terminee') status-terminee @endif">
-                    {{ $reparation->statutLabel() }}
-                </span>
-            </p>
+        @if ($s === 'annulee')
+            <p class="rep-cancelled">Cette demande a été annulée.</p>
+        @else
+            <ol class="rep-stepper">
+                @foreach (\App\Models\Reparation::PARCOURS as $i => $cle)
+                    @php $n = $i + 1; @endphp
+                    <li class="rep-step {{ $n < $etape ? 'done' : ($n === $etape ? 'current' : '') }}">
+                        <span class="dot">{{ $n < $etape ? '✓' : $n }}</span>
+                        <span class="lbl">{{ \App\Models\Reparation::STATUTS[$cle] }}</span>
+                    </li>
+                @endforeach
+            </ol>
+        @endif
+    </header>
 
-            <div class="specs">
-                <div>
+    <div class="detail detail--rep">
+        <div>
+            <dl class="rep-facts">
+                <div class="rep-fact">
                     <dt>Vêtement</dt>
                     <dd>
                         @if ($reparation->vetement)
@@ -34,20 +57,20 @@
                     </dd>
                 </div>
                 @if (class_exists(\App\Models\Atelier::class))
-                    <div>
+                    <div class="rep-fact">
                         <dt>Atelier</dt>
                         <dd>{{ optional($reparation->atelier)->nom ?? 'À confirmer' }}</dd>
                     </div>
                 @endif
-                <div>
+                <div class="rep-fact">
                     <dt>Date de rendez-vous</dt>
                     <dd>{{ optional($reparation->date_rdv)->format('d/m/Y H:i') ?? 'À confirmer' }}</dd>
                 </div>
-                <div>
+                <div class="rep-fact">
                     <dt>Devis estimé</dt>
                     <dd>{{ $reparation->devis !== null ? number_format((float) $reparation->devis, 2).' DT' : 'À confirmer' }}</dd>
                 </div>
-            </div>
+            </dl>
 
             <h2 class="h4">Description du problème</h2>
             <p>{{ $reparation->description_probleme }}</p>
@@ -56,19 +79,16 @@
 
             @if ($estAtelier)
                 <a href="{{ route('mon-atelier.index') }}" class="btn btn-primary">Traiter la demande dans mon atelier</a>
-            @elseif ($reparation->estAnnulablePar(auth()->user()))
-                <form method="POST" action="{{ route('reparations.destroy', $reparation) }}"
-                      onsubmit="return confirm('Annuler cette demande de réparation ?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-ghost">Annuler ma demande</button>
-                </form>
             @endif
+
+            @include('reparations._workflow', ['reparation' => $reparation, 'transitions' => $transitions])
         </div>
 
         <div>
+            @include('reparations._timeline', ['reparation' => $reparation])
+
             @if (class_exists(\App\Models\Atelier::class) && $reparation->atelier)
-                <h2 class="h2">Avis ({{ count($reparation->atelier->avis) }})</h2>
+                <h2 class="h2" style="margin-top: 2rem;">Avis ({{ count($reparation->atelier->avis) }})</h2>
 
                 @forelse ($reparation->atelier->avis as $avi)
                     <article class="avis-card">
@@ -136,7 +156,7 @@
                     </div>
                 @endif
             @else
-                <h2 class="h2">Avis</h2>
+                <h2 class="h2" style="margin-top: 2rem;">Avis</h2>
                 <div class="empty">
                     <p>Les avis seront disponibles dès qu'un atelier sera associé à cette réparation.</p>
                 </div>

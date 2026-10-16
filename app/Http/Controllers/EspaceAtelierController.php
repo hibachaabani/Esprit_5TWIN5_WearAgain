@@ -51,7 +51,7 @@ class EspaceAtelierController extends Controller
     /** Fiche de l'atelier (création si le compte n'en a pas encore). */
     public function edit(Request $request): View
     {
-        return view('ateliers.edit', ['atelier' => $request->user()->atelier ?? new Atelier()]);
+        return view('ateliers.edit', ['atelier' => $request->user()->atelier ?? new Atelier]);
     }
 
     public function update(ProfilAtelierRequest $request): RedirectResponse

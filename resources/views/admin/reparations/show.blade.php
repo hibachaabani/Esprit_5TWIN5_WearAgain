@@ -9,6 +9,7 @@
     <h1 class="h2">
         {{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}
         <span class="status-badge status-{{ $reparation->statut }}">{{ $reparation->statutLabel() }}</span>
+        @if ($reparation->estEnRetard())<span class="retard-badge">En retard</span>@endif
     </h1>
     <div style="display:flex;gap:.5rem">
         <a href="{{ route('admin.reparations.index') }}" class="btn btn-ghost small">← Toutes les réparations</a>
@@ -46,6 +47,8 @@
         <tr><th>Créée le</th><td>{{ $reparation->created_at?->format('d/m/Y') }}</td></tr>
     </tbody>
 </table>
+
+@include('reparations._timeline', ['reparation' => $reparation, 'titreClasse' => 'h3'])
 @endsection
 
 @push('styles')

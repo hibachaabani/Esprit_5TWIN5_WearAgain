@@ -29,12 +29,21 @@ class ReparationController extends Controller
 
         $reparations = $query->paginate(10)->withQueryString();
 
-        return view('admin.reparations.index', compact('reparations'));
+        // Compteurs par statut + retards (indépendants du filtre affiché).
+        $brut = Reparation::query()->selectRaw('statut, COUNT(*) as total')->groupBy('statut')->pluck('total', 'statut');
+        $totalParStatut = [];
+        foreach (array_keys(Reparation::STATUTS) as $cle) {
+            $totalParStatut[$cle] = (int) ($brut[$cle] ?? 0);
+        }
+        $enRetard = Reparation::enRetard()->count();
+
+        return view('admin.reparations.index', compact('reparations', 'totalParStatut', 'enRetard'));
     }
 
     public function show(Reparation $reparation)
     {
         $reparation->load('vetement');
+        $reparation->load('suivis.auteur');
 
         if (class_exists(Atelier::class)) {
             $reparation->load('atelier');

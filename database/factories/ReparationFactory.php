@@ -27,4 +27,46 @@ class ReparationFactory extends Factory
             'statut' => fake()->randomElement(array_keys(Reparation::STATUTS)),
         ];
     }
+
+    public function withStatus(string $statut): static
+    {
+        return $this->state(fn () => ['statut' => $statut]);
+    }
+
+    public function enAttente(): static
+    {
+        return $this->withStatus('en_attente')->state(fn () => ['devis' => null, 'date_rdv' => null]);
+    }
+
+    public function devisPropose(): static
+    {
+        return $this->withStatus('devis_propose')->state(fn () => [
+            'devis' => fake()->randomFloat(2, 10, 150),
+            'date_rdv' => fake()->dateTimeBetween('+2 days', '+3 weeks'),
+        ]);
+    }
+
+    public function enCours(): static
+    {
+        return $this->withStatus('en_cours')->state(fn () => [
+            'devis' => fake()->randomFloat(2, 10, 150),
+            'date_rdv' => fake()->dateTimeBetween('-3 days', '+1 day'),
+        ]);
+    }
+
+    public function terminee(): static
+    {
+        return $this->withStatus('terminee')->state(fn () => [
+            'devis' => fake()->randomFloat(2, 5, 100),
+            'date_rdv' => fake()->dateTimeBetween('-4 weeks', '-3 days'),
+        ]);
+    }
+
+    public function annulee(): static
+    {
+        return $this->withStatus('annulee')->state(fn () => [
+            'devis' => null,
+            'date_rdv' => null,
+        ]);
+    }
 }

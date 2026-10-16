@@ -34,7 +34,7 @@
         <article class="demande">
             <div>
                     @php $s = $reparation->statut; @endphp
-                    <p class="eyebrow"><span class="status-pill @if($s==='en_attente') status-en_attente @elseif($s==='en_cours') status-en_cours @elseif($s==='terminee') status-terminee @endif">{{ $reparation->statutLabel() }}</span> · reçue le {{ $reparation->created_at->format('d/m/Y') }}</p>
+                    <p class="eyebrow"><span class="status-pill status-{{ $s }}">{{ $reparation->statutLabel() }}</span> · reçue le {{ $reparation->created_at->format('d/m/Y') }}</p>
                 <h3><a href="{{ route('reparations.show', $reparation) }}">{{ $reparation->vetement->titre ?? 'Vêtement' }}</a></h3>
                 <p class="small muted">Client : {{ $reparation->vetement?->user?->name ?? '—' }}</p>
                 <p>{{ $reparation->description_probleme }}</p>
@@ -46,24 +46,9 @@
                     </p>
                 @endif
             </div>
-            <form method="POST" action="{{ route('mon-atelier.reparations.update', $reparation) }}" class="demande-form">
-                @csrf
-                @method('PATCH')
-                <label>Devis (DT)
-                    <input type="number" name="devis" min="0" step="0.5" value="{{ $reparation->devis }}">
-                </label>
-                <label>Rendez-vous
-                    <input type="datetime-local" name="date_rdv" value="{{ $reparation->date_rdv?->format('Y-m-d\TH:i') }}">
-                </label>
-                <label>Statut
-                    <select name="statut">
-                        @foreach (\App\Models\Reparation::STATUTS as $cle => $libelle)
-                            <option value="{{ $cle }}" @selected($reparation->statut === $cle)>{{ $libelle }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <button type="submit" class="btn btn-primary">Enregistrer</button>
-            </form>
+            <div class="demande-actions">
+                <a href="{{ route('reparations.show', $reparation) }}" class="btn btn-primary">Gérer la demande</a>
+            </div>
         </article>
     @empty
         <p class="muted">Aucune demande de réparation{{ $statut ? ' avec ce statut' : '' }}.</p>

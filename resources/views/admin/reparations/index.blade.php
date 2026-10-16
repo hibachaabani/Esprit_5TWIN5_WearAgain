@@ -21,7 +21,21 @@
     </select>
     <button type="submit" class="btn btn-primary small">Filtrer</button>
     <a href="{{ route('admin.reparations.index') }}" class="btn btn-ghost small">Réinitialiser</a>
+    @if (isset($enRetard) && $enRetard > 0)
+        <span class="retard-badge">Retard : {{ $enRetard }}</span>
+    @endif
 </form>
+
+@if (isset($totalParStatut))
+    <div class="avis-stats" style="margin: 1rem 0">
+        @foreach ($totalParStatut as $cle => $total)
+            <div class="avis-stat">
+                <strong>{{ $total }}</strong>
+                <span>{{ \App\Models\Reparation::STATUTS[$cle] ?? $cle }}</span>
+            </div>
+        @endforeach
+    </div>
+@endif
 
 @php($cols = class_exists(\App\Models\Atelier::class) ? 8 : 7)
 
@@ -50,7 +64,9 @@
                     </a>
                 </td>
                 <td class="small muted">{{ \Illuminate\Support\Str::limit($reparation->description_probleme, 50) }}</td>
-                <td><span class="status-badge status-{{ $reparation->statut }}">{{ $reparation->statutLabel() }}</span></td>
+                <td><span class="status-badge status-{{ $reparation->statut }}">{{ $reparation->statutLabel() }}</span>
+                    @if ($reparation->estEnRetard())<span class="retard-badge">En retard</span>@endif
+                </td>
                 <td>{{ $reparation->devis !== null ? number_format((float) $reparation->devis, 2).' DT' : '—' }}</td>
                 <td>{{ optional($reparation->date_rdv)->format('d/m/Y H:i') ?? '—' }}</td>
                 @if (class_exists(\App\Models\Atelier::class))
