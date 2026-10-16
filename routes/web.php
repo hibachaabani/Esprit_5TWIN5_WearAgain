@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
 use App\Http\Controllers\AtelierController;
 use App\Http\Controllers\AtelierAvisController;
+use App\Http\Controllers\AtelierStatistiquesController;
 use App\Http\Controllers\AvisController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DepotController;
@@ -123,6 +124,15 @@ Route::middleware('role:atelier')->prefix('mon-atelier/avis')->name('atelier.avi
     Route::get('/', [AtelierAvisController::class, 'index'])->name('index');
     Route::post('{avi}/brouillon-ia', [AtelierAvisController::class, 'brouillonIA'])->name('brouillon-ia');
     Route::post('{avi}/reponse', [AtelierAvisController::class, 'repondre'])->name('repondre');
+});
+
+/*
+| Statistiques et export de l'atelier (membre 5)
+*/
+Route::middleware('role:atelier')->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
+    Route::get('/', AtelierStatistiquesController::class)->name('index');
+    Route::get('export/{type}', [AtelierStatistiquesController::class, 'export'])
+        ->whereIn('type', ['reparations', 'avis'])->name('export');
 });
 
 /*

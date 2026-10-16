@@ -15,6 +15,7 @@
             </p>
         </div>
         <div class="hero-actions" style="margin-top: 0">
+            <a href="{{ route('atelier.statistiques.index') }}" class="btn btn-ghost">Statistiques</a>
             <a href="{{ route('atelier.avis.index') }}" class="btn btn-ghost">Mes avis reçus ({{ $nombreAvis }})</a>
             <a href="{{ route('ateliers.show', $atelier) }}" class="btn btn-ghost">Voir ma page publique</a>
             <a href="{{ route('mon-atelier.edit') }}" class="btn btn-primary">Modifier ma fiche</a>
