@@ -9,6 +9,7 @@
     <h1 class="h2">
         {{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}
         <span class="status-badge status-{{ $reparation->statut }}">{{ $reparation->statutLabel() }}</span>
+        @if ($reparation->estEnRetard())<span class="retard-badge">En retard</span>@endif
     </h1>
     <div style="display:flex;gap:.5rem">
         <a href="{{ route('admin.reparations.index') }}" class="btn btn-ghost small">← Toutes les réparations</a>
@@ -38,9 +39,18 @@
             <tr><th>Atelier</th><td>{{ optional($reparation->atelier)->nom ?? '—' }}</td></tr>
         @endif
         <tr><th>Description du problème</th><td>{{ $reparation->description_probleme }}</td></tr>
+        @if ($reparation->aDiagnosticIA())
+            <tr><th>Diagnostic IA</th><td>@include('reparations._ia_diagnostic', ['reparation' => $reparation])</td></tr>
+        @endif
         <tr><th>Devis estimé</th><td>{{ $reparation->devis !== null ? number_format((float) $reparation->devis, 2).' DT' : 'À confirmer' }}</td></tr>
         <tr><th>Date de rendez-vous</th><td>{{ optional($reparation->date_rdv)->format('d/m/Y H:i') ?? '—' }}</td></tr>
         <tr><th>Créée le</th><td>{{ $reparation->created_at?->format('d/m/Y') }}</td></tr>
     </tbody>
 </table>
+
+@include('reparations._timeline', ['reparation' => $reparation, 'titreClasse' => 'h3'])
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/reparations.css') }}">
+@endpush

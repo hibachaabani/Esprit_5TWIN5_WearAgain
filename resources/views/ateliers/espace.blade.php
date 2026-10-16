@@ -15,6 +15,8 @@
             </p>
         </div>
         <div class="hero-actions" style="margin-top: 0">
+            <a href="{{ route('atelier.statistiques.index') }}" class="btn btn-ghost">Statistiques</a>
+            <a href="{{ route('atelier.avis.index') }}" class="btn btn-ghost">Mes avis reçus ({{ $nombreAvis }})</a>
             <a href="{{ route('ateliers.show', $atelier) }}" class="btn btn-ghost">Voir ma page publique</a>
             <a href="{{ route('mon-atelier.edit') }}" class="btn btn-primary">Modifier ma fiche</a>
         </div>
@@ -31,29 +33,22 @@
     @forelse ($reparations as $reparation)
         <article class="demande">
             <div>
-                <p class="eyebrow">{{ $reparation->statutLabel() }} · reçue le {{ $reparation->created_at->format('d/m/Y') }}</p>
+                    @php $s = $reparation->statut; @endphp
+                    <p class="eyebrow"><span class="status-pill status-{{ $s }}">{{ $reparation->statutLabel() }}</span> · reçue le {{ $reparation->created_at->format('d/m/Y') }}</p>
                 <h3><a href="{{ route('reparations.show', $reparation) }}">{{ $reparation->vetement->titre ?? 'Vêtement' }}</a></h3>
                 <p class="small muted">Client : {{ $reparation->vetement?->user?->name ?? '—' }}</p>
                 <p>{{ $reparation->description_probleme }}</p>
+                @if ($reparation->aDiagnosticIA())
+                    <p class="small muted" style="margin-top: .5rem">
+                        Estimation IA : {{ $reparation->ia_categorie }} ·
+                        {{ number_format((float) $reparation->ia_prix_min, 0, ',', ' ') }}–{{ number_format((float) $reparation->ia_prix_max, 0, ',', ' ') }} DT ·
+                        {{ $reparation->ia_delai_jours }} jour(s)
+                    </p>
+                @endif
             </div>
-            <form method="POST" action="{{ route('mon-atelier.reparations.update', $reparation) }}" class="demande-form">
-                @csrf
-                @method('PATCH')
-                <label>Devis (DT)
-                    <input type="number" name="devis" min="0" step="0.5" value="{{ $reparation->devis }}">
-                </label>
-                <label>Rendez-vous
-                    <input type="datetime-local" name="date_rdv" value="{{ $reparation->date_rdv?->format('Y-m-d\TH:i') }}">
-                </label>
-                <label>Statut
-                    <select name="statut">
-                        @foreach (\App\Models\Reparation::STATUTS as $cle => $libelle)
-                            <option value="{{ $cle }}" @selected($reparation->statut === $cle)>{{ $libelle }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <button type="submit" class="btn btn-primary">Enregistrer</button>
-            </form>
+            <div class="demande-actions">
+                <a href="{{ route('reparations.show', $reparation) }}" class="btn btn-primary">Gérer la demande</a>
+            </div>
         </article>
     @empty
         <p class="muted">Aucune demande de réparation{{ $statut ? ' avec ce statut' : '' }}.</p>
@@ -108,6 +103,7 @@
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/reparations.css') }}">
 <style>
     .demande { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.5rem; padding: 1.25rem; margin-bottom: 1rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
     .demande h3 { font: 700 1.1rem var(--font-display); margin: .2rem 0; }

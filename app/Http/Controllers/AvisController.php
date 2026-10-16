@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Atelier;
 use App\Models\Avis;
+use App\Services\IA\SyntheseAvisIA;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
  * Front office : le particulier modifie ou supprime son propre avis (l'admin modère depuis le back-office).
+ * Contient aussi la synthèse IA des avis d'un atelier (endpoint public).
  */
 class AvisController extends Controller
 {
@@ -44,5 +48,20 @@ class AvisController extends Controller
         $avis->delete();
 
         return back()->with('status', 'Votre avis a été supprimé.');
+    }
+
+    /**
+     * Synthèse IA des avis d'un atelier (endpoint public, appelé en AJAX depuis la fiche atelier).
+     * "rafraichir=1" force le recalcul en ignorant le cache.
+     */
+    public function analyseIA(Request $request, Atelier $atelier, SyntheseAvisIA $synthese): JsonResponse
+    {
+        $resultat = $synthese->pourAtelier($atelier, $request->boolean('rafraichir'));
+
+        return response()->json([
+            'source' => $resultat['source'],
+            'nombre_avis' => $resultat['nombre_avis'],
+            'html' => view('avis._synthese-ia', ['synthese' => $resultat])->render(),
+        ]);
     }
 }

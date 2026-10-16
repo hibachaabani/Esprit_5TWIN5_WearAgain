@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
 use App\Http\Controllers\AtelierController;
+use App\Http\Controllers\AtelierAvisController;
+use App\Http\Controllers\AtelierStatistiquesController;
 use App\Http\Controllers\AvisController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DepotController;
@@ -13,6 +15,7 @@ use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReparationController;
+use App\Http\Controllers\ReparationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\VetementController;
@@ -60,6 +63,18 @@ Route::middleware('auth')->group(function () {
 });
 
 /*
+| Cycle de vie d'une réparation : devis, avancement et annulation (membre 5).
+| L'acteur attendu (atelier ou client) est vérifié par la policy, pas le rôle.
+*/
+Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations.')->whereNumber('reparation')->group(function () {
+    Route::post('devis', [ReparationWorkflowController::class, 'proposerDevis'])->name('devis.proposer');
+    Route::post('devis/accepter', [ReparationWorkflowController::class, 'accepter'])->name('devis.accepter');
+    Route::post('devis/refuser', [ReparationWorkflowController::class, 'refuser'])->name('devis.refuser');
+    Route::post('terminer', [ReparationWorkflowController::class, 'terminer'])->name('terminer');
+    Route::post('annuler', [ReparationWorkflowController::class, 'annuler'])->name('annuler');
+});
+
+/*
 | Particulier : vêtements, dons, dépôts, demandes de réparation / transformation, avis
 */
 Route::middleware('role:particulier')->group(function () {
@@ -72,6 +87,7 @@ Route::middleware('role:particulier')->group(function () {
     Route::get('reparations', [ReparationController::class, 'index'])->name('reparations.index');
     Route::get('reparations/create', [ReparationController::class, 'create'])->name('reparations.create');
     Route::post('reparations', [ReparationController::class, 'store'])->name('reparations.store');
+    Route::post('reparations/analyse-ia', [ReparationController::class, 'analyseIA'])->name('reparations.analyse-ia');
     Route::delete('reparations/{reparation}', [ReparationController::class, 'destroy'])->name('reparations.destroy');
     Route::post('reparations/{reparation}/avis', [ReparationController::class, 'storeAvis'])->name('reparations.avis.store');
     Route::get('avis/{avis}/modifier', [AvisController::class, 'edit'])->name('avis.edit');
@@ -115,6 +131,24 @@ Route::middleware('role:atelier')->prefix('mon-atelier')->name('mon-atelier.')->
 });
 
 /*
+| Avis reçus par l'atelier et réponse publique (membre 5)
+*/
+Route::middleware('role:atelier')->prefix('mon-atelier/avis')->name('atelier.avis.')->group(function () {
+    Route::get('/', [AtelierAvisController::class, 'index'])->name('index');
+    Route::post('{avi}/brouillon-ia', [AtelierAvisController::class, 'brouillonIA'])->name('brouillon-ia');
+    Route::post('{avi}/reponse', [AtelierAvisController::class, 'repondre'])->name('repondre');
+});
+
+/*
+| Statistiques et export de l'atelier (membre 5)
+*/
+Route::middleware('role:atelier')->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
+    Route::get('/', AtelierStatistiquesController::class)->name('index');
+    Route::get('export/{type}', [AtelierStatistiquesController::class, 'export'])
+        ->whereIn('type', ['reparations', 'avis'])->name('export');
+});
+
+/*
 | Public (visiteurs compris)
 */
 Route::resource('vetements', VetementController::class)->only(['index', 'show']);
@@ -126,6 +160,7 @@ Route::resource('points-collecte', PointCollecteController::class)
 Route::get('depots/suivi', [DepotController::class, 'suivi'])->name('depots.suivi');
 Route::get('ateliers', [AtelierController::class, 'index'])->name('ateliers.index');
 Route::get('ateliers/{atelier}', [AtelierController::class, 'show'])->name('ateliers.show');
+Route::get('ateliers/{atelier}/avis-analyse', [AvisController::class, 'analyseIA'])->name('avis.analyse')->whereNumber('atelier');
 Route::get('transformations', [TransformationController::class, 'index'])->name('transformations.index');
 Route::get('transformations/{transformation}', [TransformationController::class, 'show'])->name('transformations.show');
 
@@ -165,6 +200,13 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
 
     // Réparations et avis (membre 5)
     Route::resource('reparations', Admin\ReparationController::class);
+
+    // Analyse des avis (membre 5) — déclarée avant la ressource 'avis' pour que
+    // "avis/analyse" ne soit pas capté par "avis/{avi}".
+    Route::get('avis/analyse', Admin\AnalyseAvisController::class)->name('avis.analyse');
+    Route::post('avis/analyser-tout', [Admin\AvisController::class, 'analyserTout'])->name('avis.analyser-tout');
+    Route::post('avis/{avi}/analyser', [Admin\AvisController::class, 'analyser'])->name('avis.analyser');
+
     Route::resource('avis', Admin\AvisController::class);
 });
 

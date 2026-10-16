@@ -3,9 +3,12 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Validation\Rule;
 
+/**
+ * Back-office : l'admin modère un avis existant.
+ * Seuls la note et le commentaire sont modifiables ; l'auteur et l'atelier
+ * restent ceux de la réparation d'origine.
+ */
 class UpdateAvisRequest extends FormRequest
 {
     public function authorize(): bool
@@ -15,46 +18,29 @@ class UpdateAvisRequest extends FormRequest
 
     public function rules(): array
     {
-        $rules = [
-            'user_id' => ['required', 'exists:users,id'],
-            'atelier_id' => ['nullable'],
+        return [
             'note' => ['required', 'integer', 'between:1,5'],
-            'commentaire' => ['required', 'string', 'min:5'],
-            'date' => ['nullable', 'date'],
+            'commentaire' => ['required', 'string', 'min:5', 'max:1000'],
         ];
-
-        if (Schema::hasTable('ateliers')) {
-            // Le diagramme impose un atelier par avis (Atelier "1" -- "0..*" Avis).
-            $rules['atelier_id'] = ['required', Rule::exists('ateliers', 'id')];
-        }
-
-        return $rules;
     }
 
     public function messages(): array
     {
         return [
-            'user_id.required' => 'Veuillez choisir un membre.',
-            'user_id.exists' => 'Ce membre n\'existe pas.',
-            'atelier_id.required' => 'L\'atelier est obligatoire.',
-            'atelier_id.exists' => 'Cet atelier n\'existe pas.',
             'note.required' => 'La note est obligatoire.',
             'note.integer' => 'La note doit être un nombre entier.',
             'note.between' => 'La note doit être comprise entre 1 et 5 étoiles.',
             'commentaire.required' => 'Le commentaire est obligatoire.',
             'commentaire.min' => 'Le commentaire doit contenir au moins 5 caractères.',
-            'date.date' => 'La date n\'est pas valide.',
+            'commentaire.max' => 'Le commentaire ne doit pas dépasser 1000 caractères.',
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'user_id' => 'membre',
-            'atelier_id' => 'atelier',
             'note' => 'note',
             'commentaire' => 'commentaire',
-            'date' => 'date',
         ];
     }
 }
