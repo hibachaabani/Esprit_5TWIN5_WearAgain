@@ -13,13 +13,15 @@
         @method('PUT')
 
         <div class="field">
-            <label for="note">Note *</label>
-            <select id="note" name="note" required>
+            <label>Note *</label>
+            <div class="rating">
                 @for ($i = 5; $i >= 1; $i--)
-                    <option value="{{ $i }}" @selected((int) old('note', $avis->note) === $i)>{{ str_repeat('★', $i) }} ({{ $i }}/5)</option>
+                    <input type="radio" name="note" id="note-{{ $i }}" value="{{ $i }}"
+                           @checked((string) old('note', $avis->note) === (string) $i)>
+                    <label for="note-{{ $i }}" title="{{ $i }} étoile{{ $i > 1 ? 's' : '' }}">★</label>
                 @endfor
-            </select>
-            @error('note') <p class="error">{{ $message }}</p> @enderror
+            </div>
+            @error('note')<p class="error">{{ $message }}</p>@enderror
         </div>
 
         <div class="field">
@@ -32,3 +34,7 @@
     </form>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/reparations.css') }}">
+@endpush

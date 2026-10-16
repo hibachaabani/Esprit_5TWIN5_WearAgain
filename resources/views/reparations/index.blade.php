@@ -48,7 +48,10 @@
                     @foreach ($reparations as $reparation)
                         <a href="{{ route('reparations.show', $reparation) }}" class="item-card">
                             <div class="item-photo" style="--swatch: #E6DECD;">
-                                <span class="condition-badge">{{ $reparation->statutLabel() }}</span>
+                                @php $s = $reparation->statut; @endphp
+                                <span class="status-pill @if($s==='en_attente') status-en_attente @elseif($s==='en_cours') status-en_cours @elseif($s==='terminee') status-terminee @endif">
+                                    {{ $reparation->statutLabel() }}
+                                </span>
                             </div>
                             <div class="item-body">
                                 <h3>{{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}</h3>
@@ -84,11 +87,5 @@
 @endsection
 
 @push('styles')
-<style>
-    .pagination { display: flex; gap: .4rem; list-style: none; padding: 0; justify-content: center; flex-wrap: wrap; }
-    .pagination .page-link { display: block; padding: .4rem .85rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--white); color: var(--ink); text-decoration: none; }
-    .pagination .active .page-link { background: var(--maroon); border-color: var(--maroon); color: var(--white); }
-    .pagination .disabled .page-link { opacity: .4; }
-    .stars { color: var(--gold); letter-spacing: .1em; white-space: nowrap; }
-</style>
+<link rel="stylesheet" href="{{ asset('css/reparations.css') }}">
 @endpush

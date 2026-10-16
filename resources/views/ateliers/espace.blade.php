@@ -15,6 +15,7 @@
             </p>
         </div>
         <div class="hero-actions" style="margin-top: 0">
+            <a href="{{ route('atelier.avis.index') }}" class="btn btn-ghost">Mes avis reçus ({{ $nombreAvis }})</a>
             <a href="{{ route('ateliers.show', $atelier) }}" class="btn btn-ghost">Voir ma page publique</a>
             <a href="{{ route('mon-atelier.edit') }}" class="btn btn-primary">Modifier ma fiche</a>
         </div>
@@ -31,10 +32,18 @@
     @forelse ($reparations as $reparation)
         <article class="demande">
             <div>
-                <p class="eyebrow">{{ $reparation->statutLabel() }} · reçue le {{ $reparation->created_at->format('d/m/Y') }}</p>
+                    @php $s = $reparation->statut; @endphp
+                    <p class="eyebrow"><span class="status-pill @if($s==='en_attente') status-en_attente @elseif($s==='en_cours') status-en_cours @elseif($s==='terminee') status-terminee @endif">{{ $reparation->statutLabel() }}</span> · reçue le {{ $reparation->created_at->format('d/m/Y') }}</p>
                 <h3><a href="{{ route('reparations.show', $reparation) }}">{{ $reparation->vetement->titre ?? 'Vêtement' }}</a></h3>
                 <p class="small muted">Client : {{ $reparation->vetement?->user?->name ?? '—' }}</p>
                 <p>{{ $reparation->description_probleme }}</p>
+                @if ($reparation->aDiagnosticIA())
+                    <p class="small muted" style="margin-top: .5rem">
+                        Estimation IA : {{ $reparation->ia_categorie }} ·
+                        {{ number_format((float) $reparation->ia_prix_min, 0, ',', ' ') }}–{{ number_format((float) $reparation->ia_prix_max, 0, ',', ' ') }} DT ·
+                        {{ $reparation->ia_delai_jours }} jour(s)
+                    </p>
+                @endif
             </div>
             <form method="POST" action="{{ route('mon-atelier.reparations.update', $reparation) }}" class="demande-form">
                 @csrf
@@ -108,6 +117,7 @@
 @endsection
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/reparations.css') }}">
 <style>
     .demande { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.5rem; padding: 1.25rem; margin-bottom: 1rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
     .demande h3 { font: 700 1.1rem var(--font-display); margin: .2rem 0; }

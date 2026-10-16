@@ -73,5 +73,5 @@
     </tbody>
 </table>
 
-<div style="margin-top:1.5rem">{{ $reparations->links() }}</div>
+<div class="pagination-wrap">{{ $reparations->links('pagination.numbers') }}</div>
 @endsection

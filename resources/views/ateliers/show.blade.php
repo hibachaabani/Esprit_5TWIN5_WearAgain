@@ -72,6 +72,19 @@
         <div>
             <h2 class="h2">Avis ({{ count($atelier->avis) }})</h2>
 
+            @if (count($atelier->avis) > 0)
+                <div class="ia-trigger">
+                    <button type="button" class="btn btn-ghost" id="ia-avis-analyse" data-url="{{ route('avis.analyse', $atelier) }}">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3l1.9 4.6L18.5 9l-4.6 1.4L12 15l-1.9-4.6L5.5 9l4.6-1.4L12 3z" />
+                            <path d="M18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9L18 15z" />
+                        </svg>
+                        Analyser les avis avec l'IA
+                    </button>
+                </div>
+                <div id="ia-avis-resultat" class="ia-resultat" hidden></div>
+            @endif
+
             @forelse ($atelier->avis as $avi)
                 <article style="background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem;">
                     <p style="margin-bottom: .35rem;">
@@ -80,6 +93,18 @@
                     </p>
                     <p style="margin-bottom: .5rem;"><x-stars :note="$avi->note" /></p>
                     <p style="margin: 0;">{{ $avi->commentaire }}</p>
+                    @if ($avi->aReponseAtelier())
+                        <div class="reponse-publiee">
+                            <p class="reponse-head">
+                                <span class="reponse-badge">Réponse de l'atelier</span>
+                                @if ($avi->reponse_ia)
+                                    <span class="ia-source">Assistée par IA</span>
+                                @endif
+                                <span class="small muted">{{ optional($avi->reponse_le)->format('d/m/Y') }}</span>
+                            </p>
+                            <p class="reponse-texte">{!! nl2br(e($avi->reponse)) !!}</p>
+                        </div>
+                    @endif
                 </article>
             @empty
                 <div class="empty">
@@ -90,3 +115,45 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/reparations.css') }}">
+@endpush
+
+@push('scripts')
+<script>
+(function () {
+    const bouton = document.getElementById('ia-avis-analyse');
+    const zone = document.getElementById('ia-avis-resultat');
+    if (!bouton || !zone) return;
+
+    const gracite = (texte) => String(texte ?? '')
+        .replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+
+    bouton.addEventListener('click', async () => {
+        const libelle = bouton.innerHTML;
+        bouton.disabled = true;
+        bouton.textContent = 'Analyse en cours…';
+        zone.hidden = true;
+
+        try {
+            const reponse = await fetch(bouton.dataset.url, { headers: { 'Accept': 'application/json' } });
+
+            if (!reponse.ok) {
+                throw new Error('Analyse impossible pour le moment.');
+            }
+
+            const data = await reponse.json();
+            zone.hidden = false;
+            zone.innerHTML = data.html;
+        } catch (e) {
+            zone.hidden = false;
+            zone.innerHTML = '<p class="ia-error">' + gracite(e.message) + '</p>';
+        } finally {
+            bouton.disabled = false;
+            bouton.innerHTML = libelle;
+        }
+    });
+})();
+</script>
+@endpush

@@ -23,11 +23,26 @@ class Reparation extends Model
         'devis',
         'date_rdv',
         'statut',
+        'ia_categorie',
+        'ia_gravite',
+        'ia_prix_min',
+        'ia_prix_max',
+        'ia_delai_jours',
+        'ia_materiaux',
+        'ia_competences',
+        'ia_recommandation',
+        'ia_source',
+        'ia_analyse_le',
     ];
 
     protected $casts = [
         'devis' => 'decimal:2',
         'date_rdv' => 'datetime',
+        'ia_prix_min' => 'decimal:2',
+        'ia_prix_max' => 'decimal:2',
+        'ia_materiaux' => 'array',
+        'ia_competences' => 'array',
+        'ia_analyse_le' => 'datetime',
     ];
 
     public function vetement(): BelongsTo
@@ -56,5 +71,16 @@ class Reparation extends Model
     public function statutLabel(): string
     {
         return self::STATUTS[$this->statut] ?? $this->statut;
+    }
+
+    /** Un diagnostic IA a-t-il été enregistré pour cette demande ? */
+    public function aDiagnosticIA(): bool
+    {
+        return $this->ia_categorie !== null;
+    }
+
+    public function iaGraviteLabel(): ?string
+    {
+        return \App\Services\IA\DiagnosticIA::GRAVITES[$this->ia_gravite] ?? $this->ia_gravite;
     }
 }

@@ -16,7 +16,8 @@
             <h1>{{ $reparation->vetement->titre ?? 'Réparation n°'.$reparation->id }}</h1>
 
             <p>
-                <span class="badge badge-{{ $reparation->statut }}" style="background: var(--cream); border: 1px solid var(--line);">
+                @php $s = $reparation->statut; @endphp
+                <span class="status-pill @if($s==='en_attente') status-en_attente @elseif($s==='en_cours') status-en_cours @elseif($s==='terminee') status-terminee @endif">
                     {{ $reparation->statutLabel() }}
                 </span>
             </p>
@@ -51,6 +52,8 @@
             <h2 class="h4">Description du problème</h2>
             <p>{{ $reparation->description_probleme }}</p>
 
+            @include('reparations._ia_diagnostic', ['reparation' => $reparation])
+
             @if ($estAtelier)
                 <a href="{{ route('mon-atelier.index') }}" class="btn btn-primary">Traiter la demande dans mon atelier</a>
             @elseif ($reparation->estAnnulablePar(auth()->user()))
@@ -68,13 +71,13 @@
                 <h2 class="h2">Avis ({{ count($reparation->atelier->avis) }})</h2>
 
                 @forelse ($reparation->atelier->avis as $avi)
-                    <article style="background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem;">
-                        <p style="margin-bottom: .35rem;">
-                            <strong>{{ $avi->user->name }}</strong>
-                            <span class="small muted">— {{ optional($avi->date)->format('d/m/Y') ?? $avi->created_at->format('d/m/Y') }}</span>
-                        </p>
-                        <p style="margin-bottom: .5rem;"><x-stars :note="$avi->note" /></p>
-                        <p style="margin: 0;">{{ $avi->commentaire }}</p>
+                    <article class="avis-card">
+                        <div class="avis-meta">
+                            <span class="avis-author">{{ $avi->user->name }}</span>
+                            <span class="avis-date">{{ optional($avi->date)->format('d/m/Y') ?? $avi->created_at->format('d/m/Y') }}</span>
+                        </div>
+                        <div class="avis-stars"><x-stars :note="$avi->note" /></div>
+                        <p class="avis-comment">{{ $avi->commentaire }}</p>
                     </article>
                 @empty
                     <div class="empty">
@@ -86,14 +89,18 @@
                     <div class="avis-form" style="margin-top: 1.5rem;">
                         @if ($monAvis)
                             <h3 class="h4">Votre avis</h3>
-                            <p><x-stars :note="$monAvis->note" /> {{ $monAvis->commentaire }}</p>
-                            <form method="POST" action="{{ route('avis.destroy', $monAvis) }}"
-                                  onsubmit="return confirm('Supprimer votre avis sur cet atelier ?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-ghost small">Supprimer mon avis</button>
-                            </form>
-                            <a href="{{ route('avis.edit', $monAvis) }}" class="btn btn-ghost small">Modifier mon avis</a>
+                            <div class="avis-stars"><x-stars :note="$monAvis->note" /></div>
+                            <p class="avis-comment">{{ $monAvis->commentaire }}</p>
+                            <div class="avis-actions">
+                                <a href="{{ route('avis.edit', $monAvis) }}" class="btn btn-ghost small">Modifier mon avis</a>
+                                <form method="POST" action="{{ route('avis.destroy', $monAvis) }}"
+                                      onsubmit="return confirm('Supprimer votre avis sur cet atelier ?')"
+                                      class="inline-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-ghost small">Supprimer mon avis</button>
+                                </form>
+                            </div>
                         @elseif ($reparation->statut !== 'terminee')
                             <p class="muted" style="margin: 0">Vous pourrez noter l'atelier une fois la réparation terminée.</p>
                         @else
@@ -121,7 +128,7 @@
                                     @error('commentaire')<p class="error">{{ $message }}</p>@enderror
                                 </div>
 
-                                <button class="btn" style="background: var(--maroon); color: var(--white); border-radius: var(--radius-sm); padding: .7rem 1.5rem;">
+                                <button class="btn btn-primary">
                                     <x-icon name="message" /> Publier mon avis
                                 </button>
                             </form>
@@ -140,20 +147,5 @@
 @endsection
 
 @push('styles')
-<style>
-    .stars { color: var(--gold); letter-spacing: .1em; white-space: nowrap; }
-
-    .avis-form { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.25rem; }
-    .avis-form .field { margin-bottom: 1rem; }
-    .avis-form label { display: block; font-weight: 600; font-size: .92rem; margin-bottom: .35rem; }
-    .avis-form input[type="text"], .avis-form textarea, .avis-form select { width: 100%; }
-    .avis-form .error { color: #B3261E; font-size: .875rem; margin: .35rem 0 0; }
-
-    .rating { display: inline-flex; flex-direction: row-reverse; gap: .15rem; }
-    .rating input { display: none; }
-    .rating label { cursor: pointer; font-size: 1.8rem; color: #D8CDBB; transition: color .15s; }
-    .rating input:checked ~ label,
-    .rating label:hover,
-    .rating label:hover ~ label { color: var(--gold); }
-</style>
+<link rel="stylesheet" href="{{ asset('css/reparations.css') }}">
 @endpush
