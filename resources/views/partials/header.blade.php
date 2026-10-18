@@ -193,7 +193,11 @@
                              aria-label="Mon compte">
 
                         <span class="account-avatar" aria-hidden="true">
-                            {{ $initiales }}
+                            @if ($user->photoUrl())
+                                <img src="{{ $user->photoUrl() }}" alt="">
+                            @else
+                                {{ $initiales }}
+                            @endif
                         </span>
 
                         <svg class="chevron"

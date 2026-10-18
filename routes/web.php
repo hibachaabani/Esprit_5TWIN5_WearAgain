@@ -73,7 +73,7 @@ Route::middleware('auth')->group(function () {
 /*
 | Notifications (cloche du menu) : étapes des dons et nouveaux messages
 */
-Route::middleware('role:particulier,association')->prefix('notifications')->name('notifications.')->group(function () {
+Route::middleware(['auth', 'role:particulier,association'])->prefix('notifications')->name('notifications.')->group(function () {
     Route::get('/', [NotificationController::class, 'index'])->name('index');
     Route::get('etat', [NotificationController::class, 'etat'])->name('etat');
     Route::post('tout-lire', [NotificationController::class, 'toutLire'])->name('tout-lire');
@@ -83,7 +83,7 @@ Route::middleware('role:particulier,association')->prefix('notifications')->name
 /*
 | Messagerie : les conversations entre donateurs et associations (une par don)
 */
-Route::middleware('role:particulier,association')->prefix('messagerie')->name('messagerie.')->group(function () {
+Route::middleware(['auth', 'role:particulier,association'])->prefix('messagerie')->name('messagerie.')->group(function () {
     Route::get('/', [MessagerieController::class, 'index'])->name('index');
     Route::get('non-lus', [MessagerieController::class, 'nonLus'])->name('non-lus');
     Route::get('{don}', [MessagerieController::class, 'show'])->name('show')->whereNumber('don');
@@ -105,7 +105,7 @@ Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations
 /*
 | Particulier : vêtements, dons, dépôts, demandes de réparation / transformation, avis
 */
-Route::middleware('role:particulier')->group(function () {
+Route::middleware(['auth', 'role:particulier'])->group(function () {
     Route::get('mes-annonces', [VetementController::class, 'mes'])->name('vetements.mes');
     Route::resource('vetements', VetementController::class)->only(['create', 'store']);
 
@@ -134,7 +134,7 @@ Route::resource('vetements', VetementController::class)->only(['edit', 'update',
 /*
 | Association : sa fiche, ses dons reçus, ses points de collecte, la réception et la tournée
 */
-Route::middleware('role:association')->group(function () {
+Route::middleware(['auth', 'role:association'])->group(function () {
     Route::resource('associations', AssociationController::class)->except(['index', 'show']);
     Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
     Route::get('mes-besoins', [BesoinController::class, 'mes'])->name('besoins.mes');
@@ -153,7 +153,7 @@ Route::middleware('role:association')->group(function () {
 /*
 | Atelier : son profil et les demandes de réparation / transformation reçues
 */
-Route::middleware('role:atelier')->prefix('mon-atelier')->name('mon-atelier.')->group(function () {
+Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier')->name('mon-atelier.')->group(function () {
     Route::get('/', [EspaceAtelierController::class, 'index'])->name('index');
     Route::get('modifier', [EspaceAtelierController::class, 'edit'])->name('edit');
     Route::put('/', [EspaceAtelierController::class, 'update'])->name('update');
@@ -164,7 +164,7 @@ Route::middleware('role:atelier')->prefix('mon-atelier')->name('mon-atelier.')->
 /*
 | Avis reçus par l'atelier et réponse publique (membre 5)
 */
-Route::middleware('role:atelier')->prefix('mon-atelier/avis')->name('atelier.avis.')->group(function () {
+Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/avis')->name('atelier.avis.')->group(function () {
     Route::get('/', [AtelierAvisController::class, 'index'])->name('index');
     Route::post('{avi}/brouillon-ia', [AtelierAvisController::class, 'brouillonIA'])->name('brouillon-ia');
     Route::post('{avi}/reponse', [AtelierAvisController::class, 'repondre'])->name('repondre');
@@ -173,7 +173,7 @@ Route::middleware('role:atelier')->prefix('mon-atelier/avis')->name('atelier.avi
 /*
 | Statistiques et export de l'atelier (membre 5)
 */
-Route::middleware('role:atelier')->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
+Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
     Route::get('/', AtelierStatistiquesController::class)->name('index');
     Route::get('export/{type}', [AtelierStatistiquesController::class, 'export'])
         ->whereIn('type', ['reparations', 'avis'])->name('export');

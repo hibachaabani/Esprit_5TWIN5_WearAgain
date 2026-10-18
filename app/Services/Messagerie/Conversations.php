@@ -21,7 +21,7 @@ class Conversations
     public function de(User $user, ?string $recherche = null): Collection
     {
         return Don::concernant($user)
-            ->with(['association', 'donateur', 'dernierMessage'])
+            ->with(['association.user', 'donateur', 'dernierMessage'])
             ->withCount(['messages as non_lus_count' => fn ($q) => $q->nonLusPour($user)])
             ->latest()
             ->latest('id')
@@ -39,7 +39,7 @@ class Conversations
     {
         $dons = Don::where('donateur_id', $don->donateur_id)
             ->where('association_id', $don->association_id)
-            ->with(array_merge(['donateur', 'association', 'besoin'], $avecMessages ? ['messages.auteur'] : []))
+            ->with(array_merge(['donateur', 'association.user', 'besoin'], $avecMessages ? ['messages.auteur'] : []))
             ->latest()
             ->latest('id')
             ->get();
