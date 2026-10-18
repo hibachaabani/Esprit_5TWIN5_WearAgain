@@ -51,6 +51,20 @@
             @error('categorie_id') <p class="error">{{ $message }}</p> @enderror
         </div>
 
+        {{-- Marque --}}
+        <div class="field">
+            <label for="marque_id">Marque</label>
+            <select id="marque_id" name="marque_id">
+                <option value="">— Aucune marque —</option>
+                @foreach ($marques as $marque)
+                    <option value="{{ $marque->id }}" @selected(old('marque_id') == $marque->id)>
+                        {{ $marque->nom }}
+                    </option>
+                @endforeach
+            </select>
+            @error('marque_id') <p class="error">{{ $message }}</p> @enderror
+        </div>
+
         {{-- Taille + Matière --}}
         <div class="field-row">
             <div class="field">

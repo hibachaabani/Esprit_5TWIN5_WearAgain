@@ -67,6 +67,11 @@
                 <div><dt>Couleur</dt><dd>{{ $vetement->couleur }}</dd></div>
             @endif
             <div><dt>État</dt><dd>{{ $vetement->etatLibelle() }}</dd></div>
+            @if($vetement->marque)
+                <div><dt>Marque</dt><dd>
+                    <a href="{{ route('marques.show', $vetement->marque) }}">{{ $vetement->marque->nom }}</a>
+                </dd></div>
+            @endif
         </dl>
 
         {{-- Description --}}

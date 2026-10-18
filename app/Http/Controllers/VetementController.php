@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Categorie;
+use App\Models\Marque;
 use App\Models\Vetement;
 use App\Models\VetementPhoto;
 use Illuminate\Http\Request;
@@ -85,8 +86,9 @@ class VetementController extends Controller
     {
         $categories = Categorie::orderBy('nom')->get();
         $etats      = Vetement::ETATS;
+        $marques    = Marque::orderBy('nom')->get();
 
-        return view('vetements.create', compact('categories', 'etats'));
+        return view('vetements.create', compact('categories', 'etats', 'marques'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -101,6 +103,7 @@ class VetementController extends Controller
             'etat'         => 'required|in:' . implode(',', array_keys(Vetement::ETATS)),
             'photos'       => 'nullable|array|max:6',
             'photos.*'     => 'image|mimes:jpeg,png,webp|max:4096',
+            'marque_id'    => 'nullable|exists:marques,id',
         ]);
 
         $data['user_id'] = auth()->id();
@@ -129,7 +132,7 @@ class VetementController extends Controller
 
     public function show(Vetement $vetement): View
     {
-        $vetement->load('categorie', 'user', 'photos');
+        $vetement->load('categorie', 'user', 'photos', 'marque');
 
         return view('vetements.show', compact('vetement'));
     }
@@ -142,8 +145,9 @@ class VetementController extends Controller
         $categories = Categorie::orderBy('nom')->get();
         $etats      = Vetement::ETATS;
         $statuts    = Vetement::STATUTS;
+        $marques    = Marque::orderBy('nom')->get();
 
-        return view('vetements.edit', compact('vetement', 'categories', 'etats', 'statuts'));
+        return view('vetements.edit', compact('vetement', 'categories', 'etats', 'statuts', 'marques'));
     }
 
     public function update(Request $request, Vetement $vetement): RedirectResponse
@@ -163,6 +167,7 @@ class VetementController extends Controller
             'photos.*'          => 'image|mimes:jpeg,png,webp|max:4096',
             'supprimer_photos'  => 'nullable|array',
             'supprimer_photos.*'=> 'integer|exists:vetement_photos,id',
+            'marque_id'         => 'nullable|exists:marques,id',
         ]);
 
         $uploadedFiles    = $request->file('photos', []);

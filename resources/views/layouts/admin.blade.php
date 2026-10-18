@@ -29,6 +29,7 @@
                     @endif
                 </a>
                 <a href="{{ route('admin.categories.index') }}" @class(['active' => request()->routeIs('admin.categories.*')])>Catégories</a>
+                <a href="{{ route('admin.marques.index') }}" @class(['active' => request()->routeIs('admin.marques.*')])>Marques</a>
                 <a href="{{ route('admin.points-collecte.index') }}" @class(['active' => request()->routeIs('admin.points-collecte.*')])>Points de collecte</a>
                 <a href="{{ route('admin.depots.index') }}" @class(['active' => request()->routeIs('admin.depots.*')])>
                     Dépôts

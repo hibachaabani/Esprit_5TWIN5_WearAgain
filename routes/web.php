@@ -12,6 +12,7 @@ use App\Http\Controllers\DonController;
 use App\Http\Controllers\EspaceAtelierController;
 use App\Http\Controllers\EspaceController;
 use App\Http\Controllers\FavoriController;
+use App\Http\Controllers\MarqueController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReparationController;
@@ -153,6 +154,8 @@ Route::middleware('role:atelier')->prefix('mon-atelier/statistiques')->name('ate
 */
 Route::resource('vetements', VetementController::class)->only(['index', 'show']);
 Route::resource('categories', CategorieController::class)->only(['index', 'show'])->parameters(['categories' => 'categorie']);
+Route::get('marques', [MarqueController::class, 'index'])->name('marques.index');
+Route::get('marques/{marque}', [MarqueController::class, 'show'])->name('marques.show');
 Route::resource('associations', AssociationController::class)->only(['index', 'show']);
 Route::resource('points-collecte', PointCollecteController::class)
     ->only(['index', 'show'])
@@ -182,6 +185,9 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     Route::resource('categories', Admin\CategorieController::class)->except('show')->parameters(['categories' => 'categorie']);
     Route::patch('categories/{categorie}/active', [Admin\CategorieController::class, 'toggleActive'])->name('categories.active');
     Route::post('categories/reorder', [Admin\CategorieController::class, 'reorder'])->name('categories.reorder');
+
+    // Marques (membre 1)
+    Route::resource('marques', Admin\MarqueController::class)->except('show');
 
     // Collecte (membre 3) : points de collecte, dépôts et statistiques
     Route::get('collecte/statistiques', Admin\StatistiquesCollecteController::class)->name('collecte.statistiques');

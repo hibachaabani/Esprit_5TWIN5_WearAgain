@@ -14,6 +14,7 @@ class Vetement extends Model
     protected $fillable = [
         'user_id',
         'categorie_id',
+        'marque_id',
         'titre',
         'description',
         'taille',
@@ -49,6 +50,11 @@ class Vetement extends Model
     public function categorie(): BelongsTo
     {
         return $this->belongsTo(Categorie::class, 'categorie_id');
+    }
+
+    public function marque(): BelongsTo
+    {
+        return $this->belongsTo(Marque::class, 'marque_id');
     }
 
     public function user(): BelongsTo
