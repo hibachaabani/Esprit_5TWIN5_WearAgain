@@ -22,9 +22,19 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = $request->user();
+
+        // Si la 2FA est activée, ne pas compléter la connexion : rediriger vers le challenge
+        if ($user->two_factor_enabled) {
+            // Stocker l'ID en session et déconnecter temporairement
+            $request->session()->put('2fa_user_id', $user->id);
+            Auth::logout();
+
+            return redirect()->route('2fa.challenge');
+        }
+
         $request->session()->regenerate();
 
-        // Chacun arrive sur « Mon espace » (l'administrateur sur le back-office).
         return redirect()->intended(route('espace', absolute: false));
     }
 

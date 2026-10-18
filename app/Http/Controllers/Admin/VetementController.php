@@ -15,7 +15,7 @@ class VetementController extends Controller
     /** Liste tous les vêtements avec filtres statut / catégorie / date / signalé. */
     public function index(Request $request): View
     {
-        $query = Vetement::with(['categorie', 'user', 'photos'])->latest();
+        $query = Vetement::with(['categorie', 'user', 'photos', 'marque'])->latest();
 
         if ($request->filled('statut')) {
             $query->where('statut', $request->statut);
@@ -46,7 +46,7 @@ class VetementController extends Controller
     /** Détail d'un vêtement. */
     public function show(Vetement $vetement): View
     {
-        $vetement->load(['categorie', 'user', 'photos']);
+        $vetement->load(['categorie', 'user', 'photos', 'marque']);
 
         return view('admin.vetements.show', compact('vetement'));
     }

@@ -59,6 +59,7 @@
                 <tr><th>Statut</th><td><span class="status-badge status-{{ $vetement->statut }}">{{ $vetement->statutLibelle() }}</span></td></tr>
                 <tr><th>État</th><td>{{ $vetement->etatLibelle() }}</td></tr>
                 <tr><th>Catégorie</th><td>{{ $vetement->categorie->nom ?? '—' }}</td></tr>
+                <tr><th>Marque</th><td>{{ $vetement->marque->nom ?? '—' }}</td></tr>
                 <tr><th>Taille</th><td>{{ $vetement->taille ?? '—' }}</td></tr>
                 <tr><th>Couleur</th><td>{{ $vetement->couleur ?? '—' }}</td></tr>
                 <tr><th>Matière</th><td>{{ $vetement->matiere ?? '—' }}</td></tr>

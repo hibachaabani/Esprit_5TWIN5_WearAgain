@@ -13,16 +13,22 @@ use App\Http\Controllers\DonController;
 use App\Http\Controllers\EspaceAtelierController;
 use App\Http\Controllers\EspaceController;
 use App\Http\Controllers\FavoriController;
+use App\Http\Controllers\MarqueController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\RecoveryCodeController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\RecoveryCodeLoginController;
 use App\Http\Controllers\ReparationController;
 use App\Http\Controllers\ReparationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\VetementController;
+use App\Http\Controllers\VetementIAController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,6 +60,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Double authentification (2FA)
+    Route::get('/profile/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
+    Route::post('/profile/2fa/confirm', [TwoFactorController::class, 'confirm'])->name('2fa.confirm');
+    Route::post('/profile/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+
+    // Codes de récupération 2FA
+    Route::get('/profile/2fa/recovery-codes', [RecoveryCodeController::class, 'show'])->name('2fa.recovery-codes.show');
+    Route::post('/profile/2fa/recovery-codes/regenerate', [RecoveryCodeController::class, 'regenerate'])->name('2fa.recovery-codes.regenerate');
 
     Route::get('favoris', [FavoriController::class, 'index'])->name('favoris.index');
     Route::post('favoris/{vetement}/toggle', [FavoriController::class, 'toggle'])->name('favoris.toggle');
@@ -108,6 +123,10 @@ Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations
 Route::middleware(['auth', 'role:particulier'])->group(function () {
     Route::get('mes-annonces', [VetementController::class, 'mes'])->name('vetements.mes');
     Route::resource('vetements', VetementController::class)->only(['create', 'store']);
+
+    // IA — auto-catégorisation et génération de description
+    Route::post('vetements/ia/categoriser', [VetementIAController::class, 'categoriser'])->name('vetements.ia.categoriser');
+    Route::post('vetements/ia/description', [VetementIAController::class, 'genererDescription'])->name('vetements.ia.description');
 
     Route::resource('dons', DonController::class)->except('show');
     Route::resource('depots', DepotController::class)->except(['show', 'destroy']);
@@ -184,6 +203,8 @@ Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/statistiques')-
 */
 Route::resource('vetements', VetementController::class)->only(['index', 'show']);
 Route::resource('categories', CategorieController::class)->only(['index', 'show'])->parameters(['categories' => 'categorie']);
+Route::get('marques', [MarqueController::class, 'index'])->name('marques.index');
+Route::get('marques/{marque}', [MarqueController::class, 'show'])->name('marques.show');
 Route::resource('associations', AssociationController::class)->only(['index', 'show']);
 Route::get('besoins/assistant', [BesoinController::class, 'assistant'])->name('besoins.assistant');
 Route::resource('besoins', BesoinController::class)->only(['index', 'show']);
@@ -219,6 +240,9 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     Route::patch('categories/{categorie}/active', [Admin\CategorieController::class, 'toggleActive'])->name('categories.active');
     Route::post('categories/reorder', [Admin\CategorieController::class, 'reorder'])->name('categories.reorder');
 
+    // Marques (membre 1)
+    Route::resource('marques', Admin\MarqueController::class)->except('show');
+
     // Collecte (membre 3) : points de collecte, dépôts et statistiques
     Route::get('collecte/statistiques', Admin\StatistiquesCollecteController::class)->name('collecte.statistiques');
     Route::resource('points-collecte', Admin\PointCollecteController::class)
@@ -244,6 +268,14 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     Route::post('avis/{avi}/analyser', [Admin\AvisController::class, 'analyser'])->name('avis.analyser');
 
     Route::resource('avis', Admin\AvisController::class);
+});
+
+// Étape 2FA lors de la connexion (utilisateur non encore authentifié)
+Route::middleware('guest')->group(function () {
+    Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'create'])->name('2fa.challenge');
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'store']);
+    Route::get('/recovery-code-login', [RecoveryCodeLoginController::class, 'create'])->name('2fa.recovery-login');
+    Route::post('/recovery-code-login', [RecoveryCodeLoginController::class, 'store']);
 });
 
 require __DIR__.'/auth.php';
