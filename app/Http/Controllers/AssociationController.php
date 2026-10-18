@@ -50,7 +50,7 @@ class AssociationController extends Controller
     {
         if ($association = $request->user()->association) {
             return redirect()->route('associations.show', $association)
-                ->with('status', 'Votre compte gère déjà cette association.');
+                ->with('avertissement', 'Votre compte gère déjà cette association.');
         }
 
         return view('associations.create');
@@ -61,7 +61,7 @@ class AssociationController extends Controller
     {
         if ($association = $request->user()->association) {
             return redirect()->route('associations.show', $association)
-                ->with('status', 'Votre compte gère déjà cette association.');
+                ->with('avertissement', 'Votre compte gère déjà cette association.');
         }
 
         $association = $request->user()->association()->create($this->validated($request));
@@ -71,12 +71,29 @@ class AssociationController extends Controller
             ->with('status', 'Association créée avec succès.');
     }
 
-    /** Affiche le détail d'une association et ses derniers dons. */
-    public function show(Association $association): View
+    /** Page publique de l'association : chiffres clés, besoins, points de collecte ; ses derniers dons pour l'association elle-même. */
+    public function show(Request $request, Association $association): View
     {
-        $association->load(['user', 'dons' => fn ($q) => $q->latest()->limit(5)->with('donateur')]);
+        $gere = $association->estGereePar($request->user());
 
-        return view('associations.show', compact('association'));
+        $besoins = $association->besoins()->ouverts()->avecProgression()->parPriorite()->get()
+            ->each(fn ($besoin) => $besoin->setRelation('association', $association));
+
+        $chiffres = [
+            'dons' => $association->dons()->count(),
+            'remis' => $association->dons()->where('statut', 'remis')->count(),
+            'besoins' => $besoins->count(),
+            'points' => $association->pointsCollecte()->actifs()->count(),
+        ];
+
+        return view('associations.show', [
+            'association' => $association->load('user'),
+            'gere' => $gere,
+            'chiffres' => $chiffres,
+            'besoins' => $besoins->take(4),
+            'points' => $association->pointsCollecte()->actifs()->orderBy('nom')->limit(5)->get(),
+            'derniersDons' => $gere ? $association->dons()->with('donateur')->latest()->limit(5)->get() : collect(),
+        ]);
     }
 
     /** Affiche le formulaire de modification pré-rempli. */

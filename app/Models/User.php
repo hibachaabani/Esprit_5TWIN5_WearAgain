@@ -82,6 +82,12 @@ class User extends Authenticatable
     }
 
     /** Rôles de l'application (guide des entités). */
+    /** Messages reçus dans les fils de ses dons (donateur ou association) et pas encore lus. */
+    public function messagesNonLus(): int
+    {
+        return Message::nonLusPour($this)->whereHas('don', fn ($q) => $q->concernant($this))->count();
+    }
+
     public const ROLES = [
         'particulier' => 'Particulier',
         'atelier'     => 'Atelier',

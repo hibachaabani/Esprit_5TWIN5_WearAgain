@@ -2,16 +2,20 @@
 
 @section('title', 'Mes dons')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/dons.css') }}">
+@endpush
+
 @section('content')
 @php
-    $libellesOnglets = ['en_attente' => 'En attente', 'acceptes' => 'Acceptés', 'termines' => 'Terminés'];
+    $libellesOnglets = ['en_attente' => 'En attente', 'acceptes' => 'Acceptés · à remettre', 'termines' => 'Terminés'];
 @endphp
 
 <div class="container section">
     <div class="section-head">
         <div>
             <h1 class="h2">Mes dons</h1>
-            <p class="lead">Suivez les vêtements que vous avez proposés aux associations.</p>
+            <p class="lead">Où en sont les vêtements que vous avez proposés : réponse, rendez-vous, remise.</p>
         </div>
         <a href="{{ route('dons.create') }}" class="btn btn-primary">Proposer un don</a>
     </div>
@@ -29,36 +33,19 @@
     @if ($dons->count())
         <div class="don-list">
             @foreach ($dons as $don)
-                <article class="card don-row">
-                    <div class="don-row-info">
-                        <h3>
-                            <a href="{{ route('dons.show', $don) }}">{{ $don->vetement_titre }}</a>
-                            <span class="status-badge status-{{ $don->statut }}">{{ \App\Models\Don::LIBELLES_STATUT[$don->statut] }}</span>
-                        </h3>
-                        <p class="small muted">
-                            Pour <a href="{{ route('associations.show', $don->association) }}">{{ $don->association?->nom }}</a>
-                            · {{ $don->mode === 'depot' ? 'Dépôt' : 'Livraison' }}
-                            · proposé le {{ $don->created_at->format('d/m/Y') }}
-                            @if ($don->date_don)
-                                · remise {{ $don->date_don->format('d/m/Y') }}
-                            @endif
-                        </p>
-                    </div>
-
-                    <div class="don-row-actions">
-                        <a href="{{ route('dons.show', $don) }}" class="btn btn-ghost small">Détail</a>
-                    </div>
-                </article>
+                @include('dons._ligne', ['pourAssociation' => false])
             @endforeach
         </div>
-        <div style="margin-top:1.5rem">{{ $dons->links() }}</div>
+        <div style="margin-top:1.5rem">{{ $dons->links('pagination.numbers') }}</div>
     @else
         <div class="empty">
             @if ($onglet === 'en_attente')
                 <p>Aucun don en attente de réponse.</p>
-                <a href="{{ route('associations.index') }}" class="btn btn-primary">Trouver une association</a>
+                <a href="{{ route('besoins.index') }}" class="btn btn-primary">Voir ce que les associations recherchent</a>
+            @elseif ($onglet === 'acceptes')
+                <p>Aucun vêtement à remettre pour le moment. Quand une association accepte votre don, le rendez-vous apparaît ici.</p>
             @else
-                <p>Aucun don dans cette catégorie.</p>
+                <p>Aucun don terminé pour l'instant.</p>
             @endif
         </div>
     @endif

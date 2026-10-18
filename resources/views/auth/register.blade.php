@@ -36,6 +36,18 @@
                 <x-input-error :messages="$errors->get('numero_agrement')" class="mt-2" />
             </div>
 
+            <div>
+                <x-input-label for="association_ville" :value="__('City')" />
+                <x-text-input id="association_ville" class="block mt-1 w-full" type="text" name="association_ville" :value="old('association_ville')" list="villes-association" />
+                <datalist id="villes-association">
+                    @foreach (array_keys(config('villes')) as $ville)
+                        <option value="{{ $ville }}">
+                    @endforeach
+                </datalist>
+                <x-input-error :messages="$errors->get('association_ville')" class="mt-2" />
+            </div>
+
+            <p class="text-sm text-gray-600">{{ __('You can complete your association profile (address, map position, accepted clothes) after signing up.') }}</p>
             <p class="text-sm text-gray-600">{{ __('Your association will be visible once verified by our team.') }}</p>
         </div>
 

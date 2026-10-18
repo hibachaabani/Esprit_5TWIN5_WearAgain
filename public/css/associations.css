@@ -1,0 +1,58 @@
+/* WearAgain — page publique d'une association */
+
+.asso-hero { background: var(--white); border-bottom: 1px solid var(--line); }
+.asso-hero-inner { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; padding: 2.5rem 0 2rem; }
+.asso-logo { display: grid; place-items: center; width: 88px; height: 88px; flex-shrink: 0; border-radius: 22px; background: var(--maroon); color: var(--white); font: 700 1.9rem var(--font-display); letter-spacing: .02em; }
+.asso-identite { flex: 1; min-width: 260px; }
+.asso-identite .eyebrow { margin: 0 0 .35rem; font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.asso-identite h1 { margin: 0 0 .5rem; font-size: clamp(2rem, 4vw, 2.9rem); }
+.asso-meta { display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: .95rem; }
+.asso-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+
+.badge-verif { letter-spacing: 0; display: inline-flex; align-items: center; gap: .3rem; padding: .25rem .7rem; border-radius: 999px; font: 600 .78rem var(--font-body); vertical-align: middle; }
+.badge-verif-ok { background: #DDEEE2; color: #2B6340; }
+.badge-verif-attente { background: #F6EBD9; color: #7A5527; }
+
+.asso-chiffres { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 2rem 0; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+.asso-chiffres div { padding: 1.25rem 1.5rem; border-left: 1px solid var(--line); }
+.asso-chiffres div:first-child { border-left: 0; }
+.asso-chiffres strong { display: block; font: 700 2rem/1.1 var(--font-display); color: var(--ink); }
+.asso-chiffres span { color: var(--muted); font-size: .9rem; }
+
+.asso-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 2rem; align-items: start; }
+.asso-bloc { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+.asso-bloc > h2 { font-size: 1.25rem; margin: 0 0 1rem; }
+.asso-bloc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.asso-bloc-head h2 { font-size: 1.25rem; margin: 0; }
+.asso-mission { margin: 0; font-size: 1.05rem; line-height: 1.6; }
+.asso-bloc .tags { margin: 0; }
+
+.asso-besoins { list-style: none; margin: 0; padding: 0; }
+.asso-besoins li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem 1rem; align-items: center; padding: 1rem 0; border-top: 1px solid var(--line); }
+.asso-besoins li:first-child { border-top: 0; padding-top: 0; }
+.asso-besoins h3 { margin: 0 0 .3rem; font: 600 1.02rem var(--font-body); }
+.asso-besoins h3 a { color: var(--ink); text-decoration: none; }
+.asso-besoins h3 a:hover { color: var(--maroon); }
+.asso-besoins .progression { grid-column: 1 / -1; margin: 0; }
+
+.asso-aside .map { height: 220px; margin: 0 0 1rem; }
+.asso-coord { margin: 0; display: grid; gap: .75rem; }
+.asso-coord dt { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.asso-coord dd { margin: .1rem 0 0; font-weight: 500; }
+.asso-points { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.asso-points a { color: var(--ink); font-weight: 500; text-decoration: none; }
+.asso-points a:hover { color: var(--maroon); }
+
+.asso-gestion { border-color: var(--maroon); }
+.asso-dons { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .6rem; font-size: .92rem; }
+
+.asso-alerte { margin: 1.5rem 0 0; padding: .9rem 1.1rem; border-radius: var(--radius-sm); background: #F6EBD9; color: #7A5527; border: 1px solid #E8D2AE; }
+
+@media (max-width: 900px) {
+  .asso-layout { grid-template-columns: 1fr; }
+  .asso-chiffres { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .asso-chiffres div:nth-child(3) { border-left: 0; }
+  .asso-chiffres div:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+.asso-hero .btn-sm, .asso-bloc .btn-sm, .asso-besoins .btn-sm { padding: .4rem .85rem; font-size: .85rem; }
+.asso-besoins .besoin-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
