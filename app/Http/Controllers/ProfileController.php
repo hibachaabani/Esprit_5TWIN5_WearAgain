@@ -48,7 +48,7 @@ class ProfileController extends Controller
             Storage::disk('public')->delete($anciennePhoto);
         }
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.edit')->with('status', 'Votre profil a été mis à jour.');
     }
 
     /** Supprime le compte après confirmation du mot de passe, puis déconnecte l'utilisateur. */
