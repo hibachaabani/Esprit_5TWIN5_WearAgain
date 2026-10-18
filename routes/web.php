@@ -16,6 +16,9 @@ use App\Http\Controllers\MarqueController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\RecoveryCodeController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Http\Controllers\Auth\RecoveryCodeLoginController;
 use App\Http\Controllers\ReparationController;
 use App\Http\Controllers\ReparationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
@@ -57,6 +60,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
     Route::post('/profile/2fa/confirm', [TwoFactorController::class, 'confirm'])->name('2fa.confirm');
     Route::post('/profile/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+
+    // Codes de récupération 2FA
+    Route::get('/profile/2fa/recovery-codes', [RecoveryCodeController::class, 'show'])->name('2fa.recovery-codes.show');
+    Route::post('/profile/2fa/recovery-codes/regenerate', [RecoveryCodeController::class, 'regenerate'])->name('2fa.recovery-codes.regenerate');
 
     Route::get('favoris', [FavoriController::class, 'index'])->name('favoris.index');
     Route::post('favoris/{vetement}/toggle', [FavoriController::class, 'toggle'])->name('favoris.toggle');
@@ -220,6 +227,14 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     Route::post('avis/{avi}/analyser', [Admin\AvisController::class, 'analyser'])->name('avis.analyser');
 
     Route::resource('avis', Admin\AvisController::class);
+});
+
+// Étape 2FA lors de la connexion (utilisateur non encore authentifié)
+Route::middleware('guest')->group(function () {
+    Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'create'])->name('2fa.challenge');
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'store']);
+    Route::get('/recovery-code-login', [RecoveryCodeLoginController::class, 'create'])->name('2fa.recovery-login');
+    Route::post('/recovery-code-login', [RecoveryCodeLoginController::class, 'store']);
 });
 
 require __DIR__.'/auth.php';

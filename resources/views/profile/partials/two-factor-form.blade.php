@@ -29,14 +29,25 @@
                 </p>
             @endif
 
-            <form method="POST" action="{{ route('2fa.disable') }}">
-                @csrf
-                <x-primary-button
-                    onclick="return confirm('Voulez-vous vraiment désactiver la double authentification ?')"
-                    class="bg-red-600 hover:bg-red-500 focus:bg-red-700 active:bg-red-900 focus:ring-red-500">
-                    Désactiver la 2FA
-                </x-primary-button>
-            </form>
+            <div class="flex flex-wrap gap-3">
+                {{-- Régénérer les codes de récupération --}}
+                <form method="POST" action="{{ route('2fa.recovery-codes.regenerate') }}">
+                    @csrf
+                    <x-primary-button onclick="return confirm('Cela invalidera tous vos codes existants. Continuer ?')">
+                        Régénérer les codes de récupération
+                    </x-primary-button>
+                </form>
+
+                {{-- Désactiver la 2FA --}}
+                <form method="POST" action="{{ route('2fa.disable') }}">
+                    @csrf
+                    <button type="submit"
+                        onclick="return confirm('Voulez-vous vraiment désactiver la double authentification ?')"
+                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        Désactiver la 2FA
+                    </button>
+                </form>
+            </div>
 
         @else
             {{-- 2FA désactivée --}}

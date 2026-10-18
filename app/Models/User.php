@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'two_factor_enabled',
         'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected $attributes = [
@@ -33,6 +34,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -43,9 +45,10 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at'   => 'datetime',
-            'password'            => 'hashed',
-            'two_factor_enabled'  => 'boolean',
+            'email_verified_at'          => 'datetime',
+            'password'                   => 'hashed',
+            'two_factor_enabled'         => 'boolean',
+            'two_factor_recovery_codes'  => 'array',
         ];
     }
 

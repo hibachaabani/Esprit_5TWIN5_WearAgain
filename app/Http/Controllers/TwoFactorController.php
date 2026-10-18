@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\RecoveryCodeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,47 +15,44 @@ use BaconQrCode\Writer;
 class TwoFactorController extends Controller
 {
     protected Google2FA $google2fa;
+    protected RecoveryCodeService $recoveryCodes;
 
-    public function __construct()
+    public function __construct(RecoveryCodeService $recoveryCodes)
     {
-        $this->google2fa = new Google2FA();
+        $this->google2fa    = new Google2FA();
+        $this->recoveryCodes = $recoveryCodes;
     }
 
     /**
      * Affiche la page de configuration 2FA avec le QR code.
-     * Génère un nouveau secret temporaire en session si besoin.
      */
     public function setup(Request $request): View
     {
         $user = $request->user();
 
-        // Générer un nouveau secret temporaire et le stocker en session
         if (! $request->session()->has('2fa_secret')) {
             $request->session()->put('2fa_secret', $this->google2fa->generateSecretKey());
         }
 
         $secret = $request->session()->get('2fa_secret');
 
-        // Construire l'URL OTP pour le QR code
         $otpUrl = $this->google2fa->getQRCodeUrl(
             config('app.name'),
             $user->email,
             $secret
         );
 
-        // Générer le QR code en SVG
         $renderer = new ImageRenderer(
             new RendererStyle(200),
             new SvgImageBackEnd()
         );
-        $writer = new Writer($renderer);
-        $qrCodeSvg = $writer->writeString($otpUrl);
+        $qrCodeSvg = (new Writer($renderer))->writeString($otpUrl);
 
         return view('profile.two-factor-setup', compact('secret', 'qrCodeSvg'));
     }
 
     /**
-     * Valide le code TOTP saisi et active la 2FA si correct.
+     * Valide le code TOTP, active la 2FA et génère les codes de récupération.
      */
     public function confirm(Request $request): RedirectResponse
     {
@@ -72,32 +70,37 @@ class TwoFactorController extends Controller
                 ->with('erreur', 'Session expirée. Veuillez recommencer.');
         }
 
-        $valid = $this->google2fa->verifyKey($secret, $request->code);
-
-        if (! $valid) {
+        if (! $this->google2fa->verifyKey($secret, $request->code)) {
             return back()->withErrors(['code' => 'Code incorrect. Vérifiez votre application et réessayez.']);
         }
 
-        // Code valide : sauvegarder le secret et activer la 2FA
+        // Générer les codes de récupération en clair (à afficher une seule fois)
+        $plainCodes  = $this->recoveryCodes->generate();
+        $hashedCodes = $this->recoveryCodes->hash($plainCodes);
+
         $request->user()->update([
-            'two_factor_secret'  => $secret,
-            'two_factor_enabled' => true,
+            'two_factor_secret'         => $secret,
+            'two_factor_enabled'        => true,
+            'two_factor_recovery_codes' => $hashedCodes,
         ]);
 
         $request->session()->forget('2fa_secret');
 
-        return redirect()->route('profile.edit')
-            ->with('status', '2fa-enabled');
+        // Stocker les codes en clair en session pour les afficher une seule fois
+        $request->session()->put('2fa_recovery_codes_plain', $plainCodes);
+
+        return redirect()->route('2fa.recovery-codes.show');
     }
 
     /**
-     * Désactive la double authentification pour l'utilisateur connecté.
+     * Désactive la 2FA et efface le secret et les codes de récupération.
      */
     public function disable(Request $request): RedirectResponse
     {
         $request->user()->update([
-            'two_factor_enabled' => false,
-            'two_factor_secret'  => null,
+            'two_factor_enabled'        => false,
+            'two_factor_secret'         => null,
+            'two_factor_recovery_codes' => null,
         ]);
 
         return redirect()->route('profile.edit')
