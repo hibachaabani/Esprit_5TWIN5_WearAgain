@@ -24,6 +24,7 @@ use App\Http\Controllers\ReparationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\VetementController;
+use App\Http\Controllers\VetementIAController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -94,6 +95,10 @@ Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations
 Route::middleware('role:particulier')->group(function () {
     Route::get('mes-annonces', [VetementController::class, 'mes'])->name('vetements.mes');
     Route::resource('vetements', VetementController::class)->only(['create', 'store']);
+
+    // IA — auto-catégorisation et génération de description
+    Route::post('vetements/ia/categoriser', [VetementIAController::class, 'categoriser'])->name('vetements.ia.categoriser');
+    Route::post('vetements/ia/description', [VetementIAController::class, 'genererDescription'])->name('vetements.ia.description');
 
     Route::resource('dons', DonController::class)->except('show');
     Route::resource('depots', DepotController::class)->except(['show', 'destroy']);

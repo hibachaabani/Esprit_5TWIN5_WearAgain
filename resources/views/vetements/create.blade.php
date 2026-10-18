@@ -37,17 +37,26 @@
             @error('titre') <p class="error">{{ $message }}</p> @enderror
         </div>
 
-        {{-- Catégorie --}}
-        <div class="field">
+        {{-- Catégorie avec suggestion IA --}}
+        <div class="field" x-data="categoriseurIA()">
             <label for="categorie_id">Catégorie <span style="color:#B3261E">*</span></label>
-            <select id="categorie_id" name="categorie_id" required>
-                <option value="">— Choisir —</option>
-                @foreach ($categories as $cat)
-                    <option value="{{ $cat->id }}" @selected(old('categorie_id') == $cat->id)>
-                        {{ $cat->icone ?? '' }} {{ $cat->nom }}
-                    </option>
-                @endforeach
-            </select>
+            <div style="display:flex;gap:.5rem;align-items:center">
+                <select id="categorie_id" name="categorie_id" required x-model="categorieId" style="flex:1">
+                    <option value="">— Choisir —</option>
+                    @foreach ($categories as $cat)
+                        <option value="{{ $cat->id }}" @selected(old('categorie_id') == $cat->id)>
+                            {{ $cat->icone ?? '' }} {{ $cat->nom }}
+                        </option>
+                    @endforeach
+                </select>
+                <button type="button" class="btn btn-ghost btn-sm" @click="suggerer" :disabled="chargement"
+                        title="Suggérer une catégorie d'après le titre et la description">
+                    <span x-show="!chargement">✨ Suggérer</span>
+                    <span x-show="chargement">…</span>
+                </button>
+            </div>
+            <p x-show="explication" x-text="explication" class="muted small" style="margin-top:.35rem"></p>
+            <p x-show="erreur" x-text="erreur" class="error" style="margin-top:.35rem"></p>
             @error('categorie_id') <p class="error">{{ $message }}</p> @enderror
         </div>
 
@@ -105,11 +114,23 @@
             </div>
         </div>
 
-        {{-- Description --}}
-        <div class="field">
-            <label for="description">Description</label>
+        {{-- Description avec générateur IA --}}
+        <div class="field" x-data="generateurDescription()">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem">
+                <label for="description" style="margin:0">Description</label>
+                <button type="button" class="btn btn-ghost btn-sm" @click="generer" :disabled="chargement"
+                        title="Générer une description à partir des champs remplis">
+                    <span x-show="!chargement">✨ Générer</span>
+                    <span x-show="chargement">…</span>
+                </button>
+            </div>
             <textarea id="description" name="description" rows="5"
-                      placeholder="Matière, coupe, défauts éventuels…">{{ old('description') }}</textarea>
+                      placeholder="Matière, coupe, défauts éventuels…"
+                      x-model="texte">{{ old('description') }}</textarea>
+            <p x-show="source === 'template'" class="muted small" style="margin-top:.35rem">
+                Description générée automatiquement (mode local). Vous pouvez la modifier.
+            </p>
+            <p x-show="erreur" x-text="erreur" class="error" style="margin-top:.35rem"></p>
             @error('description') <p class="error">{{ $message }}</p> @enderror
         </div>
 
@@ -141,6 +162,99 @@ function previewPhotos(input) {
     label.textContent = files.length > 0
         ? `${files.length} photo${files.length > 1 ? 's' : ''} sélectionnée${files.length > 1 ? 's' : ''}`
         : 'Glisser-déposer ou choisir des photos';
+}
+
+function categoriseurIA() {
+    return {
+        categorieId: '{{ old('categorie_id', '') }}',
+        explication: '',
+        erreur: '',
+        chargement: false,
+
+        async suggerer() {
+            this.explication = '';
+            this.erreur = '';
+            const titre = document.getElementById('titre')?.value?.trim();
+            const description = document.getElementById('description')?.value?.trim();
+
+            if (!titre) {
+                this.erreur = 'Remplissez d\'abord le titre.';
+                return;
+            }
+
+            this.chargement = true;
+            try {
+                const res = await fetch('{{ route('vetements.ia.categoriser') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ titre, description }),
+                });
+
+                const data = await res.json();
+
+                if (data.categorie_id) {
+                    this.categorieId = String(data.categorie_id);
+                    // Also set the native select value directly as a fallback
+                    const sel = document.getElementById('categorie_id');
+                    if (sel) sel.value = String(data.categorie_id);
+                    this.explication = `✓ ${data.categorie_nom} — ${data.explication} (confiance : ${data.confiance})`;
+                } else {
+                    this.erreur = data.explication || 'Impossible de détecter la catégorie.';
+                }
+            } catch {
+                this.erreur = 'Erreur de connexion au service IA.';
+            } finally {
+                this.chargement = false;
+            }
+        }
+    };
+}
+
+function generateurDescription() {
+    return {
+        texte: `{{ old('description', '') }}`,
+        source: '',
+        erreur: '',
+        chargement: false,
+
+        async generer() {
+            this.erreur = '';
+            this.source = '';
+
+            this.chargement = true;
+            try {
+                const res = await fetch('{{ route('vetements.ia.description') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        titre:     document.getElementById('titre')?.value,
+                        categorie: document.getElementById('categorie_id')?.selectedOptions[0]?.text,
+                        marque:    document.getElementById('marque_id')?.selectedOptions[0]?.text,
+                        taille:    document.getElementById('taille')?.value,
+                        matiere:   document.getElementById('matiere')?.value,
+                        couleur:   document.getElementById('couleur')?.value,
+                        etat:      document.getElementById('etat')?.selectedOptions[0]?.text,
+                    }),
+                });
+
+                const data = await res.json();
+                this.texte  = data.description ?? '';
+                this.source = data.source ?? '';
+            } catch {
+                this.erreur = 'Erreur de connexion au service IA.';
+            } finally {
+                this.chargement = false;
+            }
+        }
+    };
 }
 </script>
 @endpush
