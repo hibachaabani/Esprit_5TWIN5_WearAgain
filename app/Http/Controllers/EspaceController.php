@@ -47,6 +47,7 @@ class EspaceController extends Controller
                 'favoris' => $user->vetementsFavoris()->count(),
             ],
             'avis' => $user->avis()->with('atelier')->latest()->get(),
+            'remises' => $user->dons()->with('association')->where('statut', 'accepte')->orderByRaw('date_remise is null')->orderBy('date_remise')->get(),
         ]);
     }
 
@@ -62,6 +63,11 @@ class EspaceController extends Controller
                     ->orderBy('nom')
                     ->get()
                 : collect(),
+            // Besoins en cours d'abord (ouverts), puis les autres ; la page n'en montre que quelques-uns.
+            'besoins' => $association
+                ? $association->besoins()->avecProgression()->orderByRaw("statut <> 'ouvert'")->parPriorite()->get()
+                : collect(),
+            'messagesNonLus' => $user->messagesNonLus(),
             'dons' => $association
                 ? $association->dons()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut')
                 : collect(),
@@ -69,6 +75,9 @@ class EspaceController extends Controller
                 ? $association->depots()->selectRaw('depots.statut, count(*) as total')->groupBy('depots.statut')->pluck('total', 'statut')
                 : collect(),
             'enRetard' => $association ? $association->depots()->enRetard()->count() : 0,
+            'remises' => $association
+                ? $association->dons()->with('donateur')->where('statut', 'accepte')->orderByRaw('date_remise is null')->orderBy('date_remise')->get()
+                : collect(),
         ]);
     }
 }

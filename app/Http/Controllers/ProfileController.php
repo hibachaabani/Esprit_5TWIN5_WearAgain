@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -19,16 +20,33 @@ class ProfileController extends Controller
         ]);
     }
 
-    /** Enregistre le nouveau nom ou le nouvel email (l'email redevient non vérifié s'il change). */
+    /**
+     * Enregistre le nom, l'email (qui redevient non vérifié s'il change) et la photo de profil :
+     * une nouvelle photo remplace l'ancienne, « supprimer la photo » la retire.
+     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->safe()->only(['name', 'email']));
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $anciennePhoto = $user->photo;
+
+        if ($request->hasFile('photo')) {
+            $user->photo = $request->file('photo')->store('photos-profil', 'public');
+        } elseif ($request->boolean('supprimer_photo')) {
+            $user->photo = null;
+        }
+
+        $user->save();
+
+        // L'ancien fichier n'est effacé qu'une fois le profil bien enregistré.
+        if ($anciennePhoto && $anciennePhoto !== $user->photo) {
+            Storage::disk('public')->delete($anciennePhoto);
+        }
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
@@ -45,6 +63,10 @@ class ProfileController extends Controller
         Auth::logout();
 
         $user->delete();
+
+        if ($user->photo) {
+            Storage::disk('public')->delete($user->photo);
+        }
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

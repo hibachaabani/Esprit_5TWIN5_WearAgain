@@ -23,7 +23,7 @@ class RegisteredUserController extends Controller
         return view('auth.register');
     }
 
-    /** Inscrit un particulier ou une association, puis connecte l'utilisateur. */
+    /** Inscrit un particulier, une association ou un atelier, puis connecte l'utilisateur. */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
@@ -33,6 +33,7 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'association_nom' => ['required_if:type,association', 'nullable', 'string', 'max:255'],
             'numero_agrement' => ['required_if:type,association', 'nullable', 'string', 'max:255', 'unique:'.Association::class],
+            'association_ville' => ['nullable', 'string', 'max:100'],
             'atelier_nom' => ['required_if:type,atelier', 'nullable', 'string', 'min:3', 'max:100'],
             'atelier_ville' => ['nullable', 'string', 'max:100'],
         ], [
@@ -49,9 +50,15 @@ class RegisteredUserController extends Controller
             $user->forceFill(['role' => $request->type])->save();
 
             if ($request->type === 'association') {
+                // La position sur la carte part du centre de la ville ; l'association l'affine ensuite.
+                $coords = Association::coordonneesVille($request->association_ville);
+
                 $user->association()->create([
                     'nom' => $request->association_nom,
                     'numero_agrement' => $request->numero_agrement,
+                    'ville' => $request->association_ville,
+                    'latitude' => $coords[0] ?? null,
+                    'longitude' => $coords[1] ?? null,
                 ]);
             }
 
@@ -77,8 +84,8 @@ class RegisteredUserController extends Controller
 
         if ($user->association) {
             return redirect()
-                ->route('espace')
-                ->with('status', 'Bienvenue ! Votre association pourra recevoir des dons une fois vérifiée par notre équipe.');
+                ->route('associations.edit', $user->association)
+                ->with('avertissement', 'Bienvenue ! Complétez la fiche de votre association : adresse, position sur la carte et vêtements acceptés. Elle pourra recevoir des dons une fois vérifiée par notre équipe.');
         }
 
         return redirect()

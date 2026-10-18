@@ -62,7 +62,9 @@ class DatabaseSeeder extends Seeder
         // Ordre important : les réparations et avis s'appuient sur les ateliers et vêtements.
         $this->call([
             AdminSeeder::class,
+            BesoinSeeder::class,
             CollecteSeeder::class,
+            ScenarioDonSeeder::class,
             AtelierTransformationSeeder::class,
             ReparationSeeder::class,
             AvisSeeder::class,

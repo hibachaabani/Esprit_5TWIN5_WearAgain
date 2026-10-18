@@ -19,6 +19,33 @@
         <li><strong>Suivez et notez</strong>Chaque demande a un statut ; notez l'atelier à la fin.</li>
     </ol>
 
+    @if ($remises->isNotEmpty())
+        {{-- Dons acceptés : où et quand apporter chaque vêtement --}}
+        <section class="espace-section" style="margin: 0 0 2.5rem">
+            <div class="section-head">
+                <h2>Mes prochaines remises</h2>
+            </div>
+            @if ($remises->isEmpty())
+                <p class="muted">Aucune remise prévue pour le moment.</p>
+            @else
+                <table class="table-simple">
+                    <thead><tr><th>Quand</th><th>Vêtement</th><th>Association</th><th>Où</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach ($remises as $don)
+                            <tr>
+                                <td><strong>{{ $don->date_remise?->format('d/m/Y') ?? 'À fixer' }}</strong><br><span class="small muted">{{ $don->date_remise?->format('H\\hi') }}</span></td>
+                                <td>{{ $don->vetement_titre }}</td>
+                                <td>{{ $don->association?->nom }}</td>
+                                <td>{{ $don->lieu_remise ?? '—' }}</td>
+                                <td><a href="{{ route('dons.show', $don) }}" class="btn btn-ghost">Détail</a></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </section>
+    @endif
+
     <div class="espace-grid">
         <article class="espace-card">
             <h2>Mes annonces</h2>

@@ -6,6 +6,7 @@ use App\Http\Controllers\AtelierController;
 use App\Http\Controllers\AtelierAvisController;
 use App\Http\Controllers\AtelierStatistiquesController;
 use App\Http\Controllers\AvisController;
+use App\Http\Controllers\BesoinController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\DonController;
@@ -13,6 +14,9 @@ use App\Http\Controllers\EspaceAtelierController;
 use App\Http\Controllers\EspaceController;
 use App\Http\Controllers\FavoriController;
 use App\Http\Controllers\MarqueController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MessagerieController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TwoFactorController;
@@ -72,9 +76,33 @@ Route::middleware('auth')->group(function () {
     // Le détail et le changement de statut vérifient que l'utilisateur est concerné.
     Route::get('dons/{don}', [DonController::class, 'show'])->name('dons.show')->whereNumber('don');
     Route::patch('dons/{don}/statut', [DonController::class, 'updateStatus'])->name('dons.statut');
+    // Fil de discussion du don : le contrôleur vérifie que l'utilisateur est le donateur ou l'association.
+    Route::post('dons/{don}/messages', [MessageController::class, 'store'])->name('messages.store')->whereNumber('don');
+    Route::put('messages/{message}', [MessageController::class, 'update'])->name('messages.update');
+    Route::delete('messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
     Route::get('depots/{depot}', [DepotController::class, 'show'])->name('depots.show')->whereNumber('depot');
     Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
     Route::get('reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show')->whereNumber('reparation');
+});
+
+/*
+| Notifications (cloche du menu) : étapes des dons et nouveaux messages
+*/
+Route::middleware(['auth', 'role:particulier,association'])->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('etat', [NotificationController::class, 'etat'])->name('etat');
+    Route::post('tout-lire', [NotificationController::class, 'toutLire'])->name('tout-lire');
+    Route::get('{id}', [NotificationController::class, 'ouvrir'])->name('ouvrir')->whereUuid('id');
+});
+
+/*
+| Messagerie : les conversations entre donateurs et associations (une par don)
+*/
+Route::middleware(['auth', 'role:particulier,association'])->prefix('messagerie')->name('messagerie.')->group(function () {
+    Route::get('/', [MessagerieController::class, 'index'])->name('index');
+    Route::get('non-lus', [MessagerieController::class, 'nonLus'])->name('non-lus');
+    Route::get('{don}', [MessagerieController::class, 'show'])->name('show')->whereNumber('don');
+    Route::get('{don}/nouveaux', [MessagerieController::class, 'nouveaux'])->name('nouveaux')->whereNumber('don');
 });
 
 /*
@@ -92,7 +120,7 @@ Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations
 /*
 | Particulier : vêtements, dons, dépôts, demandes de réparation / transformation, avis
 */
-Route::middleware('role:particulier')->group(function () {
+Route::middleware(['auth', 'role:particulier'])->group(function () {
     Route::get('mes-annonces', [VetementController::class, 'mes'])->name('vetements.mes');
     Route::resource('vetements', VetementController::class)->only(['create', 'store']);
 
@@ -125,9 +153,12 @@ Route::resource('vetements', VetementController::class)->only(['edit', 'update',
 /*
 | Association : sa fiche, ses dons reçus, ses points de collecte, la réception et la tournée
 */
-Route::middleware('role:association')->group(function () {
+Route::middleware(['auth', 'role:association'])->group(function () {
     Route::resource('associations', AssociationController::class)->except(['index', 'show']);
     Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
+    Route::get('mes-besoins', [BesoinController::class, 'mes'])->name('besoins.mes');
+    Route::post('besoins/rediger', [BesoinController::class, 'rediger'])->name('besoins.rediger')->middleware('throttle:20,1');
+    Route::resource('besoins', BesoinController::class)->except(['index', 'show']);
 
     Route::resource('points-collecte', PointCollecteController::class)
         ->except(['index', 'show'])
@@ -141,7 +172,7 @@ Route::middleware('role:association')->group(function () {
 /*
 | Atelier : son profil et les demandes de réparation / transformation reçues
 */
-Route::middleware('role:atelier')->prefix('mon-atelier')->name('mon-atelier.')->group(function () {
+Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier')->name('mon-atelier.')->group(function () {
     Route::get('/', [EspaceAtelierController::class, 'index'])->name('index');
     Route::get('modifier', [EspaceAtelierController::class, 'edit'])->name('edit');
     Route::put('/', [EspaceAtelierController::class, 'update'])->name('update');
@@ -152,7 +183,7 @@ Route::middleware('role:atelier')->prefix('mon-atelier')->name('mon-atelier.')->
 /*
 | Avis reçus par l'atelier et réponse publique (membre 5)
 */
-Route::middleware('role:atelier')->prefix('mon-atelier/avis')->name('atelier.avis.')->group(function () {
+Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/avis')->name('atelier.avis.')->group(function () {
     Route::get('/', [AtelierAvisController::class, 'index'])->name('index');
     Route::post('{avi}/brouillon-ia', [AtelierAvisController::class, 'brouillonIA'])->name('brouillon-ia');
     Route::post('{avi}/reponse', [AtelierAvisController::class, 'repondre'])->name('repondre');
@@ -161,7 +192,7 @@ Route::middleware('role:atelier')->prefix('mon-atelier/avis')->name('atelier.avi
 /*
 | Statistiques et export de l'atelier (membre 5)
 */
-Route::middleware('role:atelier')->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
+Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
     Route::get('/', AtelierStatistiquesController::class)->name('index');
     Route::get('export/{type}', [AtelierStatistiquesController::class, 'export'])
         ->whereIn('type', ['reparations', 'avis'])->name('export');
@@ -175,6 +206,8 @@ Route::resource('categories', CategorieController::class)->only(['index', 'show'
 Route::get('marques', [MarqueController::class, 'index'])->name('marques.index');
 Route::get('marques/{marque}', [MarqueController::class, 'show'])->name('marques.show');
 Route::resource('associations', AssociationController::class)->only(['index', 'show']);
+Route::get('besoins/assistant', [BesoinController::class, 'assistant'])->name('besoins.assistant');
+Route::resource('besoins', BesoinController::class)->only(['index', 'show']);
 Route::resource('points-collecte', PointCollecteController::class)
     ->only(['index', 'show'])
     ->parameters(['points-collecte' => 'pointCollecte']);
@@ -196,6 +229,9 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
     Route::resource('dons', Admin\DonController::class)->only(['index', 'show']);
+    Route::resource('besoins', Admin\BesoinController::class)->only(['index', 'show', 'destroy']);
+    Route::patch('besoins/{besoin}/statut', [Admin\BesoinController::class, 'basculerStatut'])->name('besoins.statut');
+    Route::resource('messages', Admin\MessageController::class)->only(['index', 'destroy']);
 
     // Vêtements et catégories (membre 1)
     Route::resource('vetements', Admin\VetementController::class)->only(['index', 'show', 'destroy']);

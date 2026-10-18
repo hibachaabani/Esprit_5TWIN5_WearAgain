@@ -89,6 +89,12 @@ class User extends Authenticatable
     }
 
     /** Rôles de l'application (guide des entités). */
+    /** Messages reçus dans les fils de ses dons (donateur ou association) et pas encore lus. */
+    public function messagesNonLus(): int
+    {
+        return Message::nonLusPour($this)->whereHas('don', fn ($q) => $q->concernant($this))->count();
+    }
+
     public const ROLES = [
         'particulier' => 'Particulier',
         'atelier'     => 'Atelier',
@@ -126,5 +132,21 @@ class User extends Authenticatable
     public function libelleRole(): string
     {
         return self::ROLES[$this->role] ?? $this->role;
+    }
+
+    /** Adresse de la photo de profil (servie par le lien public/storage), ou null sans photo. */
+    public function photoUrl(): ?string
+    {
+        return $this->photo ? asset('storage/'.$this->photo) : null;
+    }
+
+    /** « Ahmed Trabelsi » → « AT » : l'avatar affiché quand il n'y a pas de photo. */
+    public function initiales(): string
+    {
+        return collect(preg_split('/\s+/', trim((string) $this->name)))
+            ->filter()
+            ->take(2)
+            ->map(fn ($mot) => mb_strtoupper(mb_substr($mot, 0, 1)))
+            ->join('') ?: '?';
     }
 }

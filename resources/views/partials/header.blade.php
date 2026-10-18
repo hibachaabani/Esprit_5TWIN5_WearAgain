@@ -4,12 +4,13 @@
     | (particulier, association, atelier ou administrateur).
     */
     $user = auth()->user();
-    $lien = fn (string $route, string $label, array $actif, array $params = [], int $badge = 0) =>
-        ['url' => route($route, $params), 'label' => $label, 'actif' => $actif, 'badge' => $badge];
+    $lien = fn (string $route, string $label, array $actif, array $params = [], int $badge = 0, bool $messages = false) =>
+        ['url' => route($route, $params), 'label' => $label, 'actif' => $actif, 'badge' => $badge, 'messages' => $messages];
 
     $liens = [
         $lien('vetements.index', 'Parcourir', ['vetements.index', 'vetements.show']),
         $lien('associations.index', 'Associations', ['associations.index', 'associations.show']),
+        $lien('besoins.index', 'Besoins', ['besoins.index', 'besoins.show']),
         $lien('ateliers.index', 'Ateliers', ['ateliers.*']),
         $lien('points-collecte.index', 'Points de collecte', ['points-collecte.index', 'points-collecte.show', 'depots.suivi']),
     ];
@@ -26,16 +27,24 @@
             $lien('favoris.index', 'Mes favoris', ['favoris.index']),
         ];
         $liens[] = $espace[0];
+        $liens[] = $lien('messagerie.index', 'Messages', ['messagerie.*'], [], $user->messagesNonLus(), true);
     } elseif ($user?->estAssociation()) {
+        // L'association ne voit que ses pages de travail : pas de catalogue, d'ateliers ni de recherche d'articles.
         $association = $user->association;
         $donsATraiter = $association?->dons()->where('statut', 'propose')->count() ?? 0;
-        $espace = array_values(array_filter([
-            $lien('espace', 'Mon espace', ['espace'], [], $donsATraiter),
-            $association ? $lien('associations.show', 'Ma page publique', [], [$association]) : null,
-            $lien('dons.recus', 'Dons reçus', ['dons.recus'], [], $donsATraiter),
+        $liens = [
+            $lien('espace', 'Mon espace', ['espace']),
+            $lien('dons.recus', 'Dons reçus', ['dons.recus', 'dons.show'], [], $donsATraiter),
+            $lien('besoins.mes', 'Mes besoins', ['besoins.mes', 'besoins.create', 'besoins.edit', 'besoins.show']),
             $lien('depots.recus', 'Dépôts reçus', ['depots.recus', 'depots.reception', 'tournee.*', 'points-collecte.create', 'points-collecte.edit']),
-        ]));
-        $liens[] = $espace[0];
+            $lien('messagerie.index', 'Messages', ['messagerie.*'], [], $user->messagesNonLus(), true),
+        ];
+        $espace = $association ? [
+            $lien('associations.show', 'Ma page publique', ['associations.show'], [$association]),
+            $lien('associations.edit', 'Fiche de mon association', ['associations.edit'], [$association]),
+        ] : [
+            $lien('associations.create', 'Créer la fiche de mon association', ['associations.create']),
+        ];
     } elseif ($user?->estAtelier()) {
         $atelierConnecte = $user->atelier;
         $demandesATraiter = $atelierConnecte
@@ -56,6 +65,7 @@
     }
 
     $peutVendre = ! $user || $user->estParticulier();
+    $rechercheArticles = ! $user?->estAssociation();
 @endphp
 
 <header class="site-header" id="site-header">
@@ -71,7 +81,10 @@
                    @class(['active' => request()->routeIs(...$item['actif'])])
                    @if (request()->routeIs(...$item['actif'])) aria-current="page" @endif>
                     {{ $item['label'] }}
-                    @if ($item['badge'])
+                    @if ($item['messages'])
+                        {{-- Mis à jour en continu par js/notifications.js --}}
+                        <span class="count-badge" data-compteur-messages aria-label="messages non lus" @if (! $item['badge']) hidden @endif>{{ $item['badge'] }}</span>
+                    @elseif ($item['badge'])
                         <span class="count-badge" aria-label="{{ $item['badge'] }} à traiter">{{ $item['badge'] }}</span>
                     @endif
                 </a>
@@ -80,6 +93,7 @@
 
         <div class="header-actions">
 
+            @if ($rechercheArticles)
             <form action="{{ route('vetements.index') }}"
                   method="GET"
                   class="header-search"
@@ -113,6 +127,7 @@
                        placeholder="Rechercher…"
                        value="{{ request('q') }}">
             </form>
+            @endif
 
             @if ($peutVendre)
             <a href="{{ route('vetements.create') }}"
@@ -146,13 +161,43 @@
                         ->join('');
                 @endphp
 
+                @if ($user->aLeRole('particulier', 'association'))
+                    @php
+                        $nonLues = $user->unreadNotifications()->count();
+                    @endphp
+                    {{-- Cloche : mise à jour en continu par js/notifications.js (badge, liste, son) --}}
+                    <details class="cloche" data-cloche>
+                        <summary class="cloche-bouton" aria-label="Notifications">
+                            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span class="count-badge" data-compteur-notifications @if (! $nonLues) hidden @endif>{{ $nonLues }}</span>
+                        </summary>
+                        <div class="cloche-panneau">
+                            <div class="cloche-tete">
+                                <strong>Notifications</strong>
+                                <button type="button" class="cloche-son" data-bouton-son title="Activer ou couper le son">🔊 Son activé</button>
+                            </div>
+                            <div class="cloche-liste" data-liste-notifications>
+                                @include('notifications._liste', ['notifications' => $user->notifications()->take(6)->get()])
+                            </div>
+                            <button type="button" class="cloche-bureau" data-bouton-bureau hidden>🖥️ Recevoir aussi les notifications sur l'ordinateur</button>
+                            <a href="{{ route('notifications.index') }}" class="cloche-tout">Voir toutes les notifications</a>
+                        </div>
+                    </details>
+                @endif
+
                 <details class="account-menu">
 
                     <summary class="account-trigger"
                              aria-label="Mon compte">
 
                         <span class="account-avatar" aria-hidden="true">
-                            {{ $initiales }}
+                            @if ($user->photoUrl())
+                                <img src="{{ $user->photoUrl() }}" alt="">
+                            @else
+                                {{ $initiales }}
+                            @endif
                         </span>
 
                         <svg class="chevron"
@@ -238,6 +283,7 @@
 
         <div class="container">
 
+            @if ($rechercheArticles)
             <form action="{{ route('vetements.index') }}"
                   method="GET"
                   class="header-search"
@@ -272,6 +318,7 @@
                        placeholder="Jean, robe, baskets…"
                        value="{{ request('q') }}">
             </form>
+            @endif
 
             <nav class="mobile-nav"
                  aria-label="Navigation mobile">
@@ -280,7 +327,9 @@
                     <a href="{{ $item['url'] }}"
                        @class(['active' => request()->routeIs(...$item['actif'])])>
                         {{ $item['label'] }}
-                        @if ($item['badge'])
+                        @if ($item['messages'])
+                            <span class="count-badge" data-compteur-messages @if (! $item['badge']) hidden @endif>{{ $item['badge'] }}</span>
+                        @elseif ($item['badge'])
                             <span class="count-badge">{{ $item['badge'] }}</span>
                         @endif
                     </a>

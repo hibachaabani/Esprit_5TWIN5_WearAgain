@@ -1,0 +1,123 @@
+/* WearAgain — page d'un don : frise, rendez-vous de remise, actions et fil de discussion */
+
+.don-entete h1 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); margin: .25rem 0 .5rem; }
+.don-entete .eyebrow { margin: 1rem 0 0; }
+
+.don-frise { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; list-style: none; margin: 1.5rem 0 2rem; padding: 0; counter-reset: etape; }
+.don-frise li { position: relative; padding-top: 2.2rem; text-align: center; color: var(--muted); font-size: .9rem; }
+.don-frise li::before { counter-increment: etape; content: counter(etape); position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: grid; place-items: center; width: 1.8rem; height: 1.8rem; border-radius: 50%; background: var(--white); border: 2px solid var(--line); font-weight: 700; z-index: 1; }
+.don-frise li::after { content: ""; position: absolute; top: .9rem; left: -50%; width: 100%; height: 2px; background: var(--line); }
+.don-frise li:first-child::after { display: none; }
+.don-frise li strong { display: block; color: var(--ink); }
+.don-frise li span { font-size: .82rem; }
+.don-frise li.faite::before { content: "✓"; background: var(--sage); border-color: var(--sage); color: var(--white); }
+.don-frise li.faite::after { background: var(--sage); }
+.don-frise li.echec::before { content: "✕"; background: #B3261E; border-color: #B3261E; }
+
+.don-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 2rem; align-items: start; }
+.don-bloc { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; }
+.don-bloc > h2 { font-size: 1.2rem; margin: 0 0 .75rem; }
+.don-prochaine { border-color: var(--maroon); }
+.don-prochaine p { margin: 0 0 .75rem; }
+
+.don-rdv, .don-infos { margin: 0 0 .75rem; display: grid; gap: .65rem; }
+.don-rdv dt, .don-infos dt { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.don-rdv dd, .don-infos dd { margin: .1rem 0 0; font-weight: 500; }
+.don-rdv dd { font-size: 1.05rem; }
+
+.traitement { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .5rem; margin-top: .5rem; }
+.traitement form { margin: 0; }
+.traitement-bloc[open] { flex-basis: 100%; order: 1; }
+.traitement-bloc summary { list-style: none; display: inline-block; cursor: pointer; }
+.traitement-bloc summary::-webkit-details-marker { display: none; }
+.traitement-bloc[open] summary { margin-bottom: .75rem; }
+.traitement-form { padding: 1rem; background: var(--cream); border-radius: var(--radius-sm); }
+.traitement-form .field { margin-bottom: .75rem; }
+
+.fil { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+.fil-message { max-width: 80%; padding: .7rem 1rem; border-radius: 14px; background: var(--cream); }
+.fil-message.moi { align-self: flex-end; background: #EFE3E5; }
+.fil-message p { margin: 0; }
+.fil-auteur { font-size: .78rem; color: var(--muted); margin-bottom: .2rem !important; }
+.fil-evenement { align-self: center; max-width: 90%; text-align: center; font-size: .82rem; color: var(--muted); }
+.fil-evenement span { display: inline-block; padding: .3rem .8rem; border-radius: 999px; background: #F2EEE6; color: var(--ink); }
+.fil-evenement time { display: block; font-size: .75rem; margin-top: .2rem; }
+.fil-edition { margin-top: .4rem; font-size: .82rem; }
+.fil-edition summary { cursor: pointer; color: var(--muted); }
+.fil-edition form { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+.fil-edition textarea { flex-basis: 100%; }
+.fil-form { display: grid; gap: .5rem; }
+.fil-form button { justify-self: end; }
+
+.non-lus { display: inline-block; min-width: 1.3rem; margin-left: .35rem; padding: .05rem .4rem; border-radius: 999px; background: var(--maroon); color: var(--white); font-size: .72rem; font-weight: 600; text-align: center; vertical-align: middle; }
+.don-row-rdv { margin-top: .3rem !important; font-size: .88rem; }
+
+@media (max-width: 860px) {
+  .don-layout { grid-template-columns: 1fr; }
+  .fil-message { max-width: 95%; }
+}
+
+/* Page d'un don simplifiée : une colonne, l'action du moment puis l'aperçu de la discussion */
+.don-colonne { max-width: 760px; }
+.don-parties { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .75rem; margin: 0; color: var(--muted); font-size: 1.05rem; }
+.don-parties strong { color: var(--ink); }
+.don-liens { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--line); font-size: .9rem; }
+.don-liens form { margin: 0; }
+.lien-danger { background: none; border: 0; padding: 0; color: #B3261E; font: inherit; text-decoration: underline; cursor: pointer; }
+.don-apercu { padding: 0; margin: 0 0 1rem; overflow: visible; }
+
+/* Lignes de listes de dons */
+.don-row-qui { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: .15rem 0 0 !important; font-weight: 500; }
+.don-row-detail { margin: .3rem 0 0 !important; font-size: .88rem; color: var(--muted); }
+.don-row-detail.don-row-rdv { color: var(--ink); }
+.etiquette-besoin:hover { background: #E9E2D5; }
+.etiquette-besoin { display: inline-block; padding: .1rem .6rem; border-radius: 999px; background: #F2EEE6; color: var(--ink); font-size: .78rem; font-weight: 500; text-decoration: none; }
+
+/* Formulaire de don en 4 étapes */
+.don-form-mise-en-page { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 2rem; align-items: start; }
+.don-form { max-width: 680px; }
+.etape-form { margin: 0 0 1.25rem; padding: 1.25rem 1.4rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.etape-form legend { display: flex; align-items: center; gap: .55rem; padding: 0; font: 700 1.1rem var(--font-display); float: left; width: 100%; margin-bottom: .9rem; }
+.etape-form legend + * { clear: both; }
+.etape-num { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--maroon); color: var(--white); font: 700 .85rem var(--font-body); }
+.etape-form .field:last-child { margin-bottom: 0; }
+.besoin-resume { padding: .9rem 1rem; border-radius: var(--radius-sm); background: var(--cream); }
+.besoin-resume-titre { margin: .15rem 0 .25rem; font: 700 1.15rem var(--font-display); }
+.besoin-resume-titre a { color: var(--ink); }
+.choix-cartes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-bottom: .75rem; }
+.choix-carte { display: flex; gap: .75rem; align-items: flex-start; padding: .9rem 1rem; border: 1.5px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; }
+.choix-carte:has(input:checked) { border-color: var(--maroon); background: #FBF2F3; }
+.choix-carte input { margin-top: .25rem; accent-color: var(--maroon); }
+.choix-icone { font-size: 1.4rem; }
+.choix-carte strong { display: block; }
+.choix-carte small { display: block; margin-top: .15rem; color: var(--muted); font-size: .82rem; }
+.don-ensuite { position: sticky; top: 90px; padding: 1.25rem 1.4rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.don-ensuite h2 { font-size: 1.1rem; margin: 0 0 .75rem; }
+.don-ensuite ol { list-style: none; margin: 0 0 .75rem; padding: 0; counter-reset: ensuite; display: grid; gap: .8rem; }
+.don-ensuite li { counter-increment: ensuite; position: relative; padding-left: 2.1rem; font-size: .88rem; color: var(--muted); }
+.don-ensuite li::before { content: counter(ensuite); position: absolute; left: 0; top: 0; display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--cream); color: var(--maroon); font-weight: 700; font-size: .8rem; }
+.don-ensuite li strong { display: block; color: var(--ink); font-size: .95rem; }
+
+@media (max-width: 860px) {
+  .don-form-mise-en-page { grid-template-columns: 1fr; }
+  .don-ensuite { position: static; }
+  .choix-cartes { grid-template-columns: 1fr; }
+}
+
+/* Tri intelligent des dons reçus (IA) */
+.tri-ia { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin: 0 0 1rem; padding: .7rem 1rem; border-radius: 12px; background: #F2EEE6; font-size: .9rem; }
+.tri-ia-choix { display: inline-flex; gap: .3rem; padding: .2rem; border-radius: 999px; background: var(--white); }
+.tri-ia-choix a { padding: .3rem .8rem; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: .84rem; font-weight: 600; }
+.tri-ia-choix a.actif { background: var(--maroon); color: var(--white); }
+.avis-ia { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; margin: .4rem 0; padding: .45rem .75rem; border-radius: 10px; border-left: 4px solid; font-size: .86rem; }
+.avis-ia-score { font-weight: 700; }
+.avis-ia-raison { color: var(--muted); }
+.avis-ia-accepter { background: #EAF4EE; border-color: #2F7D4F; }
+.avis-ia-accepter strong, .avis-ia-accepter .avis-ia-score { color: #2F7D4F; }
+.avis-ia-verifier { background: #FBF4E6; border-color: #C58A1B; }
+.avis-ia-verifier strong, .avis-ia-verifier .avis-ia-score { color: #A06F12; }
+.avis-ia-complet, .avis-ia-hors { background: #F6EEEE; border-color: #B3261E; }
+.avis-ia-complet strong, .avis-ia-hors strong, .avis-ia-complet .avis-ia-score, .avis-ia-hors .avis-ia-score { color: #B3261E; }
+.avis-ia-detaille { display: block; padding: .75rem 1rem; }
+.avis-ia-detaille strong { margin-left: .4rem; }
+.avis-ia-detaille ul { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--ink); }

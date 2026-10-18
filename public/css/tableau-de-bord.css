@@ -1,0 +1,59 @@
+/* WearAgain — tableau de bord « Mon espace » : l'essentiel en haut, des listes courtes et cliquables */
+
+.tdb-tete { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.75rem; }
+.tdb-tete h1 { margin: 0 0 .5rem; font-size: clamp(2rem, 4vw, 2.8rem); }
+.tdb-tete .eyebrow { margin-bottom: .4rem; }
+.tdb-etat { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; margin: 0; font-size: .92rem; }
+.tdb-tete-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+.espace-etapes li.faite { opacity: .55; }
+.espace-etapes li.faite::before { content: "✓"; background: var(--sage); }
+
+.tdb-section { margin-bottom: 1.75rem; }
+.tdb-titre { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 .75rem; font-family: var(--font-body); }
+
+.tdb-tuiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.tdb-tuile { display: grid; gap: .15rem; padding: 1.1rem 1.25rem; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); color: var(--ink); text-decoration: none; transition: border-color .15s, transform .15s; }
+.tdb-tuile:hover { border-color: var(--maroon); transform: translateY(-2px); }
+.tdb-tuile strong { font: 700 2.1rem/1 var(--font-display); }
+.tdb-tuile span { color: var(--muted); font-size: .9rem; }
+.tdb-tuile em { margin-top: .5rem; font-style: normal; font-size: .85rem; font-weight: 600; color: var(--maroon); }
+.tdb-tuile.urgent { border-color: var(--maroon); background: #FBF2F3; }
+.tdb-tuile.urgent strong { color: var(--maroon); }
+
+.tdb-colonnes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem; }
+.tdb-carte { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.25rem 1.4rem; }
+.tdb-carte-tete { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+.tdb-carte-tete h2 { font-size: 1.15rem; margin: 0; }
+.tdb-vide { margin: .5rem 0 0; font-size: .92rem; }
+.tdb-plus { display: inline-block; margin-top: .75rem; }
+
+.tdb-ligne { display: flex; align-items: center; gap: 1rem; padding: .7rem .5rem; margin: 0 -.5rem; border-top: 1px solid var(--line); border-radius: 8px; color: var(--ink); text-decoration: none; }
+.tdb-ligne:first-of-type { border-top: 0; }
+.tdb-ligne:hover { background: var(--cream); }
+.tdb-date { flex-shrink: 0; width: 4.8rem; display: grid; font-size: .82rem; color: var(--muted); }
+.tdb-date strong { color: var(--ink); font-size: .9rem; }
+.tdb-ligne-texte { flex: 1; min-width: 0; display: grid; gap: .1rem; }
+.tdb-ligne-texte > strong { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tdb-ligne-texte > span { font-size: .84rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+
+.tdb-progression { flex-shrink: 0; width: 7.5rem; display: grid; gap: .25rem; text-align: right; }
+.tdb-progression .progression-barre { height: 6px; }
+.tdb-progression small { font-size: .78rem; color: var(--muted); }
+
+.tdb-collecte { margin-bottom: 1rem; }
+.tdb-resume { margin: 0 0 .75rem; color: var(--muted); }
+.tdb-resume strong { color: var(--ink); }
+.tdb-points { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.tdb-points a { display: inline-flex; align-items: center; gap: .45rem; padding: .35rem .8rem; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); font-size: .88rem; text-decoration: none; }
+.tdb-points a:hover { border-color: var(--maroon); }
+.tdb-points small { color: var(--muted); }
+.tdb-pastille { width: .55rem; height: .55rem; border-radius: 50%; background: var(--sage); }
+.tdb-pastille.plein { background: #B3261E; }
+.tdb-pastille.ferme { background: var(--line); }
+
+@media (max-width: 900px) {
+  .tdb-tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tdb-colonnes { grid-template-columns: 1fr; }
+}

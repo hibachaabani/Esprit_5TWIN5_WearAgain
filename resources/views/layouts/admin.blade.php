@@ -21,6 +21,8 @@
                 <a href="{{ route('admin.ateliers.index') }}" @class(['active' => request()->routeIs('admin.ateliers.*')])>Ateliers</a>
                 <a href="{{ route('admin.transformations.index') }}" @class(['active' => request()->routeIs('admin.transformations.*')])>Transformations</a>
                 <a href="{{ route('admin.dons.index') }}" @class(['active' => request()->routeIs('admin.dons.*')])>Dons</a>
+                <a href="{{ route('admin.besoins.index') }}" @class(['active' => request()->routeIs('admin.besoins.*')])>Besoins</a>
+                <a href="{{ route('admin.messages.index') }}" @class(['active' => request()->routeIs('admin.messages.*')])>Messages</a>
                 <a href="{{ route('admin.vetements.index') }}" @class(['active' => request()->routeIs('admin.vetements.*')])>
                     Vêtements
                     @php $signales = \App\Models\Vetement::where('signale', true)->count(); @endphp
@@ -49,6 +51,9 @@
         <main class="admin-content">
             @if (session('status'))
                 <p class="flash">{{ session('status') }}</p>
+            @endif
+            @if (session('avertissement'))
+                <p class="flash flash-avertissement" role="alert">{{ session('avertissement') }}</p>
             @endif
             @if (session('erreur'))
                 <p class="flash flash-erreur" role="alert">{{ session('erreur') }}</p>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Association;
 use App\Models\Atelier;
 use App\Models\Avis;
+use App\Models\Besoin;
 use App\Models\Categorie;
 use App\Models\Depot;
 use App\Models\Don;
@@ -28,6 +29,7 @@ class TableauDeBordController extends Controller
             'modules' => [
                 ['titre' => 'Associations', 'total' => Association::count(), 'alerte' => Association::where('verifiee', false)->count().' à vérifier', 'route' => 'admin.associations.index'],
                 ['titre' => 'Dons', 'total' => Don::count(), 'alerte' => Don::where('statut', 'propose')->count().' proposé(s)', 'route' => 'admin.dons.index'],
+                ['titre' => 'Besoins', 'total' => Besoin::count(), 'alerte' => Besoin::ouverts()->where('urgence', 'urgente')->count().' urgent(s)', 'route' => 'admin.besoins.index'],
                 ['titre' => 'Vêtements', 'total' => Vetement::count(), 'alerte' => Vetement::where('signale', true)->count().' signalé(s)', 'route' => 'admin.vetements.index'],
                 ['titre' => 'Catégories', 'total' => Categorie::count(), 'alerte' => Categorie::where('active', false)->count().' masquée(s)', 'route' => 'admin.categories.index'],
                 ['titre' => 'Points de collecte', 'total' => PointCollecte::count(), 'alerte' => PointCollecte::where('actif', false)->count().' fermé(s)', 'route' => 'admin.points-collecte.index'],
