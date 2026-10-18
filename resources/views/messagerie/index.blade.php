@@ -8,13 +8,6 @@
 
 @php
     $moi = auth()->user();
-    // « Les Mains Solidaires » → « MS » ; un nom fait seulement d'articles (« LA ») garde ses propres lettres.
-    $initiales = function (string $nom) {
-        $mots = collect(preg_split('/\s+/', trim($nom)))->filter();
-        $utiles = $mots->reject(fn ($mot) => in_array(mb_strtolower($mot), ['les', 'la', 'le', 'de', 'des', 'du', 'et']));
-
-        return ($utiles->isEmpty() ? $mots : $utiles)->take(2)->map(fn ($mot) => mb_strtoupper(mb_substr($mot, 0, 1)))->join('');
-    };
 @endphp
 
 @section('content')
@@ -39,7 +32,7 @@
                     <li>
                         <a href="{{ route('messagerie.show', $item->donPrincipal()) }}"
                            @class(['conversation', 'active' => $conversation?->identifiant() === $item->identifiant(), 'non-lue' => $item->nonLus()])>
-                            <span class="avatar" aria-hidden="true">{{ $initiales($nom) ?: '?' }}</span>
+                            @include('messagerie._avatar', ['compte' => $item->compteInterlocuteur($moi), 'nom' => $nom])
                             <span class="conversation-texte">
                                 <span class="conversation-ligne">
                                     <strong>{{ $nom }}</strong>
@@ -98,7 +91,7 @@
                 @endphp
                 <header class="fil-tete">
                     <a href="{{ route('messagerie.index') }}" class="fil-retour" aria-label="Retour aux conversations">←</a>
-                    <span class="avatar" aria-hidden="true">{{ $initiales($nom) ?: '?' }}</span>
+                    @include('messagerie._avatar', ['compte' => $conversation->compteInterlocuteur($moi), 'nom' => $nom])
                     <div class="fil-tete-texte">
                         <strong>{{ $nom }}</strong>
                         <span>

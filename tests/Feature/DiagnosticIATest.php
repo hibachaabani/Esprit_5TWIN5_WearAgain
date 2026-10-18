@@ -71,8 +71,9 @@ class DiagnosticIATest extends TestCase
 
     public function test_l_analyse_ia_ne_s_expose_pas_aux_visiteurs(): void
     {
+        // Appel JavaScript d'un visiteur : le middleware auth répond 401 (pas de redirection pour un fetch).
         $this->postJson(route('reparations.analyse-ia'), ['description' => 'Fermeture eclair cassee sur le blouson.'])
-            ->assertRedirect(route('login'));
+            ->assertUnauthorized();
     }
 
     /* ----- Diagnostic enregistré à la création ----- */

@@ -39,6 +39,14 @@ final class Conversation
         return $this->dons->first()->interlocuteurPour($user);
     }
 
+    /** Le compte de l'autre participant (pour sa photo) : le donateur, ou le compte de l'association. */
+    public function compteInterlocuteur(?User $user): ?User
+    {
+        $don = $this->dons->first();
+
+        return $don->estRecuPar($user) ? $don->donateur : $don->association?->user;
+    }
+
     /** Les dons en cours (proposés ou acceptés) : on peut encore écrire à leur sujet. */
     public function donsEnCours(): Collection
     {

@@ -126,4 +126,20 @@ class User extends Authenticatable
     {
         return self::ROLES[$this->role] ?? $this->role;
     }
+
+    /** Adresse de la photo de profil (servie par le lien public/storage), ou null sans photo. */
+    public function photoUrl(): ?string
+    {
+        return $this->photo ? asset('storage/'.$this->photo) : null;
+    }
+
+    /** « Ahmed Trabelsi » → « AT » : l'avatar affiché quand il n'y a pas de photo. */
+    public function initiales(): string
+    {
+        return collect(preg_split('/\s+/', trim((string) $this->name)))
+            ->filter()
+            ->take(2)
+            ->map(fn ($mot) => mb_strtoupper(mb_substr($mot, 0, 1)))
+            ->join('') ?: '?';
+    }
 }

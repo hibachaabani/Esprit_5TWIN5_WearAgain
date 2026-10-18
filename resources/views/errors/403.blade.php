@@ -6,7 +6,14 @@
 <div class="container section narrow">
     <p class="eyebrow">Erreur 403</p>
     <h1>Accès refusé</h1>
-    <p class="lead">{{ $exception->getMessage() ?: "Votre compte n'a pas les droits pour accéder à cette page." }}</p>
+    @php
+        // Les refus de Laravel arrivent en anglais (« This action is unauthorized. ») : on garde nos propres messages.
+        $message = $exception->getMessage();
+        $message = in_array($message, ['', 'This action is unauthorized.', 'Forbidden', 'Unauthorized.'], true)
+            ? "Votre compte n'a pas les droits pour accéder à cette page."
+            : $message;
+    @endphp
+    <p class="lead">{{ $message }}</p>
     <div class="hero-actions">
         <a href="{{ route('home') }}" class="btn btn-primary">Retour à l'accueil</a>
         @guest
