@@ -1,0 +1,45 @@
+/* WearAgain — page « Mon profil » */
+.profil { max-width: 820px; }
+.profil-entete { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; }
+.profil-entete h1 { margin-bottom: .25rem; }
+.profil-entete .lead { margin: 0; }
+
+.profil-avatar { flex-shrink: 0; display: inline-grid; place-items: center; width: 84px; height: 84px; border-radius: 999px; overflow: hidden; background: var(--maroon); color: var(--white); font: 700 1.6rem var(--font-display); border: 3px solid var(--white); box-shadow: 0 6px 18px rgba(34, 31, 28, .12); }
+.profil-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profil-avatar-lg { width: 108px; height: 108px; font-size: 2.1rem; }
+
+.profil-sommaire { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
+.profil-sommaire a { padding: .4rem .9rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--white); color: var(--ink); text-decoration: none; font-weight: 500; font-size: .92rem; }
+.profil-sommaire a:hover { border-color: var(--maroon); color: var(--maroon); }
+
+.profil-bloc { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; padding: 1.75rem; margin-bottom: 1.25rem; scroll-margin-top: 6rem; }
+.profil-bloc-titre h2 { font-size: 1.3rem; margin-bottom: .4rem; }
+.profil-bloc-titre p { font-size: .92rem; margin: 0; }
+.profil-form .field:last-of-type { margin-bottom: 1rem; }
+.profil input[type=password] { width: 100%; padding: .65rem .85rem; border: 1.5px solid var(--line); border-radius: var(--radius-sm); background: var(--white); font: inherit; color: var(--ink); }
+.profil-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; }
+
+.profil-photo { display: flex; align-items: center; gap: 1.25rem; padding: 1rem; border: 2px dashed var(--line); border-radius: 14px; background: var(--cream); }
+.profil-photo.est-glisse { border-color: var(--maroon); }
+.profil-photo-actions { display: flex; flex-direction: column; align-items: flex-start; gap: .5rem; }
+.profil-photo-actions p { margin: 0; }
+.profil-photo-actions .btn { cursor: pointer; }
+.profil-photo input[type=file]:focus-visible + .btn, .profil-photo .btn:focus-within { outline: 3px solid var(--gold); outline-offset: 2px; }
+.profil-retirer { display: inline-flex; align-items: center; gap: .45rem; font-size: .9rem; color: var(--maroon); cursor: pointer; }
+.profil-retirer input { accent-color: var(--maroon); }
+
+.btn-danger { background: #B3261E; color: var(--white); }
+.btn-danger:hover { background: #8C1D17; }
+.profil-danger { border-color: #F0C8C4; }
+.profil-danger h2 { color: #B3261E; }
+.profil-danger > .profil-actions { align-self: center; }
+
+.profil-dialog { width: min(460px, 100% - 2rem); border: 0; border-radius: var(--radius-lg); padding: 1.75rem; box-shadow: 0 24px 60px rgba(34, 31, 28, .25); }
+.profil-dialog::backdrop { background: rgba(34, 31, 28, .45); }
+
+@media (max-width: 760px) {
+  .profil-bloc { grid-template-columns: 1fr; gap: 1rem; padding: 1.25rem; }
+  .profil .field-row { grid-template-columns: 1fr; gap: 0; }
+  .profil-entete { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .profil-actions .btn { width: 100%; }
+}
