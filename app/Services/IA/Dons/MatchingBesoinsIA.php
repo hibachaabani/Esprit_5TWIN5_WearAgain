@@ -67,7 +67,8 @@ class MatchingBesoinsIA
         return config('ia.provider', 'local') !== 'local' && (string) config('ia.api_key') !== '';
     }
 
-    private function noter(Besoin $besoin, AnalyseDon $analyse, ?array $position): array
+    /** Score d'un besoin pour ce vêtement, sur 100, avec les raisons ; sert aussi au tri des dons reçus. */
+    public function noter(Besoin $besoin, AnalyseDon $analyse, ?array $position = null): array
     {
         $points = 0;
         $maximum = self::POINTS['categorie'] + self::POINTS['vetement'] + self::POINTS['urgence'];
@@ -88,7 +89,7 @@ class MatchingBesoinsIA
         $famillesCommunes = array_values(array_intersect($analyse->familles, $famillesBesoin));
         $motsCommuns = array_values(array_intersect($analyse->motsCles, $motsBesoin));
         // Une famille commune compte une fois, quel que soit le synonyme employé ; les autres mots communs (« enfant », « hiver »…) s'y ajoutent.
-        $synonymes = collect($famillesCommunes)->flatMap(fn ($famille) => LexiqueVetements::FAMILLES[$famille])->all();
+        $synonymes = collect($famillesCommunes)->flatMap(fn ($famille) => LexiqueVetements::synonymes($famille))->all();
         $correspondances = count($famillesCommunes) + count(array_diff($motsCommuns, $synonymes));
 
         // Le besoin cherche clairement un autre type de vêtement (des manteaux pour des baskets) :

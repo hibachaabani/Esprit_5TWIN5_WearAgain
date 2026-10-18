@@ -56,6 +56,26 @@
 .msg-options[open] > form { margin-top: .35rem; }
 .msg-edition { display: grid; gap: .35rem; min-width: 240px; }
 
+/* Les dons de la conversation, sous l'en-tête */
+.fil-dons { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; padding: .55rem 1.1rem; background: var(--white); border-bottom: 1px solid var(--line); }
+.fil-don { display: inline-grid; gap: 0; padding: .3rem .75rem; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 10px; color: var(--ink); text-decoration: none; font-size: .78rem; line-height: 1.3; }
+.fil-don:hover { background: var(--cream); }
+.fil-don strong { font-weight: 600; font-size: .82rem; }
+.fil-don span { color: var(--muted); }
+.fil-don.actif { background: #F2E4E7; }
+.fil-don-propose { border-left-color: #C58A1B; }
+.fil-don-accepte { border-left-color: #2F7D4F; }
+.fil-don-remis { border-left-color: var(--maroon); }
+.fil-don-refuse, .fil-don-annule { border-left-color: var(--line); opacity: .8; }
+.fil-dons-termines summary { list-style: none; cursor: pointer; padding: .45rem .75rem; border: 1px dashed var(--line); border-radius: 10px; font-size: .78rem; color: var(--muted); }
+.fil-dons-termines summary::-webkit-details-marker { display: none; }
+.fil-dons-termines[open] summary { margin-bottom: .4rem; }
+.fil-dons-termines > div { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+/* Repère « À propos de … » quand le message change de don */
+.msg-sujet { align-self: center; margin: .6rem 0 .1rem; font-size: .74rem; color: var(--muted); letter-spacing: .02em; }
+.msg-evenement strong { font-weight: 700; }
+
 /* Zone de saisie */
 .fil-saisie { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: end; padding: .75rem 1.1rem .6rem; background: var(--white); border-top: 1px solid var(--line); }
 .fil-saisie textarea { resize: none; max-height: 160px; padding: .65rem 1rem; border: 1.5px solid var(--line); border-radius: 22px; background: var(--cream); font: inherit; line-height: 1.4; }
@@ -63,6 +83,9 @@
 .fil-envoyer { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--maroon); color: var(--white); font-size: 1.1rem; cursor: pointer; }
 .fil-envoyer:disabled { opacity: .5; }
 .fil-aide { grid-column: 1 / -1; margin: 0; font-size: .72rem; color: var(--muted); }
+.fil-sujet { grid-column: 1 / -1; display: flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--muted); }
+.fil-sujet select { flex: 1; min-width: 0; max-width: 340px; padding: .3rem .7rem; border: 1.5px solid var(--line); border-radius: 999px; background: var(--cream); font: inherit; font-size: .84rem; color: var(--ink); }
+.fil-ferme a { display: inline-block; margin-left: .35rem; }
 .fil-saisie .error { grid-column: 1 / -1; }
 .fil-ferme { margin: 0; padding: 1rem; text-align: center; color: var(--muted); background: var(--white); border-top: 1px solid var(--line); }
 

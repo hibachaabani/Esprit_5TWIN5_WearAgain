@@ -1,6 +1,7 @@
 /*
  * WearAgain — messagerie : envoi sans rechargement, nouveaux messages toutes les 4 secondes,
- * Entrée pour envoyer, zone de saisie qui s'agrandit.
+ * Entrée pour envoyer, zone de saisie qui s'agrandit. Une conversation réunit tous les dons
+ * entre deux personnes : le message part « à propos de » du don choisi.
  */
 (() => {
     const fil = document.getElementById('fil-messages');
@@ -11,6 +12,8 @@
     const jeton = document.querySelector('meta[name="csrf-token"]')?.content
         ?? saisie?.querySelector('input[name="_token"]')?.value;
     let dernier = Number(fil.dataset.dernier || 0);
+    // Les dons en cours affichés ; s'ils changent (don accepté, nouveau don…), la page se met à jour.
+    const sujetsAffiches = JSON.stringify(JSON.parse(fil.dataset.sujets || '[]'));
 
     const enBas = () => { fil.scrollTop = fil.scrollHeight; };
     const presDuBas = () => fil.scrollHeight - fil.scrollTop - fil.clientHeight < 120;
@@ -19,6 +22,10 @@
         const suivre = presDuBas();
         const modele = document.createElement('template');
         modele.innerHTML = html.trim();
+        // Un repère « À propos de … » déjà affiché avec sa bulle n'est pas répété.
+        modele.content.querySelectorAll('[data-pour]').forEach((repere) => {
+            if (fil.querySelector(`[data-id="${repere.dataset.pour}"]`)) repere.remove();
+        });
         modele.content.querySelectorAll('[data-id]').forEach((bulle) => {
             if (fil.querySelector(`[data-id="${bulle.dataset.id}"]`)) bulle.remove();
             else dernier = Math.max(dernier, Number(bulle.dataset.id));
@@ -37,7 +44,9 @@
             if (!reponse.ok) return;
             const donnees = await reponse.json();
             if (donnees.html) ajouter(donnees.html);
-            if (donnees.fil_ouvert === false && saisie) window.location.reload();
+            // Un don a avancé ou un nouveau don est arrivé : on recharge, sauf pendant la saisie d'un message.
+            const enCoursDeSaisie = zone && zone.value.trim() !== '';
+            if (JSON.stringify(donnees.sujets ?? []) !== sujetsAffiches && !enCoursDeSaisie) window.location.reload();
         } catch (e) { /* hors ligne : on réessaiera */ }
     };
     setInterval(actualiser, 4000);
@@ -66,7 +75,7 @@
             const reponse = await fetch(saisie.action, {
                 method: 'POST',
                 headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': jeton },
-                body: JSON.stringify({ contenu }),
+                body: JSON.stringify({ contenu, don_id: saisie.querySelector('[name="don_id"]')?.value }),
             });
             if (reponse.status === 201) {
                 const donnees = await reponse.json();

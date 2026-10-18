@@ -4,53 +4,69 @@ namespace App\Http\Controllers;
 
 use App\Models\Don;
 use App\Models\Message;
-use App\Models\User;
+use App\Services\Messagerie\Conversation;
+use App\Services\Messagerie\Conversations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 /**
- * Messagerie façon « Messenger » : une conversation par don, entre le donateur et l'association.
- * La page se met à jour seule (interrogation régulière) et le menu affiche les messages non lus.
+ * Messagerie façon « Messenger » : une conversation par donateur et association, qui réunit
+ * les messages de tous leurs dons. La page se met à jour seule (interrogation régulière).
  */
 class MessagerieController extends Controller
 {
+    public function __construct(private readonly Conversations $conversations) {}
+
     /** Liste des conversations, sans conversation ouverte. */
     public function index(Request $request): View
     {
         return view('messagerie.index', [
-            'conversations' => $this->conversations($request->user(), $request->query('q')),
+            'conversations' => $this->conversations->de($request->user(), $request->query('q')),
+            'conversation' => null,
             'don' => null,
         ]);
     }
 
-    /** Conversation d'un don, à côté de la liste. */
+    /**
+     * La conversation dont fait partie ce don, à côté de la liste. Le don de l'adresse est proposé
+     * comme sujet du prochain message s'il est encore en cours.
+     */
     public function show(Request $request, Don $don): View
     {
         abort_unless($don->estVisiblePar($request->user()), 403);
 
-        $don->load(['donateur', 'association', 'besoin', 'messages.auteur']);
-        $don->marquerLuPar($request->user());
+        $conversation = $this->conversations->autourDe($don, avecMessages: true);
+        $this->conversations->marquerLue($conversation, $request->user());
 
         return view('messagerie.index', [
-            'conversations' => $this->conversations($request->user(), $request->query('q')),
-            'don' => $don,
+            'conversations' => $this->conversations->de($request->user(), $request->query('q')),
+            'conversation' => $conversation,
+            'fil' => $this->conversations->fil($conversation),
+            'don' => $conversation->dons->firstWhere('id', $don->id),
         ]);
     }
 
-    /** Nouveaux messages d'une conversation depuis le dernier affiché (appelé toutes les quelques secondes). */
+    /** Nouveaux messages de la conversation depuis le dernier affiché (appelé toutes les quelques secondes). */
     public function nouveaux(Request $request, Don $don): JsonResponse
     {
         abort_unless($don->estVisiblePar($request->user()), 403);
 
-        $messages = $don->messages()->with('auteur')->where('id', '>', (int) $request->query('apres'))->get();
-        $don->marquerLuPar($request->user());
+        $apres = (int) $request->query('apres');
+        $conversation = $this->conversations->autourDe($don);
+        $messages = $this->conversations->nouveaux($conversation, $apres);
+        $this->conversations->marquerLue($conversation, $request->user());
 
         return response()->json([
-            'html' => $messages->map(fn (Message $message) => view('messagerie._bulle', ['message' => $message, 'don' => $don])->render())->join(''),
-            'dernier_id' => $messages->last()?->id,
-            'fil_ouvert' => $don->fresh()->filOuvert(),
+            'html' => $messages->isEmpty() ? '' : view('messagerie._fil', [
+                'messages' => $messages,
+                'conversation' => $conversation,
+                'precedent' => $this->conversations->donPrecedent($conversation, $apres + 1),
+            ])->render(),
+            'dernier_id' => $messages->max('id'),
+            'fil_ouvert' => $conversation->estOuverte(),
+            // Les dons sur lesquels on peut encore écrire : la liste « À propos de » suit leur évolution.
+            'sujets' => $conversation->sujets(),
         ]);
     }
 
@@ -71,27 +87,8 @@ class MessagerieController extends Controller
                 'auteur' => $dernier->don->interlocuteurPour($user),
                 'extrait' => str($dernier->contenu)->limit(80)->toString(),
                 'url' => route('messagerie.show', $dernier->don_id),
+                'conversation' => Conversation::cle($dernier->don),
             ] : null,
         ]);
-    }
-
-    /**
-     * Conversations de l'utilisateur, la plus récemment active en premier.
-     *
-     * @return Collection<int, Don>
-     */
-    private function conversations(User $user, ?string $recherche): Collection
-    {
-        return Don::concernant($user)
-            ->with(['association', 'donateur', 'dernierMessage'])
-            ->withCount(['messages as non_lus_count' => fn ($q) => $q->nonLusPour($user)])
-            ->withMax('messages', 'created_at')
-            ->when($recherche, fn ($q, $terme) => $q->where(fn ($w) => $w
-                ->where('vetement_titre', 'like', "%{$terme}%")
-                ->orWhereHas('donateur', fn ($d) => $d->where('name', 'like', "%{$terme}%"))
-                ->orWhereHas('association', fn ($a) => $a->where('nom', 'like', "%{$terme}%"))))
-            ->orderByRaw('coalesce(messages_max_created_at, dons.created_at) desc')
-            ->limit(100)
-            ->get();
     }
 }

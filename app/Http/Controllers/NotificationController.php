@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Services\Messagerie\Conversation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,6 +66,8 @@ class NotificationController extends Controller
                 'titre' => 'Nouveau message de '.$message->don->interlocuteurPour($user),
                 'texte' => str($message->contenu)->limit(80)->toString(),
                 'url' => route('messagerie.show', $message->don_id),
+                // Pour ne pas sonner quand cette conversation est déjà ouverte à l'écran.
+                'conversation' => Conversation::cle($message->don),
             ] : null,
             'liste' => view('notifications._liste', ['notifications' => $user->notifications()->take(6)->get()])->render(),
         ]);

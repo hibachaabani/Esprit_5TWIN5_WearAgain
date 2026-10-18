@@ -31,6 +31,16 @@
         @endforeach
     </nav>
 
+    @if ($onglet === 'a_traiter' && $dons->count())
+        <div class="tri-ia">
+            <span>✨ <strong>Tri intelligent</strong> : l'IA compare chaque don à vos besoins en cours.</span>
+            <span class="tri-ia-choix">
+                <a href="{{ route('dons.recus', ['onglet' => 'a_traiter']) }}" @class(['actif' => $tri === 'pertinence'])>Les plus utiles d'abord</a>
+                <a href="{{ route('dons.recus', ['onglet' => 'a_traiter', 'tri' => 'recent']) }}" @class(['actif' => $tri === 'recent'])>Les plus récents</a>
+            </span>
+        </div>
+    @endif
+
     @if ($dons->count())
         <div class="don-list">
             @foreach ($dons as $don)

@@ -12,7 +12,7 @@
     <a href="{{ route('dons.show', $don) }}" class="small">← Retour au don</a>
     <h1 class="h2" style="margin:.5rem 0 1.5rem">Modifier le don</h1>
 
-    <form method="POST" action="{{ route('dons.update', $don) }}" class="form don-form">
+    <form method="POST" action="{{ route('dons.update', $don) }}" class="form don-form" data-envoi-unique>
         @csrf
         @method('PUT')
         @include('dons._form')
@@ -20,3 +20,7 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/envoi-unique.js') }}"></script>
+@endpush

@@ -138,6 +138,7 @@ Route::middleware('role:association')->group(function () {
     Route::resource('associations', AssociationController::class)->except(['index', 'show']);
     Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
     Route::get('mes-besoins', [BesoinController::class, 'mes'])->name('besoins.mes');
+    Route::post('besoins/rediger', [BesoinController::class, 'rediger'])->name('besoins.rediger')->middleware('throttle:20,1');
     Route::resource('besoins', BesoinController::class)->except(['index', 'show']);
 
     Route::resource('points-collecte', PointCollecteController::class)

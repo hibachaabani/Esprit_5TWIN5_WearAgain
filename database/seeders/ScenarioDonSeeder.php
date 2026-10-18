@@ -20,7 +20,13 @@ class ScenarioDonSeeder extends Seeder
         $association = Association::where('numero_agrement', 'AGR-2026-0042')->first();
         $donateur = User::where('email', 'donateur@wearagain.tn')->first();
 
-        if (! $association || ! $donateur || Don::where('vetement_titre', 'Doudoune 8 ans')->where('statut', 'accepte')->exists()) {
+        if (! $association || ! $donateur) {
+            return;
+        }
+
+        $this->donsPourLeTriIA($association, $donateur);
+
+        if (Don::where('vetement_titre', 'Doudoune 8 ans')->where('statut', 'accepte')->exists()) {
             return;
         }
 
@@ -77,5 +83,27 @@ class ScenarioDonSeeder extends Seeder
         Notification::sendNow($association->user, new DonMisAJour($propose), ['database']);
         Notification::sendNow($donateur, new DonMisAJour($refuse), ['database']);
         Notification::sendNow($donateur, new DonMisAJour($accepte), ['database']);
+    }
+
+    /** Deux dons à traiter de plus, pour montrer le tri intelligent : l'un répond à un besoin, l'autre non. */
+    private function donsPourLeTriIA(Association $association, User $donateur): void
+    {
+        foreach ([
+            ['Body 3 mois en coton', 'Lot de 3 bodies, lavés et repassés.'],
+            ['Costume homme taille 52', 'Porté deux fois.'],
+        ] as [$vetement, $message]) {
+            if (Don::where('association_id', $association->id)->where('vetement_titre', $vetement)->exists()) {
+                continue;
+            }
+
+            Don::create([
+                'vetement_titre' => $vetement,
+                'donateur_id' => $donateur->id,
+                'association_id' => $association->id,
+                'mode' => 'depot',
+                'statut' => 'propose',
+                'message' => $message,
+            ])->ajouterEvenement('Don proposé.');
+        }
     }
 }

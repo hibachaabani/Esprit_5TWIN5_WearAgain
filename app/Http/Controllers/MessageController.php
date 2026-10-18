@@ -4,19 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Don;
 use App\Models\Message;
+use App\Services\Messagerie\Conversations;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 /**
- * Fil de discussion d'un don : le donateur et l'association s'écrivent tant que le don est en cours.
+ * Messages entre un donateur et une association : chaque message porte sur l'un de leurs dons en cours.
  * Chacun peut modifier ou supprimer ses propres messages.
  */
 class MessageController extends Controller
 {
-    public function store(Request $request, Don $don): RedirectResponse|JsonResponse
+    public function store(Request $request, Don $don, Conversations $conversations): RedirectResponse|JsonResponse
     {
         abort_unless($don->estVisiblePar($request->user()), 403);
+
+        // Depuis la messagerie, le message peut porter sur un autre don en cours avec la même personne (« À propos de »).
+        if ($request->filled('don_id') && (int) $request->input('don_id') !== $don->id) {
+            $don = Don::whereKey((int) $request->input('don_id'))
+                ->where('donateur_id', $don->donateur_id)
+                ->where('association_id', $don->association_id)
+                ->firstOrFail();
+        }
 
         if (! $don->filOuvert()) {
             return $request->expectsJson()
@@ -31,13 +40,20 @@ class MessageController extends Controller
 
         // Envoi depuis la messagerie (sans rechargement) : on renvoie la bulle à ajouter au fil.
         if ($request->expectsJson()) {
+            $conversation = $conversations->autourDe($don);
+            $message->load('auteur')->setRelation('don', $conversation->dons->firstWhere('id', $don->id));
+
             return response()->json([
-                'html' => view('messagerie._bulle', ['message' => $message->load('auteur'), 'don' => $don])->render(),
+                'html' => view('messagerie._fil', [
+                    'messages' => collect([$message]),
+                    'conversation' => $conversation,
+                    'precedent' => $conversations->donPrecedent($conversation, $message->id),
+                ])->render(),
                 'id' => $message->id,
             ], 201);
         }
 
-        return redirect()->to(route('dons.show', $don).'#fil')->with('status', 'Message envoyé.');
+        return redirect()->back(fallback: route('dons.show', $don).'#fil')->with('status', 'Message envoyé.');
     }
 
     public function update(Request $request, Message $message): RedirectResponse

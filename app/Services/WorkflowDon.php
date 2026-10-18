@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
  *   proposé ──(association)──► accepté (rendez-vous) ──(association)──► remis
  *      ├──(association)──► refusé (motif)
  *      └──(donateur)──► annulé ◄── (aussi depuis « accepté »)
+ *
+ * Chaque étape vérifie, sous verrou, que le don en est encore là : un double clic ou deux onglets
+ * ne le font pas avancer deux fois (ni n'envoient deux e-mails). Elle renvoie false sinon.
  */
 class WorkflowDon
 {
@@ -24,9 +27,9 @@ class WorkflowDon
     }
 
     /** @param  array{date_remise: string, lieu_remise: string, consigne?: ?string}  $remise */
-    public function accepter(Don $don, array $remise): void
+    public function accepter(Don $don, array $remise): bool
     {
-        DB::transaction(function () use ($don, $remise) {
+        $fait = $this->avancer($don, ['propose'], function () use ($don, $remise) {
             $don->update([
                 'statut' => 'accepte',
                 'date_remise' => $remise['date_remise'],
@@ -39,38 +42,75 @@ class WorkflowDon
                 ." : {$don->lieu_remise}.".($don->consigne ? " Consigne : {$don->consigne}" : ''));
         });
 
-        $this->prevenir($don->donateur, $don);
+        if ($fait) {
+            $this->prevenir($don->donateur, $don);
+        }
+
+        return $fait;
     }
 
-    public function refuser(Don $don, string $motif): void
+    public function refuser(Don $don, string $motif): bool
     {
-        DB::transaction(function () use ($don, $motif) {
+        $fait = $this->avancer($don, ['propose'], function () use ($don, $motif) {
             $don->update(['statut' => 'refuse', 'motif_refus' => $motif, 'cloture_le' => now()]);
             $don->ajouterEvenement("Don refusé. Motif : {$motif}");
         });
 
-        $this->prevenir($don->donateur, $don);
+        if ($fait) {
+            $this->prevenir($don->donateur, $don);
+        }
+
+        return $fait;
     }
 
-    public function remettre(Don $don): void
+    public function remettre(Don $don): bool
     {
-        DB::transaction(function () use ($don) {
+        $fait = $this->avancer($don, ['accepte'], function () use ($don) {
             $don->update(['statut' => 'remis', 'date_don' => now()->toDateString(), 'cloture_le' => now()]);
             $don->ajouterEvenement('Vêtement remis à l\'association. Merci !');
             $don->besoin?->verifierObjectif();
         });
 
-        $this->prevenir($don->donateur, $don);
+        if ($fait) {
+            $this->prevenir($don->donateur, $don);
+        }
+
+        return $fait;
     }
 
-    public function annuler(Don $don): void
+    public function annuler(Don $don): bool
     {
-        DB::transaction(function () use ($don) {
+        $fait = $this->avancer($don, ['propose', 'accepte'], function () use ($don) {
             $don->update(['statut' => 'annule', 'cloture_le' => now()]);
             $don->ajouterEvenement('Don annulé par le donateur.');
         });
 
-        $this->prevenir($don->association->user, $don);
+        if ($fait) {
+            $this->prevenir($don->association->user, $don);
+        }
+
+        return $fait;
+    }
+
+    /**
+     * Applique le changement seulement si le don est encore à l'une des étapes attendues.
+     * Le verrou fait attendre une seconde demande simultanée, qui trouve alors le statut déjà changé.
+     */
+    private function avancer(Don $don, array $depuis, \Closure $changement): bool
+    {
+        return DB::transaction(function () use ($don, $depuis, $changement) {
+            $statutActuel = Don::whereKey($don->getKey())->lockForUpdate()->value('statut');
+
+            if (! in_array($statutActuel, $depuis, true)) {
+                $don->setRawAttributes(['statut' => $statutActuel] + $don->getAttributes(), true);
+
+                return false;
+            }
+
+            $changement();
+
+            return true;
+        });
     }
 
     /**

@@ -5,12 +5,18 @@
 --}}
 @php($possibles = $don->statutsPossiblesPour(auth()->user()))
 
+@once
+    @push('scripts')
+        <script src="{{ asset('js/envoi-unique.js') }}"></script>
+    @endpush
+@endonce
+
 @if ($possibles)
 <div class="traitement">
     @if (in_array('accepte', $possibles))
         <details class="traitement-bloc" @if ($errors->hasAny(['date_remise', 'lieu_remise']) && (int) old('don_id') === $don->id) open @endif>
             <summary class="btn btn-primary small">Accepter…</summary>
-            <form method="POST" action="{{ route('dons.statut', $don) }}" class="form traitement-form">
+            <form method="POST" action="{{ route('dons.statut', $don) }}" data-envoi-unique class="form traitement-form">
                 @csrf @method('PATCH')
                 <input type="hidden" name="statut" value="accepte">
                 <input type="hidden" name="don_id" value="{{ $don->id }}">
@@ -54,7 +60,7 @@
     @if (in_array('refuse', $possibles))
         <details class="traitement-bloc" @if ($errors->has('motif_refus') && (int) old('don_id') === $don->id) open @endif>
             <summary class="btn btn-ghost small">Refuser…</summary>
-            <form method="POST" action="{{ route('dons.statut', $don) }}" class="form traitement-form">
+            <form method="POST" action="{{ route('dons.statut', $don) }}" data-envoi-unique class="form traitement-form">
                 @csrf @method('PATCH')
                 <input type="hidden" name="statut" value="refuse">
                 <input type="hidden" name="don_id" value="{{ $don->id }}">
@@ -75,7 +81,7 @@
     @endif
 
     @if (in_array('remis', $possibles))
-        <form method="POST" action="{{ route('dons.statut', $don) }}">
+        <form method="POST" action="{{ route('dons.statut', $don) }}" data-envoi-unique>
             @csrf @method('PATCH')
             <input type="hidden" name="statut" value="remis">
             <button class="btn btn-primary small" type="submit">Confirmer la remise</button>
@@ -83,7 +89,7 @@
     @endif
 
     @if (in_array('annule', $possibles))
-        <form method="POST" action="{{ route('dons.statut', $don) }}" onsubmit="return confirm('Annuler ce don ? L\'association sera prévenue.')">
+        <form method="POST" action="{{ route('dons.statut', $don) }}" data-envoi-unique onsubmit="return confirm('Annuler ce don ? L\'association sera prévenue.')">
             @csrf @method('PATCH')
             <input type="hidden" name="statut" value="annule">
             <button class="lien-danger" type="submit">Annuler le don</button>

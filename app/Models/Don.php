@@ -136,6 +136,18 @@ class Don extends Model
         return $statuts;
     }
 
+    /**
+     * Les changements de statut que cette personne peut faire sur ce don, à une étape ou une autre :
+     * l'association accepte, refuse et confirme la remise ; le donateur annule.
+     */
+    public function actionsPrevuesPour(?User $user): array
+    {
+        return array_merge(
+            $this->estRecuPar($user) ? ['accepte', 'refuse', 'remis'] : [],
+            $this->estDonneePar($user) ? ['annule'] : [],
+        );
+    }
+
     /** Le fil de discussion reste ouvert tant que le don n'est pas terminé. */
     public function filOuvert(): bool
     {

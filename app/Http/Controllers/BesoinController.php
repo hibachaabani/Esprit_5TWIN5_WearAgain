@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BesoinRequest;
 use App\Models\Association;
 use App\Models\Besoin;
+use App\Services\IA\Besoins\RedactionBesoinIA;
 use App\Services\IA\Dons\MatchingBesoinsIA;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -83,6 +85,17 @@ class BesoinController extends Controller
             ->partition(fn (Besoin $besoin) => $besoin->cleStatut() === 'ouvert');
 
         return view('besoins.mes', compact('association', 'enCours', 'termines'));
+    }
+
+    /** Assistant de rédaction (IA) : une phrase de l'association devient une proposition de besoin complète. */
+    public function rediger(Request $request, RedactionBesoinIA $redaction): JsonResponse
+    {
+        $demande = $request->validate(['demande' => ['required', 'string', 'min:5', 'max:500']])['demande'];
+        $association = $request->user()->association;
+
+        abort_unless($association, 403);
+
+        return response()->json($redaction->rediger($demande, $association->nom)->toArray());
     }
 
     /** Affiche le formulaire pour publier un besoin. */

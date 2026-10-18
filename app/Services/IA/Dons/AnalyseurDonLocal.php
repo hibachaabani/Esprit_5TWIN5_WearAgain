@@ -13,7 +13,7 @@ class AnalyseurDonLocal implements AnalyseurDon
         $mots = LexiqueVetements::mots($description);
         $scores = [];
 
-        foreach (LexiqueVetements::INDICES_CATEGORIE as $categorie => $indices) {
+        foreach (LexiqueVetements::indicesCategorie() as $categorie => $indices) {
             foreach ($indices as $poids => $liste) {
                 $scores[$categorie] = ($scores[$categorie] ?? 0) + $poids * count(array_intersect($liste, $mots));
             }
@@ -44,8 +44,8 @@ class AnalyseurDonLocal implements AnalyseurDon
 
     private function saison(array $mots): string
     {
-        $hiver = count(array_intersect(LexiqueVetements::SAISONS['hiver'], $mots));
-        $ete = count(array_intersect(LexiqueVetements::SAISONS['ete'], $mots));
+        $hiver = count(array_intersect(LexiqueVetements::motsSaison('hiver'), $mots));
+        $ete = count(array_intersect(LexiqueVetements::motsSaison('ete'), $mots));
 
         return match (true) {
             $hiver > $ete => 'hiver',

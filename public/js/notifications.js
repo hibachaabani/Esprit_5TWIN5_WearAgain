@@ -131,9 +131,10 @@
                 ecrire('wa-derniere-notification', derniereVue);
             }
 
-            // Un nouveau message : son discret, sauf si la conversation est déjà ouverte à l'écran.
+            // Un nouveau message : son discret, sauf si la conversation est ouverte et regardée.
             if (etat.message && etat.message.id > dernierMessageVu) {
-                const dejaOuverte = window.location.pathname === new URL(etat.message.url).pathname;
+                const dejaOuverte = !document.hidden
+                    && document.querySelector(`[data-conversation-ouverte="${etat.message.conversation}"]`) !== null;
                 if (dernierMessageVu && !dejaOuverte) alerter(etat.message, false);
                 dernierMessageVu = etat.message.id;
                 ecrire('wa-dernier-message-notifie', String(dernierMessageVu));

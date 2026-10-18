@@ -167,6 +167,60 @@ class DonWorkflowTest extends TestCase
         $this->assertSame('propose', $don->fresh()->statut);
     }
 
+    public function test_confirmer_deux_fois_la_remise_ne_mene_pas_a_une_erreur(): void
+    {
+        $don = $this->donPropose();
+        $association = $don->association->user;
+        $this->actingAs($association)->patch(route('dons.statut', $don), $this->rendezVous());
+        $this->actingAs($association)->patch(route('dons.statut', $don), ['statut' => 'remis']);
+
+        // Double clic, ou page restée ouverte : on revient sur la page avec un message, sans erreur 403.
+        $this->actingAs($association)->from(route('dons.show', $don))
+            ->patch(route('dons.statut', $don), ['statut' => 'remis'])
+            ->assertRedirect(route('dons.show', $don))
+            ->assertSessionHas('status', "C'est déjà fait : ce don est « Remis ».");
+
+        $this->assertSame(1, $don->messages()->where('contenu', 'like', 'Vêtement remis%')->count());
+        Notification::assertSentToTimes($don->donateur, DonMisAJour::class, 2);
+    }
+
+    public function test_une_action_devenue_impossible_previent_au_lieu_d_echouer(): void
+    {
+        $don = $this->donPropose();
+        // Le donateur annule pendant que l'association a encore la page ouverte.
+        $this->actingAs($don->donateur)->patch(route('dons.statut', $don), ['statut' => 'annule']);
+
+        $this->actingAs($don->association->user)->from(route('dons.recus'))
+            ->patch(route('dons.statut', $don), $this->rendezVous())
+            ->assertRedirect(route('dons.recus'))
+            ->assertSessionHas('avertissement', "Ce don est maintenant « Annulé » : cette action n'est plus possible.");
+
+        $this->assertSame('annule', $don->fresh()->statut);
+    }
+
+    public function test_deux_demandes_simultanees_ne_font_avancer_le_don_qu_une_fois(): void
+    {
+        $don = $this->donPropose(['statut' => 'accepte']);
+        $copiePerimee = Don::find($don->id);
+
+        // La première demande confirme la remise ; la seconde arrive avec le don chargé avant ce changement.
+        $this->assertTrue(app(\App\Services\WorkflowDon::class)->remettre($don));
+        $this->assertFalse(app(\App\Services\WorkflowDon::class)->remettre($copiePerimee));
+
+        $this->assertSame('remis', $copiePerimee->statut);
+        $this->assertSame(1, $don->messages()->where('contenu', 'like', 'Vêtement remis%')->count());
+        Notification::assertSentToTimes($don->donateur, DonMisAJour::class, 1);
+    }
+
+    public function test_les_boutons_de_traitement_ne_partent_qu_une_fois(): void
+    {
+        $don = $this->donPropose();
+
+        $this->actingAs($don->association->user)->get(route('dons.show', $don))
+            ->assertSee('data-envoi-unique', false)
+            ->assertSee('js/envoi-unique.js');
+    }
+
     public function test_une_panne_d_email_ne_bloque_pas_le_don(): void
     {
         $don = $this->donPropose();

@@ -13,7 +13,7 @@
     <h1 class="h2" style="margin:.5rem 0 1.5rem">Proposer un don</h1>
 
     <div class="don-form-mise-en-page">
-        <form method="POST" action="{{ route('dons.store') }}" class="form don-form">
+        <form method="POST" action="{{ route('dons.store') }}" class="form don-form" data-envoi-unique>
             @csrf
             @include('dons._form')
             <button type="submit" class="btn btn-primary btn-lg btn-block">Proposer le don</button>
@@ -31,3 +31,7 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/envoi-unique.js') }}"></script>
+@endpush

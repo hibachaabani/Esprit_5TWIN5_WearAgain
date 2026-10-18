@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Association;
 use App\Models\Besoin;
 use App\Models\Don;
+use App\Services\IA\Dons\TriDonsIA;
 use App\Services\WorkflowDon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -76,7 +78,7 @@ class DonController extends Controller
     }
 
     /** Dons reçus par l'association de l'utilisateur connecté, classés par onglet. */
-    public function recus(Request $request): View|RedirectResponse
+    public function recus(Request $request, TriDonsIA $triIA): View|RedirectResponse
     {
         $association = $request->user()->association;
 
@@ -97,25 +99,37 @@ class DonController extends Controller
             ->groupBy('statut')
             ->pluck('total', 'statut');
 
-        $dons = $association->dons()
+        $requete = $association->dons()
             ->with(['donateur', 'besoin'])
             ->withCount(['messages as non_lus_count' => fn ($q) => $q->nonLusPour($request->user())])
             ->whereIn('statut', $onglets[$onglet])
             // Les dons acceptés sont rangés par date de remise, la plus proche d'abord.
             ->when($onglet === 'acceptes', fn ($q) => $q->orderByRaw('date_remise is null')->orderBy('date_remise'))
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->latest();
 
-        $dons->getCollection()->each(fn (Don $don) => $don->setRelation('association', $association));
+        // À traiter : l'IA évalue chaque don et range les plus utiles d'abord (ou du plus récent, au choix).
+        $tri = $onglet === 'a_traiter' && $request->query('tri') !== 'recent' ? 'pertinence' : 'recent';
+
+        if ($onglet === 'a_traiter') {
+            $tous = $requete->get()->each(fn (Don $don) => $don->setRelation('association', $association));
+            $evalues = $tri === 'pertinence'
+                ? $triIA->trier($tous, $association)
+                : $tous->each(fn (Don $don) => $don->setAttribute('avis_ia', $triIA->evaluer($don)));
+            $page = LengthAwarePaginator::resolveCurrentPage();
+            $dons = new LengthAwarePaginator($evalues->forPage($page, 10)->values(), $evalues->count(), 10, $page,
+                ['path' => $request->url(), 'query' => $request->query()]);
+        } else {
+            $dons = $requete->paginate(10)->withQueryString();
+            $dons->getCollection()->each(fn (Don $don) => $don->setRelation('association', $association));
+        }
 
         $points = $association->pointsCollecte()->actifs()->orderBy('nom')->get();
 
-        return view('dons.recus', compact('association', 'dons', 'onglet', 'onglets', 'compteurs', 'points'));
+        return view('dons.recus', compact('association', 'dons', 'onglet', 'onglets', 'compteurs', 'points', 'tri'));
     }
 
     /** Détail d'un don : sa frise, ses actions et le fil de discussion entre le donateur et l'association. */
-    public function show(Request $request, Don $don): View
+    public function show(Request $request, Don $don, TriDonsIA $triIA): View
     {
         $don->load(['donateur', 'association', 'besoin', 'messages.auteur']);
 
@@ -127,7 +141,10 @@ class DonController extends Controller
             ? $don->association->pointsCollecte()->actifs()->orderBy('nom')->get()
             : collect();
 
-        return view('dons.show', compact('don', 'points'));
+        // Avis de l'IA pour aider l'association à répondre à un don proposé.
+        $avisIA = $don->statut === 'propose' && $don->estRecuPar($request->user()) ? $triIA->evaluer($don) : null;
+
+        return view('dons.show', compact('don', 'points', 'avisIA'));
     }
 
     /** Affiche le formulaire de modification pré-rempli. */
@@ -172,15 +189,22 @@ class DonController extends Controller
      */
     public function updateStatus(Request $request, Don $don, WorkflowDon $workflow): RedirectResponse
     {
+        $user = $request->user();
         $statut = $request->validate([
             'statut' => ['required', 'in:'.implode(',', Don::STATUTS)],
         ])['statut'];
 
-        abort_unless(in_array($statut, $don->statutsPossiblesPour($request->user())), 403);
+        // Une action que ce compte ne fait jamais sur ce don (le donateur qui « accepte » son propre don) : interdite.
+        abort_unless(in_array($statut, $don->actionsPrevuesPour($user), true), 403);
+
+        // Une action prévue mais plus possible : le don a changé d'étape (double clic, onglet resté ouvert).
+        if (! in_array($statut, $don->statutsPossiblesPour($user), true)) {
+            return $this->dejaTraite($don, $statut);
+        }
 
         $erreurs = ['date_remise.after_or_equal' => 'La remise ne peut pas être fixée dans le passé.'];
 
-        match ($statut) {
+        $fait = match ($statut) {
             'accepte' => $workflow->accepter($don, $request->validate([
                 'date_remise' => ['required', 'date', 'after_or_equal:today'],
                 'lieu_remise' => ['required', 'string', 'max:255'],
@@ -193,12 +217,27 @@ class DonController extends Controller
             'annule' => $workflow->annuler($don),
         };
 
+        // Deux demandes simultanées : la seconde trouve le don déjà avancé par la première.
+        if (! $fait) {
+            return $this->dejaTraite($don, $statut);
+        }
+
         return back()->with('status', match ($statut) {
             'accepte' => "Don accepté : {$don->donateur->name} est prévenu du rendez-vous.",
             'refuse' => "Don refusé : {$don->donateur->name} est prévenu du motif.",
             'remis' => 'Remise confirmée. Merci !',
             'annule' => 'Don annulé : l\'association est prévenue.',
         });
+    }
+
+    /** Retour sur la page avec un message clair, plutôt qu'une erreur, quand le don a déjà changé d'étape. */
+    private function dejaTraite(Don $don, string $statut): RedirectResponse
+    {
+        $actuel = Don::LIBELLES_STATUT[$don->statut];
+
+        return $don->statut === $statut
+            ? back()->with('status', "C'est déjà fait : ce don est « {$actuel} ».")
+            : back()->with('avertissement', "Ce don est maintenant « {$actuel} » : cette action n'est plus possible.");
     }
 
     /** Règles de validation communes à store() et update(). */

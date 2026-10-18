@@ -127,3 +127,16 @@
   .assistant-action { justify-items: start; }
   .assistant-form-bas .btn { margin-left: 0; width: 100%; }
 }
+
+/* Assistant de rédaction de besoin (IA) */
+.redaction-ia { display: grid; gap: .5rem; margin: 0 0 1.75rem; padding: 1.1rem 1.25rem; border: 1.5px dashed var(--maroon); border-radius: 16px; background: #FBF2F3; }
+.redaction-ia h2 { margin: 0; font-size: 1.15rem; color: var(--maroon); }
+.redaction-ia p { margin: 0; }
+.redaction-ia textarea { width: 100%; resize: vertical; padding: .7rem .9rem; border: 1.5px solid var(--line); border-radius: 12px; font: inherit; background: var(--white); }
+.redaction-ia textarea:focus { outline: none; border-color: var(--maroon); }
+.redaction-ia-bas { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+.redaction-ia-etat { flex: 1; color: #2F7D4F; font-weight: 600; }
+.redaction-ia-etat.error { color: #B3261E; }
+.rempli-ia { animation: rempli-ia 1.6s ease-out; }
+@keyframes rempli-ia { 0% { background: #FFF1C9; border-color: #C58A1B; } 100% { background: inherit; } }
+.estime-ia { border-color: #C58A1B !important; box-shadow: 0 0 0 3px rgba(197, 138, 27, .18); }

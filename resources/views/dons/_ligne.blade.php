@@ -23,6 +23,9 @@
 
         @switch($don->statut)
             @case('propose')
+                @if ($pourAssociation && $don->avis_ia)
+                    @include('dons._avis_ia', ['avis' => $don->avis_ia])
+                @endif
                 @if ($pourAssociation)
                     <p class="don-row-detail">
                         {{ \App\Models\Don::LIBELLES_MODE[$don->mode] }} · proposé {{ $don->created_at->diffForHumans() }}
