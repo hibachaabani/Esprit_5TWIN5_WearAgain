@@ -56,12 +56,11 @@
                 </p>
             @endif
 
-            <form method="POST" action="{{ route('2fa.enable') }}">
-                @csrf
-                <x-primary-button>
+            <a href="{{ route('2fa.setup') }}">
+                <x-primary-button type="button">
                     Activer la 2FA
                 </x-primary-button>
-            </form>
+            </a>
         @endif
     </div>
 </section>

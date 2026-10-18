@@ -54,7 +54,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Double authentification (2FA)
-    Route::post('/profile/2fa/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
+    Route::get('/profile/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
+    Route::post('/profile/2fa/confirm', [TwoFactorController::class, 'confirm'])->name('2fa.confirm');
     Route::post('/profile/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
 
     Route::get('favoris', [FavoriController::class, 'index'])->name('favoris.index');

@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'two_factor_enabled',
+        'two_factor_secret',
     ];
 
     protected $attributes = [
@@ -31,6 +32,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
     ];
 
     /**
