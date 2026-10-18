@@ -42,11 +42,16 @@ class RolesTest extends TestCase
 
     public function test_inscription_d_une_association(): void
     {
-        $this->post('/register', $this->inscription(['type' => 'association', 'association_nom' => 'Solidarité Textile', 'numero_agrement' => 'AGR-1']));
+        $reponse = $this->post('/register', $this->inscription(['type' => 'association', 'association_nom' => 'Solidarité Textile', 'numero_agrement' => 'AGR-1', 'association_ville' => 'Sousse']));
 
         $user = User::firstWhere('email', 'nouveau@example.com');
         $this->assertSame('association', $user->role);
         $this->assertSame('Solidarité Textile', $user->association->nom);
+
+        // La ville place l'association sur la carte, puis elle est invitée à compléter sa fiche.
+        $this->assertSame('Sousse', $user->association->ville);
+        $this->assertNotNull($user->association->latitude);
+        $reponse->assertRedirect(route('associations.edit', $user->association))->assertSessionHas('avertissement');
     }
 
     public function test_inscription_d_un_atelier(): void

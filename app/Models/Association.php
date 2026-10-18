@@ -59,6 +59,11 @@ class Association extends Model
         return $this->hasMany(Don::class);
     }
 
+    public function besoins(): HasMany
+    {
+        return $this->hasMany(Besoin::class);
+    }
+
     public function pointsCollecte(): HasMany
     {
         return $this->hasMany(PointCollecte::class);

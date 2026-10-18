@@ -6,12 +6,16 @@ use App\Http\Controllers\AtelierController;
 use App\Http\Controllers\AtelierAvisController;
 use App\Http\Controllers\AtelierStatistiquesController;
 use App\Http\Controllers\AvisController;
+use App\Http\Controllers\BesoinController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\DonController;
 use App\Http\Controllers\EspaceAtelierController;
 use App\Http\Controllers\EspaceController;
 use App\Http\Controllers\FavoriController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\MessagerieController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReparationController;
@@ -57,9 +61,33 @@ Route::middleware('auth')->group(function () {
     // Le détail et le changement de statut vérifient que l'utilisateur est concerné.
     Route::get('dons/{don}', [DonController::class, 'show'])->name('dons.show')->whereNumber('don');
     Route::patch('dons/{don}/statut', [DonController::class, 'updateStatus'])->name('dons.statut');
+    // Fil de discussion du don : le contrôleur vérifie que l'utilisateur est le donateur ou l'association.
+    Route::post('dons/{don}/messages', [MessageController::class, 'store'])->name('messages.store')->whereNumber('don');
+    Route::put('messages/{message}', [MessageController::class, 'update'])->name('messages.update');
+    Route::delete('messages/{message}', [MessageController::class, 'destroy'])->name('messages.destroy');
     Route::get('depots/{depot}', [DepotController::class, 'show'])->name('depots.show')->whereNumber('depot');
     Route::patch('depots/{depot}/statut', [DepotController::class, 'changerStatut'])->name('depots.statut');
     Route::get('reparations/{reparation}', [ReparationController::class, 'show'])->name('reparations.show')->whereNumber('reparation');
+});
+
+/*
+| Notifications (cloche du menu) : étapes des dons et nouveaux messages
+*/
+Route::middleware('role:particulier,association')->prefix('notifications')->name('notifications.')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::get('etat', [NotificationController::class, 'etat'])->name('etat');
+    Route::post('tout-lire', [NotificationController::class, 'toutLire'])->name('tout-lire');
+    Route::get('{id}', [NotificationController::class, 'ouvrir'])->name('ouvrir')->whereUuid('id');
+});
+
+/*
+| Messagerie : les conversations entre donateurs et associations (une par don)
+*/
+Route::middleware('role:particulier,association')->prefix('messagerie')->name('messagerie.')->group(function () {
+    Route::get('/', [MessagerieController::class, 'index'])->name('index');
+    Route::get('non-lus', [MessagerieController::class, 'nonLus'])->name('non-lus');
+    Route::get('{don}', [MessagerieController::class, 'show'])->name('show')->whereNumber('don');
+    Route::get('{don}/nouveaux', [MessagerieController::class, 'nouveaux'])->name('nouveaux')->whereNumber('don');
 });
 
 /*
@@ -109,6 +137,8 @@ Route::resource('vetements', VetementController::class)->only(['edit', 'update',
 Route::middleware('role:association')->group(function () {
     Route::resource('associations', AssociationController::class)->except(['index', 'show']);
     Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
+    Route::get('mes-besoins', [BesoinController::class, 'mes'])->name('besoins.mes');
+    Route::resource('besoins', BesoinController::class)->except(['index', 'show']);
 
     Route::resource('points-collecte', PointCollecteController::class)
         ->except(['index', 'show'])
@@ -154,6 +184,8 @@ Route::middleware('role:atelier')->prefix('mon-atelier/statistiques')->name('ate
 Route::resource('vetements', VetementController::class)->only(['index', 'show']);
 Route::resource('categories', CategorieController::class)->only(['index', 'show'])->parameters(['categories' => 'categorie']);
 Route::resource('associations', AssociationController::class)->only(['index', 'show']);
+Route::get('besoins/assistant', [BesoinController::class, 'assistant'])->name('besoins.assistant');
+Route::resource('besoins', BesoinController::class)->only(['index', 'show']);
 Route::resource('points-collecte', PointCollecteController::class)
     ->only(['index', 'show'])
     ->parameters(['points-collecte' => 'pointCollecte']);
@@ -175,6 +207,9 @@ Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group
     Route::patch('associations/{association}/verifier', [Admin\AssociationController::class, 'verifier'])->name('associations.verifier');
 
     Route::resource('dons', Admin\DonController::class)->only(['index', 'show']);
+    Route::resource('besoins', Admin\BesoinController::class)->only(['index', 'show', 'destroy']);
+    Route::patch('besoins/{besoin}/statut', [Admin\BesoinController::class, 'basculerStatut'])->name('besoins.statut');
+    Route::resource('messages', Admin\MessageController::class)->only(['index', 'destroy']);
 
     // Vêtements et catégories (membre 1)
     Route::resource('vetements', Admin\VetementController::class)->only(['index', 'show', 'destroy']);

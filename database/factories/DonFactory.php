@@ -24,4 +24,22 @@ class DonFactory extends Factory
             'message' => fake()->optional()->sentence(10),
         ];
     }
+
+    /** Complète les étapes selon le statut tiré : rendez-vous si accepté, motif si refusé, dates de clôture. */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Don $don) {
+            if (in_array($don->statut, ['accepte', 'remis'], true)) {
+                $don->accepte_le ??= now()->subDays(3);
+                $don->date_remise ??= now()->addDays(fake()->numberBetween(1, 10))->setTime(10, 0);
+                $don->lieu_remise ??= fake()->streetAddress().', '.fake()->randomElement(['Tunis', 'Sousse', 'Sfax']);
+            }
+            if ($don->statut === 'refuse') {
+                $don->motif_refus ??= 'Taille ou catégorie non recherchée en ce moment';
+            }
+            if (in_array($don->statut, ['remis', 'refuse', 'annule'], true)) {
+                $don->cloture_le ??= now()->subDay();
+            }
+        });
+    }
 }

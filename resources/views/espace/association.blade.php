@@ -4,132 +4,163 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/espaces.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/besoins.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/tableau-de-bord.css') }}">
 @endpush
 
 @section('content')
 <div class="container section">
-    <p class="eyebrow">Mon espace association</p>
-    <h1>{{ $association->nom ?? 'Mon association' }}</h1>
-    <p class="lead espace-intro">Vous êtes connecté en tant qu'<strong>association</strong>. Vous recevez les dons de vêtements des particuliers et vous gérez des points de collecte où ils déposent leurs vêtements.</p>
-
-    <ol class="espace-etapes">
-        <li><strong>Complétez votre fiche</strong>Mission, ville, position sur la carte, vêtements acceptés.</li>
-        <li><strong>Attendez la vérification</strong>L'administrateur valide votre numéro d'agrément.</li>
-        <li><strong>Ouvrez vos points de collecte</strong>Les particuliers y déposent leurs vêtements.</li>
-        <li><strong>Traitez dons et dépôts</strong>Acceptez les dons, recevez puis triez les dépôts.</li>
-    </ol>
-
-    {{-- 1. La fiche de l'association (CRUD) --}}
-    <section class="espace-section" style="margin-top: 0">
-        <div class="section-head">
-            <h2>1. Ma fiche association</h2>
+    @if (! $association)
+        <p class="eyebrow">Mon espace association</p>
+        <h1>Bienvenue</h1>
+        <div class="empty">
+            <p>Votre compte n'a pas encore de fiche association.</p>
+            <a href="{{ route('associations.create') }}" class="btn btn-primary">Créer ma fiche</a>
         </div>
+    @else
+        @php
+            $ficheComplete = $association->mission && $association->ville && $association->hasPosition() && $association->categories;
+            $aTraiter = $dons['propose'] ?? 0;
+            $aCollecter = $points->sum('a_collecter_count');
+        @endphp
 
-        @if (! $association)
-            <div class="empty">
-                <p>Votre compte n'a pas encore de fiche association.</p>
-                <a href="{{ route('associations.create') }}" class="btn btn-primary">Créer ma fiche</a>
-            </div>
-        @else
-            <article class="espace-card">
-                <p>
+        {{-- En-tête : identité et état de la fiche --}}
+        <header class="tdb-tete">
+            <div>
+                <p class="eyebrow">Mon espace association</p>
+                <h1>{{ $association->nom }}</h1>
+                <p class="tdb-etat">
                     @if ($association->verifiee)
                         <span class="badge-etat badge-ok">✔ Vérifiée : vous pouvez recevoir des dons</span>
                     @else
                         <span class="badge-etat badge-attente">⏳ En attente de vérification par l'administrateur</span>
                     @endif
+                    <span class="muted">{{ $association->ville ?? 'Ville non renseignée' }} · agrément {{ $association->numero_agrement }}</span>
                 </p>
-                <p>{{ $association->ville ?? 'Ville non renseignée' }} · agrément {{ $association->numero_agrement }}</p>
-                <p>{{ $association->mission ?? 'Ajoutez votre mission pour vous présenter aux donateurs.' }}</p>
-                <div class="espace-actions">
-                    <a href="{{ route('associations.show', $association) }}" class="btn btn-ghost">Voir ma page publique</a>
-                    <a href="{{ route('associations.edit', $association) }}" class="btn btn-primary">Modifier ma fiche</a>
-                    <form method="POST" action="{{ route('associations.destroy', $association) }}"
-                          onsubmit="return confirm('Supprimer définitivement la fiche de votre association ?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-supprimer">Supprimer</button>
-                    </form>
-                </div>
-            </article>
-        @endif
-    </section>
-
-    @if ($association)
-        {{-- 2. Les points de collecte (CRUD) --}}
-        <section class="espace-section">
-            <div class="section-head">
-                <h2>2. Mes points de collecte</h2>
-                <a href="{{ route('points-collecte.create') }}" class="btn btn-primary">Ajouter un point</a>
             </div>
+            <div class="tdb-tete-actions">
+                <a href="{{ route('associations.show', $association) }}" class="btn btn-ghost">Voir ma page publique</a>
+                <a href="{{ route('associations.edit', $association) }}" class="btn btn-ghost">Modifier ma fiche</a>
+            </div>
+        </header>
 
-            @if ($points->isEmpty())
-                <p class="muted">Aucun point de collecte. Ajoutez-en un pour que les particuliers puissent y déposer leurs vêtements.</p>
-            @else
-                <table class="table-simple">
-                    <thead><tr><th>Point</th><th>Remplissage</th><th>À collecter</th><th>État</th><th></th></tr></thead>
-                    <tbody>
-                        @foreach ($points as $point)
-                            <tr>
-                                <td><strong>{{ $point->nom }}</strong><br><span class="small muted">{{ $point->adresse }}, {{ $point->ville }}</span></td>
-                                <td>{{ $point->placesOccupees() }} / {{ $point->capacite }} ({{ $point->tauxRemplissage() }} %)</td>
-                                <td>{{ $point->a_collecter_count }}</td>
-                                <td>{{ $point->actif ? 'Ouvert' : 'Fermé' }}</td>
-                                <td>
-                                    <div class="actions-ligne">
-                                        <a href="{{ route('points-collecte.show', $point) }}" class="btn btn-ghost">Voir</a>
-                                        <a href="{{ route('points-collecte.edit', $point) }}" class="btn btn-ghost">Modifier</a>
-                                        <form method="POST" action="{{ route('points-collecte.destroy', $point) }}"
-                                              onsubmit="return confirm('Supprimer ce point de collecte ?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-supprimer">Supprimer</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @endif
+        {{-- Les étapes ne servent qu'au démarrage : fiche incomplète ou pas encore vérifiée. --}}
+        @if (! $association->verifiee || ! $ficheComplete)
+            <ol class="espace-etapes">
+                <li @class(['faite' => $ficheComplete])><strong>Complétez votre fiche</strong>Mission, ville, position sur la carte, vêtements acceptés.</li>
+                <li @class(['faite' => $association->verifiee])><strong>Attendez la vérification</strong>L'administrateur valide votre numéro d'agrément.</li>
+                <li><strong>Points de collecte et besoins</strong>Ouvrez des points de dépôt et publiez les vêtements recherchés.</li>
+                <li><strong>Traitez dons et dépôts</strong>Acceptez les dons, recevez puis triez les dépôts.</li>
+            </ol>
+        @endif
+
+        {{-- À faire maintenant : les actions du moment, en un clic --}}
+        <section class="tdb-section">
+            <h2 class="tdb-titre">À faire maintenant</h2>
+            <div class="tdb-tuiles">
+                <a href="{{ route('dons.recus') }}" @class(['tdb-tuile', 'urgent' => $aTraiter])>
+                    <strong>{{ $aTraiter }}</strong><span>don(s) à traiter</span><em>Traiter les dons →</em>
+                </a>
+                <a href="{{ route('messagerie.index') }}" @class(['tdb-tuile', 'urgent' => $messagesNonLus])>
+                    <strong>{{ $messagesNonLus }}</strong><span>message(s) non lu(s)</span><em>Ouvrir les messages →</em>
+                </a>
+                <a href="{{ route('dons.recus', ['onglet' => 'acceptes']) }}" class="tdb-tuile">
+                    <strong>{{ $remises->count() }}</strong><span>remise(s) à venir</span><em>Voir les dons acceptés →</em>
+                </a>
+                <a href="{{ route('depots.recus') }}" @class(['tdb-tuile', 'urgent' => $enRetard])>
+                    <strong>{{ $depots['en_attente'] ?? 0 }}</strong><span>dépôt(s) en attente{{ $enRetard ? ' · '.$enRetard.' en retard' : '' }}</span><em>Traiter les dépôts →</em>
+                </a>
+            </div>
         </section>
 
-        {{-- 3. Dons et dépôts reçus --}}
-        <section class="espace-section">
-            <div class="section-head">
-                <h2>3. Ce que vous recevez</h2>
-            </div>
-            <div class="espace-grid">
-                <article class="espace-card">
-                    <h3>Dons reçus</h3>
-                    <p>Les particuliers vous proposent des vêtements : acceptez ou refusez, puis confirmez la remise.</p>
-                    <span class="espace-chiffre">{{ $dons['propose'] ?? 0 }}<small>à traiter</small></span>
-                    <p>{{ $dons['accepte'] ?? 0 }} accepté(s) · {{ $dons['remis'] ?? 0 }} remis</p>
-                    <div class="espace-actions">
-                        <a href="{{ route('dons.recus') }}" class="btn btn-primary">Traiter les dons</a>
-                    </div>
-                </article>
+        <div class="tdb-colonnes">
+            {{-- Prochaines remises de dons --}}
+            <section class="tdb-carte">
+                <div class="tdb-carte-tete">
+                    <h2>Prochaines remises</h2>
+                    <a href="{{ route('dons.recus', ['onglet' => 'acceptes']) }}" class="small">Tout voir →</a>
+                </div>
+                @forelse ($remises->take(4) as $don)
+                    <a href="{{ route('dons.show', $don) }}" class="tdb-ligne">
+                        <span class="tdb-date">
+                            @if ($don->date_remise)
+                                <strong>{{ ucfirst($don->date_remise->translatedFormat('D d/m')) }}</strong>{{ $don->date_remise->format('H\hi') }}
+                            @else
+                                <strong>À fixer</strong>
+                            @endif
+                        </span>
+                        <span class="tdb-ligne-texte">
+                            <strong>{{ $don->vetement_titre }}</strong>
+                            <span>{{ $don->donateur?->name }}{{ $don->lieu_remise ? ' · '.$don->lieu_remise : '' }}</span>
+                        </span>
+                    </a>
+                @empty
+                    <p class="muted tdb-vide">Aucune remise prévue. Les dons que vous acceptez apparaîtront ici avec leur rendez-vous.</p>
+                @endforelse
+            </section>
 
-                <article class="espace-card">
-                    <h3>Dépôts reçus</h3>
-                    <p>Vêtements déposés dans vos points : marquez-les reçus puis triés.</p>
-                    <span class="espace-chiffre">{{ $depots['en_attente'] ?? 0 }}<small>en attente</small></span>
-                    <p>{{ $depots['recu'] ?? 0 }} reçu(s) · {{ $depots['trie'] ?? 0 }} trié(s) · {{ $enRetard }} en retard</p>
-                    <div class="espace-actions">
-                        <a href="{{ route('depots.recus') }}" class="btn btn-primary">Traiter les dépôts</a>
-                        <a href="{{ route('depots.reception') }}" class="btn btn-ghost">Scanner un bon</a>
-                    </div>
-                </article>
+            {{-- Besoins publiés --}}
+            <section class="tdb-carte">
+                <div class="tdb-carte-tete">
+                    <h2>Mes besoins</h2>
+                    <a href="{{ route('besoins.create') }}" class="btn btn-primary small">+ Publier un besoin</a>
+                </div>
+                @unless ($association->peutRecevoirDesDons())
+                    <p class="small muted">Vos besoins seront visibles par les donateurs une fois votre association vérifiée.</p>
+                @endunless
+                @forelse ($besoins->take(4) as $besoin)
+                    <a href="{{ route('besoins.show', $besoin) }}" class="tdb-ligne tdb-besoin">
+                        <span class="tdb-ligne-texte">
+                            <strong>{{ $besoin->titre }}</strong>
+                            <span>
+                                <span class="point-urgence urgence-{{ $besoin->urgence }}">● {{ \App\Models\Besoin::URGENCES[$besoin->urgence] }}</span>
+                                @if ($besoin->cleStatut() !== 'ouvert') · {{ $besoin->libelleStatut() }} @endif
+                                @if ($besoin->date_limite) · avant le {{ $besoin->date_limite->format('d/m') }} @endif
+                            </span>
+                        </span>
+                        <span class="tdb-progression">
+                            <span class="progression-barre"><span style="width: {{ $besoin->progression() }}%"></span><span class="en-route" style="width: {{ $besoin->progressionEnRoute() }}%"></span></span>
+                            <small>{{ $besoin->quantiteRecue() }} / {{ $besoin->quantite }}</small>
+                        </span>
+                    </a>
+                @empty
+                    <p class="muted tdb-vide">Aucun besoin publié. Indiquez aux donateurs les vêtements que vous recherchez en priorité.</p>
+                @endforelse
+                @if ($besoins->count() > 4)
+                    <a href="{{ route('besoins.mes') }}" class="small tdb-plus">Voir les {{ $besoins->count() }} besoins →</a>
+                @endif
+            </section>
+        </div>
 
-                <article class="espace-card">
-                    <h3>Tournée de collecte</h3>
-                    <p>L'ordre de passage le plus court pour vider vos points.</p>
-                    <span class="espace-chiffre">{{ $points->sum('a_collecter_count') }}<small>vêtement(s) à collecter</small></span>
-                    <div class="espace-actions">
-                        <a href="{{ route('tournee.index') }}" class="btn btn-primary">Planifier la tournée</a>
-                    </div>
-                </article>
+        {{-- Points de collecte : un résumé, la gestion détaillée est dans le module collecte --}}
+        <section class="tdb-carte tdb-collecte">
+            <div class="tdb-carte-tete">
+                <h2>Mes points de collecte</h2>
+                <div class="tdb-tete-actions">
+                    <a href="{{ route('points-collecte.create') }}" class="btn btn-ghost small">Ajouter un point</a>
+                    <a href="{{ route('tournee.index') }}" class="btn btn-ghost small">Planifier la tournée</a>
+                    <a href="{{ route('depots.reception') }}" class="btn btn-ghost small">Scanner un bon</a>
+                </div>
             </div>
+            @if ($points->isEmpty())
+                <p class="muted tdb-vide">Aucun point de collecte. Ajoutez-en un pour que les particuliers puissent y déposer leurs vêtements.</p>
+            @else
+                <p class="tdb-resume">
+                    <strong>{{ $points->count() }}</strong> point(s) · {{ $points->where('actif', true)->count() }} ouvert(s) ·
+                    <strong>{{ $aCollecter }}</strong> vêtement(s) à collecter
+                </p>
+                <ul class="tdb-points">
+                    @foreach ($points as $point)
+                        <li>
+                            <a href="{{ route('points-collecte.show', $point) }}">
+                                <span @class(['tdb-pastille', 'ferme' => ! $point->actif, 'plein' => $point->tauxRemplissage() >= 90])></span>
+                                {{ $point->nom }}
+                                <small>{{ $point->tauxRemplissage() }} %</small>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
         </section>
     @endif
 </div>
