@@ -19,5 +19,10 @@ class AdminSeeder extends Seeder
         if (! $admin->isAdmin()) {
             $admin->forceFill(['role' => 'admin'])->save();
         }
+
+        // Idempotent : le compte de démonstration est considéré comme vérifié.
+        if (is_null($admin->email_verified_at)) {
+            $admin->forceFill(['email_verified_at' => now()])->save();
+        }
     }
 }

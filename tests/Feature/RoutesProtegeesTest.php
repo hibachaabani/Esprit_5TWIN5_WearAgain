@@ -22,6 +22,7 @@ class RoutesProtegeesTest extends TestCase
         'points-collecte.index', 'points-collecte.show',
         'transformations.index', 'transformations.show',
         'depots.suivi',
+        'marques.index', 'marques.show',
     ];
 
     public function test_chaque_route_de_module_exige_d_etre_connecte(): void
