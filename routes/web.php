@@ -53,7 +53,7 @@ Route::get('/', function () {
 /*
 | Tout compte connecté
 */
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     // Page d'arrivée après connexion : le tableau de bord du rôle.
     Route::get('mon-espace', [EspaceController::class, 'index'])->name('espace');
 
@@ -88,7 +88,7 @@ Route::middleware('auth')->group(function () {
 /*
 | Notifications (cloche du menu) : étapes des dons et nouveaux messages
 */
-Route::middleware(['auth', 'role:particulier,association'])->prefix('notifications')->name('notifications.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:particulier,association'])->prefix('notifications')->name('notifications.')->group(function () {
     Route::get('/', [NotificationController::class, 'index'])->name('index');
     Route::get('etat', [NotificationController::class, 'etat'])->name('etat');
     Route::post('tout-lire', [NotificationController::class, 'toutLire'])->name('tout-lire');
@@ -98,7 +98,7 @@ Route::middleware(['auth', 'role:particulier,association'])->prefix('notificatio
 /*
 | Messagerie : les conversations entre donateurs et associations (une par don)
 */
-Route::middleware(['auth', 'role:particulier,association'])->prefix('messagerie')->name('messagerie.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:particulier,association'])->prefix('messagerie')->name('messagerie.')->group(function () {
     Route::get('/', [MessagerieController::class, 'index'])->name('index');
     Route::get('non-lus', [MessagerieController::class, 'nonLus'])->name('non-lus');
     Route::get('{don}', [MessagerieController::class, 'show'])->name('show')->whereNumber('don');
@@ -109,7 +109,7 @@ Route::middleware(['auth', 'role:particulier,association'])->prefix('messagerie'
 | Cycle de vie d'une réparation : devis, avancement et annulation (membre 5).
 | L'acteur attendu (atelier ou client) est vérifié par la policy, pas le rôle.
 */
-Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations.')->whereNumber('reparation')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('reparations/{reparation}')->name('reparations.')->whereNumber('reparation')->group(function () {
     Route::post('devis', [ReparationWorkflowController::class, 'proposerDevis'])->name('devis.proposer');
     Route::post('devis/accepter', [ReparationWorkflowController::class, 'accepter'])->name('devis.accepter');
     Route::post('devis/refuser', [ReparationWorkflowController::class, 'refuser'])->name('devis.refuser');
@@ -120,7 +120,7 @@ Route::middleware('auth')->prefix('reparations/{reparation}')->name('reparations
 /*
 | Particulier : vêtements, dons, dépôts, demandes de réparation / transformation, avis
 */
-Route::middleware(['auth', 'role:particulier'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:particulier'])->group(function () {
     Route::get('mes-annonces', [VetementController::class, 'mes'])->name('vetements.mes');
     Route::resource('vetements', VetementController::class)->only(['create', 'store']);
 
@@ -148,12 +148,12 @@ Route::middleware(['auth', 'role:particulier'])->group(function () {
 });
 
 // Le propriétaire (ou l'admin) modifie et supprime son annonce : vérifié dans le contrôleur.
-Route::resource('vetements', VetementController::class)->only(['edit', 'update', 'destroy'])->middleware('auth');
+Route::resource('vetements', VetementController::class)->only(['edit', 'update', 'destroy'])->middleware(['auth', 'verified']);
 
 /*
 | Association : sa fiche, ses dons reçus, ses points de collecte, la réception et la tournée
 */
-Route::middleware(['auth', 'role:association'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:association'])->group(function () {
     Route::resource('associations', AssociationController::class)->except(['index', 'show']);
     Route::get('mes-dons-recus', [DonController::class, 'recus'])->name('dons.recus');
     Route::get('mes-besoins', [BesoinController::class, 'mes'])->name('besoins.mes');
@@ -172,7 +172,7 @@ Route::middleware(['auth', 'role:association'])->group(function () {
 /*
 | Atelier : son profil et les demandes de réparation / transformation reçues
 */
-Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier')->name('mon-atelier.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:atelier'])->prefix('mon-atelier')->name('mon-atelier.')->group(function () {
     Route::get('/', [EspaceAtelierController::class, 'index'])->name('index');
     Route::get('modifier', [EspaceAtelierController::class, 'edit'])->name('edit');
     Route::put('/', [EspaceAtelierController::class, 'update'])->name('update');
@@ -183,7 +183,7 @@ Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier')->name('mon-at
 /*
 | Avis reçus par l'atelier et réponse publique (membre 5)
 */
-Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/avis')->name('atelier.avis.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:atelier'])->prefix('mon-atelier/avis')->name('atelier.avis.')->group(function () {
     Route::get('/', [AtelierAvisController::class, 'index'])->name('index');
     Route::post('{avi}/brouillon-ia', [AtelierAvisController::class, 'brouillonIA'])->name('brouillon-ia');
     Route::post('{avi}/reponse', [AtelierAvisController::class, 'repondre'])->name('repondre');
@@ -192,7 +192,7 @@ Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/avis')->name('a
 /*
 | Statistiques et export de l'atelier (membre 5)
 */
-Route::middleware(['auth', 'role:atelier'])->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:atelier'])->prefix('mon-atelier/statistiques')->name('atelier.statistiques.')->group(function () {
     Route::get('/', AtelierStatistiquesController::class)->name('index');
     Route::get('export/{type}', [AtelierStatistiquesController::class, 'export'])
         ->whereIn('type', ['reparations', 'avis'])->name('export');
@@ -221,7 +221,7 @@ Route::get('transformations/{transformation}', [TransformationController::class,
 /*
 | Back-office : administrateur uniquement
 */
-Route::prefix('admin')->middleware(['auth', 'can:admin'])->name('admin.')->group(function () {
+Route::prefix('admin')->middleware(['auth', 'verified', 'can:admin'])->name('admin.')->group(function () {
     Route::get('/', Admin\TableauDeBordController::class)->name('dashboard');
     Route::get('utilisateurs', [Admin\UtilisateurController::class, 'index'])->name('utilisateurs.index');
 

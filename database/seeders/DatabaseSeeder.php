@@ -80,6 +80,12 @@ class DatabaseSeeder extends Seeder
             $user->forceFill(['role' => $role])->save();
         }
 
+        // Idempotent : les comptes de démonstration sont considérés comme vérifiés
+        // (l'email de vérification ne s'adresse qu'aux nouveaux inscrits).
+        if (is_null($user->email_verified_at)) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
         return $user;
     }
 }
