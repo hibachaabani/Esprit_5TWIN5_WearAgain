@@ -15,10 +15,10 @@
         </div>
         <div class="hero-actions" style="margin-top: 0">
             <a href="{{ route('atelier.statistiques.export', 'reparations') }}" class="btn btn-ghost">
-                Exporter réparations (CSV)
+                Exporter réparations (Excel)
             </a>
             <a href="{{ route('atelier.statistiques.export', 'avis') }}" class="btn btn-ghost">
-                Exporter avis (CSV)
+                Exporter avis (Excel)
             </a>
             <a href="{{ route('mon-atelier.index') }}" class="btn btn-primary">← Mon atelier</a>
         </div>
