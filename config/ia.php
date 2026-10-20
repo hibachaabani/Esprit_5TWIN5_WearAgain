@@ -61,4 +61,3 @@ return [
     'cache_ttl' => (int) env('IA_CACHE_TTL', 3600),
 
 ];
-
