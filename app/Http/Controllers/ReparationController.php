@@ -30,8 +30,7 @@ class ReparationController extends Controller
         private readonly DiagnosticReparationIA $diagnosticIA,
         private readonly RecommandationAteliers $recommandationAteliers,
         private readonly ReparationWorkflow $workflow,
-    ) {
-    }
+    ) {}
 
     /** « Mes réparations » : les demandes du particulier connecté (recherche + statut). */
     public function index(Request $request): View

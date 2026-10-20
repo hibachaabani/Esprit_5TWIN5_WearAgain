@@ -86,7 +86,7 @@ class DiagnosticIATest extends TestCase
         $this->actingAs($client)->post(route('reparations.store'), [
             'vetement_id' => $vetement->id,
             'atelier_id' => $atelier->id,
-            'description_probleme' => "Bouton manquant sur la chemise et couture qui se decoud le long de la manche.",
+            'description_probleme' => 'Bouton manquant sur la chemise et couture qui se decoud le long de la manche.',
         ])->assertSessionHasNoErrors();
 
         $reparation = Reparation::firstOrFail();
@@ -111,7 +111,7 @@ class DiagnosticIATest extends TestCase
         $this->actingAs($client)->post(route('reparations.store'), [
             'vetement_id' => $vetement->id,
             'atelier_id' => $atelier->id,
-            'description_probleme' => "Fermeture eclair cassee sur le blouson de cuir, tissu dechire.",
+            'description_probleme' => 'Fermeture eclair cassee sur le blouson de cuir, tissu dechire.',
         ]);
 
         $reparation = Reparation::firstOrFail();

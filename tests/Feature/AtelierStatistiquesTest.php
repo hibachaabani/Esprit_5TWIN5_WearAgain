@@ -9,6 +9,7 @@ use App\Models\Reparation;
 use App\Models\User;
 use App\Models\Vetement;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class AtelierStatistiquesTest extends TestCase
@@ -117,9 +118,27 @@ class AtelierStatistiquesTest extends TestCase
             ->assertSee('4'); // délai moyen = 4 jours
     }
 
-    /* ----- Export CSV ----- */
+    /* ----- Export Excel ----- */
 
-    public function test_l_export_des_reparations_renvoie_un_csv(): void
+    /** Contenu textuel de toutes les cellules d'un classeur .xlsx. */
+    private function lireXlsx(string $contenu): string
+    {
+        $fichier = tempnam(sys_get_temp_dir(), 'wearagain');
+        file_put_contents($fichier, $contenu);
+
+        $classeur = IOFactory::load($fichier);
+        unlink($fichier);
+
+        $cellules = array_map(
+            fn (string $coord) => (string) $classeur->getActiveSheet()->getCell($coord)->getValue(),
+            $classeur->getActiveSheet()->getCoordinates()
+        );
+        $classeur->disconnectWorksheets();
+
+        return implode(' | ', $cellules);
+    }
+
+    public function test_l_export_des_reparations_renvoie_un_excel(): void
     {
         [$proprio, $atelier] = $this->atelierProprietaire();
         $this->reparation($atelier, ['statut' => 'terminee', 'devis' => 120]);
@@ -128,14 +147,14 @@ class AtelierStatistiquesTest extends TestCase
             ->get(route('atelier.statistiques.export', 'reparations'));
 
         $reponse->assertOk();
-        $this->assertStringContainsString('text/csv', $reponse->headers->get('content-type'));
+        $this->assertStringContainsString('spreadsheetml', $reponse->headers->get('content-type'));
         $this->assertStringContainsString('attachment', $reponse->headers->get('content-disposition'));
 
-        $csv = $reponse->streamedContent();
-        $this->assertStringContainsString('Vêtement', $csv);
-        $this->assertStringContainsString('Devis (DT)', $csv);
-        $this->assertStringContainsString('120', $csv);
-        $this->assertStringContainsString('Terminée', $csv);
+        $xlsx = $this->lireXlsx($reponse->streamedContent());
+        $this->assertStringContainsString('Vêtement', $xlsx);
+        $this->assertStringContainsString('Devis (DT)', $xlsx);
+        $this->assertStringContainsString('120', $xlsx);
+        $this->assertStringContainsString('Terminée', $xlsx);
     }
 
     public function test_l_export_des_avis_contient_les_reponses(): void
@@ -151,13 +170,13 @@ class AtelierStatistiquesTest extends TestCase
             'reponse_le' => now(),
         ]);
 
-        $csv = $this->actingAs($proprio)
+        $xlsx = $this->lireXlsx($this->actingAs($proprio)
             ->get(route('atelier.statistiques.export', 'avis'))
-            ->streamedContent();
+            ->streamedContent());
 
-        $this->assertStringContainsString('Client Export', $csv);
-        $this->assertStringContainsString('Excellent, merci beaucoup.', $csv);
-        $this->assertStringContainsString('Merci pour votre confiance', $csv);
+        $this->assertStringContainsString('Client Export', $xlsx);
+        $this->assertStringContainsString('Excellent, merci beaucoup.', $xlsx);
+        $this->assertStringContainsString('Merci pour votre confiance', $xlsx);
     }
 
     public function test_l_export_ne_contient_pas_les_donnees_d_un_autre_atelier(): void
@@ -177,12 +196,12 @@ class AtelierStatistiquesTest extends TestCase
             'devis' => 9999,
         ]);
 
-        $csv = $this->actingAs($proprio)
+        $xlsx = $this->lireXlsx($this->actingAs($proprio)
             ->get(route('atelier.statistiques.export', 'reparations'))
-            ->streamedContent();
+            ->streamedContent());
 
-        $this->assertStringNotContainsString('9999', $csv);
-        $this->assertStringNotContainsString('Manteau secret autre atelier', $csv);
+        $this->assertStringNotContainsString('9999', $xlsx);
+        $this->assertStringNotContainsString('Manteau secret autre atelier', $xlsx);
     }
 
     public function test_un_type_d_export_inconnu_renvoie_404(): void

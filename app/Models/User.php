@@ -2,19 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     // « role » n'est volontairement pas assignable en masse : il ne vient jamais d'un formulaire.
     protected $fillable = [
@@ -45,10 +47,10 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function casts(): array
     {
         return [
-            'email_verified_at'          => 'datetime',
-            'password'                   => 'hashed',
-            'two_factor_enabled'         => 'boolean',
-            'two_factor_recovery_codes'  => 'array',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_recovery_codes' => 'array',
         ];
     }
 
@@ -65,7 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function vetementsFavoris(): BelongsToMany
     {
         return $this->belongsToMany(Vetement::class, 'favoris', 'user_id', 'vetement_id')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     public function depots(): HasMany
@@ -97,15 +99,28 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public const ROLES = [
         'particulier' => 'Particulier',
-        'atelier'     => 'Atelier',
+        'atelier' => 'Atelier',
         'association' => 'Association',
-        'admin'       => 'Administrateur',
+        'admin' => 'Administrateur',
     ];
+
+    protected static function booted(): void
+    {
+        // La colonne users.role reste la source d'écriture : Spatie est synchronisé à chaque changement.
+        static::saved(function (User $user): void {
+            if (! $user->role || ! ($user->wasRecentlyCreated || $user->wasChanged('role'))) {
+                return;
+            }
+
+            $role = Role::firstOrCreate(['name' => $user->role, 'guard_name' => 'web']);
+            $user->syncRoles([$role]);
+        });
+    }
 
     /** Vrai si l'utilisateur a l'un des rôles donnés. */
     public function aLeRole(string ...$roles): bool
     {
-        return in_array($this->role, $roles, true);
+        return $this->hasRole($roles);
     }
 
     /** Vrai si l'utilisateur est administrateur (accès back-office). */

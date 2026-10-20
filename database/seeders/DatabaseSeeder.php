@@ -68,6 +68,7 @@ class DatabaseSeeder extends Seeder
             AtelierTransformationSeeder::class,
             ReparationSeeder::class,
             AvisSeeder::class,
+            RoleSeeder::class,
         ]);
     }
 

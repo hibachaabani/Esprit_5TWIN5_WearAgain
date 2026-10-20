@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Reparation;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -35,7 +36,7 @@ class StoreAvisRequest extends FormRequest
     {
         // Front office : l'atelier est repris de la réparation liée (route /reparations/{reparation}/avis).
         // L'auteur est toujours le membre connecté : il n'est jamais choisi dans le formulaire.
-        if (($reparation = $this->route('reparation')) instanceof \App\Models\Reparation) {
+        if (($reparation = $this->route('reparation')) instanceof Reparation) {
             $this->merge(['atelier_id' => $reparation->atelier_id, 'user_id' => $this->user()?->id]);
         }
     }
