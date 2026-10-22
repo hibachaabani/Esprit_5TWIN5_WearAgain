@@ -1,0 +1,43 @@
+# Blueprint Render : un service web Docker (offre gratuite).
+# Render > New > Blueprint > choisir ce dépôt. La clé Groq se saisit dans le tableau de bord.
+#
+# Base de données : SQLite dans le conteneur, créée et remplie avec les données de démonstration
+# à chaque démarrage (le disque de l'offre gratuite est effacé à chaque redéploiement).
+services:
+  - type: web
+    name: wearagain
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
+    autoDeployTrigger: checksPass # redéploie après chaque commit sur main, seulement si la CI est verte
+    envVars:
+      - key: APP_NAME
+        value: WearAgain
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_LOCALE
+        value: fr
+      - key: APP_FALLBACK_LOCALE
+        value: fr
+      - key: APP_FAKER_LOCALE
+        value: fr_FR
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: MAIL_MAILER
+        value: log
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: COLLECTE_IA_FOURNISSEUR
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false # à saisir dans Render, jamais dans le dépôt

@@ -10,7 +10,7 @@ Projet **Applications Web Avancées — 5TWIN (2026-2027)**, Laravel 12.
 |---|---|---|
 | 1 — [@Taieb-belhadjali](https://github.com/Taieb-belhadjali) | Catégorie, Vêtement | Annonces, photos, favoris, catégories |
 | 2 — [@hibachaabani](https://github.com/hibachaabani) | Association, Don | Associations (carte), dons et leur suivi, authentification |
-| 3 — [@haythem-djebbi9](https://github.com/haythem-djebbi9) | Point de collecte, Dépôt | Carte des points, dépôts avec code de suivi et QR code, tournée, statistiques, rôles |
+| 3 — [@haythem-djebbi9](https://github.com/haythem-djebbi9) | Point de collecte, Dépôt, Signalement, Campagne de collecte | Carte des points, dépôts avec code de suivi et QR code, tournée, signalements, campagnes, assistant IA (Groq), statistiques, rôles |
 | 4 — [@ChedlyRebai](https://github.com/ChedlyRebai) | Atelier, Transformation | Ateliers, upcycling |
 | 5 — [@romdhaninour](https://github.com/romdhaninour) | Réparation, Avis | Réparations, avis sur les ateliers |
 
@@ -57,7 +57,7 @@ Après la connexion, chacun arrive sur **« Mon espace »** (lien en haut de cha
 - **Particulier** : publier ses vêtements (« Mes annonces » : ajouter, voir, modifier, supprimer), puis les **donner** à une association, les **déposer** dans un point de collecte, ou demander leur **réparation** ou leur **transformation** à un atelier. Chaque demande a un statut ; à la fin d'une réparation, il note l'atelier (avis modifiable et supprimable).
 - **Association** : « Mon espace » suit 4 étapes. ① Sa fiche (voir, modifier, supprimer). ② L'admin la vérifie. ③ Ses points de collecte (ajouter, voir, modifier, supprimer). ④ Elle traite les dons reçus (accepter, refuser, remis) et les dépôts reçus (reçu, trié), scanne les bons de dépôt et planifie sa tournée.
 - **Atelier** : « Mon atelier » liste les demandes reçues. Il fixe le devis, le rendez-vous ou le prix, fait avancer le statut et ajoute la photo du résultat ; il modifie aussi la fiche de son atelier.
-- **Admin** : il n'utilise que le **back-office** (`/admin`), où il arrive directement. On y trouve un tableau de bord par module, les utilisateurs par rôle, la vérification des associations, la modération des vêtements et des avis, le CRUD des catégories, des ateliers, des transformations et des réparations, et le suivi de la collecte.
+- **Admin** : il n'utilise que le **back-office** (`/admin`), où il arrive directement. Son tableau de bord liste d'abord ce qui attend une action (associations à vérifier, annonces et signalements, dépôts en retard…), du plus urgent au moins urgent ; une recherche globale en haut de chaque page retrouve un compte, une annonce, un don ou un dépôt (un code `DEP-…` ouvre directement sa fiche). On y trouve un tableau de bord par module, les utilisateurs par rôle, la vérification des associations, la modération des vêtements et des avis, le CRUD des catégories, des ateliers, des transformations et des réparations, et le suivi de la collecte.
 
 ## Rôles et droits
 
@@ -88,9 +88,49 @@ Mise en œuvre : middleware `role:…` (`app/Http/Middleware/VerifierRole.php`),
 php artisan test
 ```
 
-128 tests sur une base SQLite en mémoire : authentification, rôles et droits d'accès, CRUD et validation de chaque module, parcours des dépôts, réparations, transformations et avis.
+375 tests sur une base SQLite en mémoire : authentification, rôles et droits d'accès, CRUD et validation de chaque module, parcours des dépôts, signalements, campagnes, assistant IA (Groq simulé), réparations, transformations et avis.
 
 ## Commandes utiles
 
 - `php artisan depots:expirer` : annule les dépôts jamais apportés (planifiée chaque nuit).
+
+## DevOps : intégration et déploiement continus
+
+| Étape | Fichier | Ce qui se passe |
+| --- | --- | --- |
+| Intégration continue | `.github/workflows/ci.yml` | À chaque push et Pull Request : PHP 8.4, `composer install`, `npm ci`, style Pint sur les fichiers modifiés, build Vite, tests PHPUnit, `composer audit`, puis construction de l'image Docker (publiée sur GitHub Container Registry depuis `main`). |
+| Image | `Dockerfile`, `docker/` | PHP 8.4 + Apache, front-end compilé, OPcache ; au démarrage : migrations, données de démo si la base est neuve, caches, planificateur. |
+| Déploiement continu | `render.yaml`, `.github/workflows/deploy.yml` | Render construit l'image après chaque commit sur `main` dont la CI est verte, vérifie la route `/up` et garde l'ancienne version si la nouvelle échoue. |
+
+Lancer l'image en local :
+
+```bash
+docker build -t wearagain .
+docker run --rm -p 8080:8080 wearagain
+```
+
+Puis ouvrir http://localhost:8080 (base SQLite remplie avec les comptes de démonstration).
+
+### Déployer sur Render à partir de l'image publiée
+
+À chaque commit sur `main` dont la CI est verte, l'image `ghcr.io/hibachaabani/wearagain:latest` est publiée sur GitHub Container Registry.
+
+1. Sur GitHub, créer un jeton (*Settings > Developer settings > Personal access tokens > Tokens (classic)*) avec la seule permission `read:packages`.
+2. Sur Render, *Settings > Registry Credentials* : ajouter ce jeton pour le registre GitHub, avec son nom d'utilisateur GitHub.
+3. *New > Web Service > Existing Image* : image `ghcr.io/hibachaabani/wearagain:latest`, avec ces identifiants, région Frankfurt, offre Free.
+4. Variables d'environnement : seulement `GEMINI_API_KEY`. Les autres réglages de production sont déjà dans l'image.
+5. *Advanced > Health Check Path* : `/up`. Puis *Create Web Service*.
+
+Pour publier une nouvelle version : *Manual Deploy > Deploy latest reference*. Le lien *Deploy Hook* de Render peut aussi être rangé dans le secret GitHub `RENDER_DEPLOY_HOOK_URL` : `deploy.yml` redéploie alors seul après chaque CI verte sur `main`.
+
+## Assistant IA de la collecte (Gemini ou Groq)
+
+Le module collecte interroge un modèle de langage au format compatible OpenAI, avec des réponses JSON vérifiées. Le fournisseur se choisit avec `COLLECTE_IA_FOURNISSEUR` : **Gemini** par défaut (`gemini-2.5-flash`, sans « réflexion » préalable, environ 3 s par réponse) ou **Groq** (`llama-3.3-70b-versatile`).
+
+- **« Où déposer ? »** sur la carte des points : à une question libre (« un sac de vêtements d'enfant à Ariana »), l'assistant répond en choisissant parmi les points ouverts qui ont de la place ;
+- **signalements** : priorité (haute, moyenne, basse) et résumé estimés à l'envoi, proposition de réponse pour l'association ;
+- **campagnes** : rédaction de la description à partir du titre, de l'objectif et des dates ;
+- **conseils du jour** pour l'association (page « Dépôts reçus ») : points à vider, signalements urgents, dépôts à recevoir ou à trier, campagnes qui finissent.
+
+Mettre la clé dans `.env` (`GEMINI_API_KEY=…` ou `GROQ_API_KEY=…`), jamais dans le code. Sans clé, ou si le fournisseur ne répond pas, un **moteur local** à base de règles donne un résultat équivalent. L'étiquette « IA Gemini » ou « Moteur local » indique d'où vient chaque réponse. Les tests simulent l'IA (`Http::fake`) et n'envoient aucune requête réelle.
 - `php artisan migrate:fresh --seed` : réinitialise la base avec les données de démonstration.

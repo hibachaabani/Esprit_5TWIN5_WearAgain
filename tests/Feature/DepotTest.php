@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Association;
+use App\Models\CampagneCollecte;
 use App\Models\Categorie;
 use App\Models\Depot;
 use App\Models\PointCollecte;
+use App\Models\Signalement;
 use App\Models\User;
 use App\Models\Vetement;
 use Database\Seeders\CollecteSeeder;
@@ -367,6 +369,9 @@ class DepotTest extends TestCase
         $this->assertSame(1, PointCollecte::distinct()->count('association_id'));
         $this->assertGreaterThan(10, Depot::count());
         $this->assertTrue(PointCollecte::where('nom', 'Conteneur Ennasr')->firstOrFail()->estComplet());
+        // Signalements et campagnes de démo : créés une seule fois, eux aussi.
+        $this->assertSame(5, Signalement::count());
+        $this->assertSame(2, CampagneCollecte::count());
 
         PointCollecte::withCount('depotsActifs')->get()->each(
             fn (PointCollecte $point) => $this->assertLessThanOrEqual($point->capacite, $point->depots_actifs_count)

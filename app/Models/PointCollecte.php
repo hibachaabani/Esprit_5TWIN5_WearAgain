@@ -16,7 +16,6 @@ class PointCollecte extends Model
 
     protected $table = 'points_collecte';
 
-
     protected $fillable = [
         'association_id',
         'nom',
@@ -68,6 +67,16 @@ class PointCollecte extends Model
     public function depotsActifs(): HasMany
     {
         return $this->depots()->whereIn('statut', Depot::STATUTS_ACTIFS);
+    }
+
+    public function signalements(): HasMany
+    {
+        return $this->hasMany(Signalement::class);
+    }
+
+    public function campagnes(): HasMany
+    {
+        return $this->hasMany(CampagneCollecte::class);
     }
 
     public function scopeActifs(Builder $query): void

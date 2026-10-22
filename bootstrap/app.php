@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\VerifierRole;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,8 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // role:particulier, role:atelier, role:association, role:admin (plusieurs séparés par des virgules)
         $middleware->alias([
-            'role' => \App\Http\Middleware\VerifierRole::class,
+            'role' => VerifierRole::class,
         ]);
+
+        // Derrière le proxy HTTPS de l'hébergeur (Render) : liens et redirections en https.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

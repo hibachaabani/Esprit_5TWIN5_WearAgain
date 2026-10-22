@@ -21,7 +21,7 @@ class RoutesProtegeesTest extends TestCase
         'categories.index', 'categories.show',
         'points-collecte.index', 'points-collecte.show',
         'transformations.index', 'transformations.show',
-        'depots.suivi',
+        'depots.suivi', 'campagnes.index', 'campagnes.show', 'collecte.assistant',
         'marques.index', 'marques.show',
     ];
 

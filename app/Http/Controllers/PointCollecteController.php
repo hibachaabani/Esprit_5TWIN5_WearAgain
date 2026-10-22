@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PointCollecteRequest;
+use App\Models\CampagneCollecte;
 use App\Models\Depot;
 use App\Models\PointCollecte;
 use Illuminate\Http\RedirectResponse;
@@ -89,7 +90,11 @@ class PointCollecteController extends Controller
 
     public function show(PointCollecte $pointCollecte): View
     {
-        $pointCollecte->load('association')->loadCount(['depots', 'depotsActifs']);
+        $pointCollecte->load('association')->loadCount([
+            'depots',
+            'depotsActifs',
+            'signalements as signalements_ouverts_count' => fn ($q) => $q->ouverts(),
+        ]);
 
         return view('points-collecte.show', [
             'point' => $pointCollecte,
@@ -102,6 +107,12 @@ class PointCollecteController extends Controller
                 ->latest('date_depot')
                 ->latest('id')
                 ->limit(8)
+                ->get(),
+            // Campagnes en cours ou à venir qui visent ce point, ou tous les points de son association.
+            'campagnes' => CampagneCollecte::visibles()
+                ->where(fn ($q) => $q->where('point_collecte_id', $pointCollecte->id)
+                    ->orWhere(fn ($q) => $q->whereNull('point_collecte_id')->where('association_id', $pointCollecte->association_id)))
+                ->orderBy('date_debut')
                 ->get(),
         ]);
     }
