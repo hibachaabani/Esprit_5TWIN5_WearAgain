@@ -94,13 +94,21 @@ php artisan test
 
 - `php artisan depots:expirer` : annule les dépôts jamais apportés (planifiée chaque nuit).
 
-## DevOps : intégration et déploiement continus
+## DevOps : pipeline CI/CD et déploiement
 
-| Étape | Fichier | Ce qui se passe |
-| --- | --- | --- |
-| Intégration continue | `.github/workflows/ci.yml` | À chaque push et Pull Request : PHP 8.4, `composer install`, `npm ci`, style Pint sur les fichiers modifiés, build Vite, tests PHPUnit, `composer audit`, puis construction de l'image Docker (publiée sur GitHub Container Registry depuis `main`). |
-| Image | `Dockerfile`, `docker/` | PHP 8.4 + Apache, front-end compilé, OPcache ; au démarrage : migrations, données de démo si la base est neuve, caches, planificateur. |
-| Déploiement continu | `render.yaml`, `.github/workflows/deploy.yml` | Render construit l'image après chaque commit sur `main` dont la CI est verte, vérifie la route `/up` et garde l'ancienne version si la nouvelle échoue. |
+Une seule pipeline GitHub Actions, `.github/workflows/pipeline.yml`, reprend les étapes du document DevOps. Chaque étape apparaît comme un bloc dans l'onglet **Actions** du dépôt.
+
+| # | Étape | Quand | Ce qui est vérifié ou produit |
+| --- | --- | --- | --- |
+| 1 | Qualité du code (Pint) | PR et `main` | style des fichiers modifiés |
+| 2 | Build front-end (Vite) | PR et `main` | CSS et JavaScript compilés, transmis aux tests |
+| 3 | Tests (PHPUnit) | PR et `main` | tous les tests, sur SQLite en mémoire ; rapport JUnit conservé |
+| 4 | Sécurité (`composer audit`) | PR et `main` | aucune faille connue dans les dépendances |
+| 5 | Image Docker (GHCR) | PR et `main` | image construite ; publiée sur `ghcr.io/hibachaabani/wearagain` depuis `main` |
+| 6 | Déploiement sur Render | `main` | Render redéploie l'image (lien *Deploy Hook*) |
+| 7 | Vérification en ligne | `main` | le site sert le nouveau commit (`/version.txt`) et `/up` répond 200 |
+
+L'image (`Dockerfile`, `docker/`) contient PHP 8.4 et Apache, le front-end compilé et OPcache. Au démarrage, elle joue les migrations, remplit la base de démonstration si elle est neuve, met les caches en place et lance le planificateur.
 
 Lancer l'image en local :
 
@@ -111,17 +119,7 @@ docker run --rm -p 8080:8080 wearagain
 
 Puis ouvrir http://localhost:8080 (base SQLite remplie avec les comptes de démonstration).
 
-### Déployer sur Render à partir de l'image publiée
-
-À chaque commit sur `main` dont la CI est verte, l'image `ghcr.io/hibachaabani/wearagain:latest` est publiée sur GitHub Container Registry.
-
-1. Sur GitHub, créer un jeton (*Settings > Developer settings > Personal access tokens > Tokens (classic)*) avec la seule permission `read:packages`.
-2. Sur Render, *Settings > Registry Credentials* : ajouter ce jeton pour le registre GitHub, avec son nom d'utilisateur GitHub.
-3. *New > Web Service > Existing Image* : image `ghcr.io/hibachaabani/wearagain:latest`, avec ces identifiants, région Frankfurt, offre Free.
-4. Variables d'environnement : seulement `GEMINI_API_KEY`. Les autres réglages de production sont déjà dans l'image.
-5. *Advanced > Health Check Path* : `/up`. Puis *Create Web Service*.
-
-Pour publier une nouvelle version : *Manual Deploy > Deploy latest reference*. Le lien *Deploy Hook* de Render peut aussi être rangé dans le secret GitHub `RENDER_DEPLOY_HOOK_URL` : `deploy.yml` redéploie alors seul après chaque CI verte sur `main`.
+**Hébergement** : suivre le guide pas à pas [docs/deploiement-render.md](docs/deploiement-render.md).
 
 ## Assistant IA de la collecte (Gemini ou Groq)
 

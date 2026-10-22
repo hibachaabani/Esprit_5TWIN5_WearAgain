@@ -1,0 +1,230 @@
+# Pipeline CI/CD de WearAgain : les étapes du document DevOps, dans l'ordre.
+#
+#   Intégration continue (CI)          Déploiement continu (CD), sur main seulement
+#   1. Qualité du code (Pint)    ─┐
+#   2. Build front-end (Vite) ─> 3. Tests ─┼─> 5. Image Docker ─> 6. Déploiement Render ─> 7. Vérification en ligne
+#   4. Sécurité (composer audit) ─┘
+#
+# Pull Request vers main : étapes 1 à 5 (l'image est construite pour vérification, pas publiée).
+# Fusion dans main : toutes les étapes ; l'image est publiée sur GHCR puis déployée sur Render.
+name: Pipeline CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/wearagain
+
+jobs:
+  qualite:
+    name: 1. Qualité du code (Pint)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # historique complet : Pint compare avec la version précédente
+
+      - name: Préparer PHP et Composer
+        uses: ./.github/actions/preparer-php
+
+      - name: Style des fichiers modifiés
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="origin/${{ github.base_ref }}"
+          else
+            BASE="${{ github.event.before }}"
+          fi
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then BASE="HEAD~1"; fi
+          vendor/bin/pint --test --diff="$BASE"
+
+  build:
+    name: 2. Build front-end (Vite)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Dépendances front-end
+        run: npm ci --no-audit --no-fund
+
+      - name: Compilation CSS et JavaScript
+        run: npm run build
+
+      - name: Conserver le build pour les tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-front
+          path: public/build
+          retention-days: 3
+
+  tests:
+    name: 3. Tests (PHPUnit)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Préparer PHP et Composer
+        uses: ./.github/actions/preparer-php
+
+      - name: Récupérer le build front-end
+        uses: actions/download-artifact@v4
+        with:
+          name: build-front
+          path: public/build
+
+      - name: Configuration
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Tests (SQLite en mémoire)
+        run: php artisan test --log-junit rapport-tests.xml
+
+      - name: Résumé des tests
+        if: always()
+        run: |
+          if [ -f rapport-tests.xml ]; then
+            TOTAL=$(grep -o 'tests="[0-9]*"' rapport-tests.xml | head -1 | grep -o '[0-9]*')
+            ECHECS=$(grep -o 'failures="[0-9]*"' rapport-tests.xml | head -1 | grep -o '[0-9]*')
+            ERREURS=$(grep -o 'errors="[0-9]*"' rapport-tests.xml | head -1 | grep -o '[0-9]*')
+            echo "### 3. Tests : $TOTAL tests, $ECHECS échec(s), $ERREURS erreur(s)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Conserver le rapport de tests
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-tests
+          path: rapport-tests.xml
+          retention-days: 14
+
+  securite:
+    name: 4. Sécurité (composer audit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Failles connues dans les dépendances PHP
+        run: composer audit --locked
+
+  image:
+    name: 5. Image Docker (GHCR)
+    needs: [qualite, tests, securite]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      PUBLIER: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Connexion à GitHub Container Registry
+        if: env.PUBLIER == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Construire l'image (publiée seulement depuis main)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ env.PUBLIER == 'true' }}
+          build-args: APP_COMMIT=${{ github.sha }}
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Résumé
+        run: |
+          if [ "$PUBLIER" = "true" ]; then
+            echo "### 5. Image publiée : \`${IMAGE}:latest\` (commit \`${GITHUB_SHA::7}\`)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### 5. Image construite (non publiée : publication depuis main uniquement)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  deploiement:
+    name: 6. Déploiement sur Render
+    needs: image
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      declenche: ${{ steps.render.outputs.declenche }}
+    steps:
+      # Le lien « Deploy Hook » de Render (Settings) se range dans le secret RENDER_DEPLOY_HOOK_URL.
+      - name: Demander le déploiement à Render
+        id: render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "declenche=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secret RENDER_DEPLOY_HOOK_URL absent : déployer depuis Render (Manual Deploy > Deploy latest reference)."
+            echo "### 6. Déploiement : manuel dans Render (Manual Deploy > Deploy latest reference)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          curl --fail --silent --show-error -X POST "$HOOK" > /dev/null
+          echo "declenche=true" >> "$GITHUB_OUTPUT"
+          echo "### 6. Déploiement demandé à Render pour le commit \`${GITHUB_SHA::7}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  verification:
+    name: 7. Vérification en ligne
+    needs: deploiement
+    if: needs.deploiement.outputs.declenche == 'true' && vars.RENDER_URL != ''
+    runs-on: ubuntu-latest
+    steps:
+      # Render garde l'ancienne version tant que la nouvelle ne répond pas sur /up.
+      # On attend que le site serve ce commit (public/version.txt), puis on vérifie /up.
+      - name: Attendre la nouvelle version
+        env:
+          URL: ${{ vars.RENDER_URL }}
+        run: |
+          for essai in $(seq 1 40); do
+            EN_LIGNE=$(curl --silent --max-time 20 "$URL/version.txt" || true)
+            if [ "$EN_LIGNE" = "$GITHUB_SHA" ]; then
+              echo "Version $GITHUB_SHA en ligne après $((essai * 15)) s."
+              break
+            fi
+            sleep 15
+          done
+          [ "$EN_LIGNE" = "$GITHUB_SHA" ] || { echo "::error::La nouvelle version n'est pas en ligne : Render a gardé l'ancienne (voir Render > Events et Logs)."; exit 1; }
+
+      - name: Test de santé /up
+        env:
+          URL: ${{ vars.RENDER_URL }}
+        run: |
+          curl --fail --silent --show-error --max-time 30 "$URL/up" > /dev/null
+          echo "### 7. En ligne : $URL (commit \`${GITHUB_SHA::7}\`), /up répond 200" >> "$GITHUB_STEP_SUMMARY"

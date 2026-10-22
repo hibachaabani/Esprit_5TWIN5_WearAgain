@@ -1,5 +1,6 @@
-# Blueprint Render : un service web Docker (offre gratuite).
-# Render > New > Blueprint > choisir ce dépôt. La clé Groq se saisit dans le tableau de bord.
+# Blueprint Render : un service web Docker (offre gratuite), construit depuis ce dépôt.
+# À utiliser si Render a accès au dépôt (Render > New > Blueprint). Sinon, déployer l'image publiée
+# par la pipeline sur GHCR : voir docs/deploiement-render.md. La clé Gemini se saisit dans Render.
 #
 # Base de données : SQLite dans le conteneur, créée et remplie avec les données de démonstration
 # à chaque démarrage (le disque de l'offre gratuite est effacé à chaque redéploiement).
