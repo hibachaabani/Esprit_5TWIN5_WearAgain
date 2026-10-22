@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgentAssociationController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
 use App\Http\Controllers\AtelierController;
@@ -177,6 +178,12 @@ Route::middleware(['auth', 'verified', 'role:association'])->group(function () {
     Route::get('mes-besoins', [BesoinController::class, 'mes'])->name('besoins.mes');
     Route::post('besoins/rediger', [BesoinController::class, 'rediger'])->name('besoins.rediger')->middleware('throttle:20,1');
     Route::resource('besoins', BesoinController::class)->except(['index', 'show']);
+
+    // Assistant IA (agent) : discussion, brouillons de besoins à relire, nouvelle conversation.
+    Route::get('assistant-association', [AgentAssociationController::class, 'index'])->name('agent.index');
+    Route::post('assistant-association/messages', [AgentAssociationController::class, 'message'])->name('agent.message')->middleware('throttle:15,1');
+    Route::post('assistant-association/brouillon', [AgentAssociationController::class, 'brouillon'])->name('agent.brouillon');
+    Route::delete('assistant-association', [AgentAssociationController::class, 'reinitialiser'])->name('agent.reinitialiser');
 
     Route::resource('points-collecte', PointCollecteController::class)
         ->except(['index', 'show'])

@@ -89,7 +89,7 @@ class TriDonsIA
     }
 
     /** L'analyse d'un même intitulé est gardée une journée : la liste ne rappelle pas le modèle de langage à chaque affichage. */
-    private function analyse(Don $don): AnalyseDon
+    public function analyse(Don $don): AnalyseDon
     {
         $texte = trim($don->vetement_titre);
 

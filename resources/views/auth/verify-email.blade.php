@@ -1,31 +1,34 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
+<x-guest-layout title="Vérifiez votre adresse e-mail">
+    <div class="auth-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
     </div>
+    <h1 class="auth-title">Vérifiez votre e-mail</h1>
+    <p class="auth-subtitle">
+        Pour activer votre compte, cliquez sur le lien de confirmation envoyé à
+        <strong class="auth-email">{{ auth()->user()->email }}</strong>
+    </p>
 
     @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
+        <div class="auth-alert auth-alert-ok" role="status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Un nouveau lien vient de vous être envoyé.
         </div>
     @endif
 
-    <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
+    <ul class="auth-steps">
+        <li>Ouvrez votre boîte de réception.</li>
+        <li>Pensez à regarder dans les courriers indésirables (spams).</li>
+        <li>Le lien est valable 60 minutes.</li>
+    </ul>
 
-            <div>
-                <x-primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-primary-button>
-            </div>
-        </form>
+    <form method="POST" action="{{ route('verification.send') }}">
+        @csrf
+        <button type="submit" class="btn btn-primary auth-submit">Renvoyer l'e-mail de confirmation</button>
+    </form>
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
-            </button>
-        </form>
-    </div>
+    <form method="POST" action="{{ route('logout') }}" class="auth-switch">
+        @csrf
+        Ce n'est pas votre adresse ?
+        <button type="submit" class="auth-text-btn">Se déconnecter</button>
+    </form>
 </x-guest-layout>
