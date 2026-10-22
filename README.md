@@ -88,11 +88,28 @@ Mise en œuvre : middleware `role:…` (`app/Http/Middleware/VerifierRole.php`),
 php artisan test
 ```
 
-128 tests sur une base SQLite en mémoire : authentification, rôles et droits d'accès, CRUD et validation de chaque module, parcours des dépôts, réparations, transformations et avis.
+375 tests sur une base SQLite en mémoire : authentification, rôles et droits d'accès, CRUD et validation de chaque module, parcours des dépôts, signalements, campagnes, assistant IA (Groq simulé), réparations, transformations et avis.
 
 ## Commandes utiles
 
 - `php artisan depots:expirer` : annule les dépôts jamais apportés (planifiée chaque nuit).
+
+## DevOps : intégration et déploiement continus
+
+| Étape | Fichier | Ce qui se passe |
+| --- | --- | --- |
+| Intégration continue | `.github/workflows/ci.yml` | À chaque push et Pull Request : PHP 8.4, `composer install`, `npm ci`, style Pint sur les fichiers modifiés, build Vite, tests PHPUnit, `composer audit`, puis construction de l'image Docker (publiée sur GitHub Container Registry depuis `main`). |
+| Image | `Dockerfile`, `docker/` | PHP 8.4 + Apache, front-end compilé, OPcache ; au démarrage : migrations, données de démo si la base est neuve, caches, planificateur. |
+| Déploiement continu | `render.yaml`, `.github/workflows/deploy.yml` | Render construit l'image après chaque commit sur `main` dont la CI est verte, vérifie la route `/up` et garde l'ancienne version si la nouvelle échoue. |
+
+Lancer l'image en local :
+
+```bash
+docker build -t wearagain .
+docker run --rm -p 8080:8080 wearagain
+```
+
+Puis ouvrir http://localhost:8080 (base SQLite remplie avec les comptes de démonstration).
 
 ## Assistant IA de la collecte (Groq)
 
