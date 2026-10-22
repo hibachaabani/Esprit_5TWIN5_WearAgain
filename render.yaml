@@ -37,7 +37,7 @@ services:
         value: log
       - key: LOG_CHANNEL
         value: stderr
-      - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
-      - key: GROQ_API_KEY
+      - key: COLLECTE_IA_FOURNISSEUR
+        value: gemini
+      - key: GEMINI_API_KEY
         sync: false # à saisir dans Render, jamais dans le dépôt

@@ -118,19 +118,19 @@ Puis ouvrir http://localhost:8080 (base SQLite remplie avec les comptes de démo
 1. Sur GitHub, créer un jeton (*Settings > Developer settings > Personal access tokens > Tokens (classic)*) avec la seule permission `read:packages`.
 2. Sur Render, *Settings > Registry Credentials* : ajouter ce jeton pour le registre GitHub, avec son nom d'utilisateur GitHub.
 3. *New > Web Service > Existing Image* : image `ghcr.io/hibachaabani/wearagain:latest`, avec ces identifiants, région Frankfurt, offre Free.
-4. Variables d'environnement : seulement `GROQ_API_KEY`. Les autres réglages de production sont déjà dans l'image.
+4. Variables d'environnement : seulement `GEMINI_API_KEY`. Les autres réglages de production sont déjà dans l'image.
 5. *Advanced > Health Check Path* : `/up`. Puis *Create Web Service*.
 
 Pour publier une nouvelle version : *Manual Deploy > Deploy latest reference*. Le lien *Deploy Hook* de Render peut aussi être rangé dans le secret GitHub `RENDER_DEPLOY_HOOK_URL` : `deploy.yml` redéploie alors seul après chaque CI verte sur `main`.
 
-## Assistant IA de la collecte (Groq)
+## Assistant IA de la collecte (Gemini ou Groq)
 
-Le module collecte utilise l'API [Groq](https://console.groq.com) (modèle `llama-3.3-70b-versatile`, réponses JSON) :
+Le module collecte interroge un modèle de langage au format compatible OpenAI, avec des réponses JSON vérifiées. Le fournisseur se choisit avec `COLLECTE_IA_FOURNISSEUR` : **Gemini** par défaut (`gemini-2.5-flash`, sans « réflexion » préalable, environ 3 s par réponse) ou **Groq** (`llama-3.3-70b-versatile`).
 
-- **« Où déposer ? »** sur la carte des points : une question libre (« un sac de vêtements d'enfant à Ariana »), l'assistant choisit parmi les points ouverts qui ont de la place ;
+- **« Où déposer ? »** sur la carte des points : à une question libre (« un sac de vêtements d'enfant à Ariana »), l'assistant répond en choisissant parmi les points ouverts qui ont de la place ;
 - **signalements** : priorité (haute, moyenne, basse) et résumé estimés à l'envoi, proposition de réponse pour l'association ;
 - **campagnes** : rédaction de la description à partir du titre, de l'objectif et des dates ;
 - **conseils du jour** pour l'association (page « Dépôts reçus ») : points à vider, signalements urgents, dépôts à recevoir ou à trier, campagnes qui finissent.
 
-Mettre la clé dans `.env` (`GROQ_API_KEY=…`), jamais dans le code. Sans clé, ou si Groq ne répond pas, un **moteur local** à base de règles donne un résultat équivalent : l'étiquette « IA Groq » ou « Moteur local » indique d'où vient chaque réponse. Les tests simulent Groq (`Http::fake`) et n'envoient aucune requête réelle.
+Mettre la clé dans `.env` (`GEMINI_API_KEY=…` ou `GROQ_API_KEY=…`), jamais dans le code. Sans clé, ou si le fournisseur ne répond pas, un **moteur local** à base de règles donne un résultat équivalent. L'étiquette « IA Gemini » ou « Moteur local » indique d'où vient chaque réponse. Les tests simulent l'IA (`Http::fake`) et n'envoient aucune requête réelle.
 - `php artisan migrate:fresh --seed` : réinitialise la base avec les données de démonstration.

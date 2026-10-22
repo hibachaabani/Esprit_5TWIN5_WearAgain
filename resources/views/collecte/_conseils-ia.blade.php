@@ -13,7 +13,7 @@
 </section>
 
 @push('scripts')
-<script src="{{ asset('js/assistant-ia.js') }}"></script>
+<script src="{{ asset('js/assistant-ia.js') }}" data-moteur="{{ config('collecte.ia.nom') }}"></script>
 <script>
 document.getElementById('conseils-bouton').addEventListener('click', async (evenement) => {
     const bouton = evenement.currentTarget;

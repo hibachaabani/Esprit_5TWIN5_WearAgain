@@ -16,16 +16,16 @@ use Throwable;
 /**
  * Assistant IA du module collecte.
  *
- * Chaque fonction interroge Groq, puis vérifie la réponse (valeurs autorisées, points
- * existants). Si Groq n'est pas configuré, ne répond pas ou répond mal, un moteur local
- * à base de règles donne un résultat équivalent. Le champ « source » indique d'où vient
- * le résultat : « ia » (Groq) ou « local ».
+ * Chaque fonction interroge le modèle de langage (Gemini ou Groq, voir ClientIA), puis
+ * vérifie la réponse (valeurs autorisées, points existants). Si l'IA n'est pas configurée,
+ * ne répond pas ou répond mal, un moteur local à base de règles donne un résultat équivalent.
+ * Le champ « source » indique d'où vient le résultat : « ia » (modèle) ou « local ».
  */
 class AssistantCollecte
 {
     private const PRIORITES = ['haute', 'moyenne', 'basse'];
 
-    public function __construct(private ClientGroq $groq) {}
+    public function __construct(private ClientIA $ia) {}
 
     /* ----------------------------------------------------------------------
      | 1. « Où déposer ? » : recommander des points à partir d'une question libre
@@ -48,7 +48,7 @@ class AssistantCollecte
         }
 
         try {
-            $donnees = $this->groq->json(
+            $donnees = $this->ia->json(
                 <<<'PROMPT'
                 Tu es l'assistant de WearAgain, une plateforme tunisienne de collecte de vêtements.
                 On te donne une question d'un particulier et la liste JSON des points de collecte ouverts qui ont de la place.
@@ -66,7 +66,7 @@ class AssistantCollecte
                 ->filter(fn (int $id) => $candidats->has($id))->unique()->take(3)->values();
 
             if ($ids->isEmpty() || ! is_string($donnees['reponse'] ?? null)) {
-                throw new \RuntimeException('Réponse Groq sans point valable.');
+                throw new \RuntimeException("Réponse de l'IA sans point valable.");
             }
 
             return [
@@ -141,7 +141,7 @@ class AssistantCollecte
     public function analyserSignalement(Signalement $signalement): array
     {
         try {
-            $donnees = $this->groq->json(
+            $donnees = $this->ia->json(
                 <<<'PROMPT'
                 Tu aides une association tunisienne à gérer ses points de collecte de vêtements.
                 Analyse le signalement d'un particulier et réponds UNIQUEMENT avec ce JSON :
@@ -192,7 +192,7 @@ class AssistantCollecte
         $association = $signalement->pointCollecte->association?->nom ?? 'L\'association';
 
         try {
-            $donnees = $this->groq->json(
+            $donnees = $this->ia->json(
                 <<<'PROMPT'
                 Tu rédiges, au nom d'une association de collecte de vêtements, une réponse courte (60 mots maximum),
                 polie et concrète à un particulier qui a signalé un problème sur un point de collecte.
@@ -238,7 +238,7 @@ class AssistantCollecte
         $lieu = $campagne['point'] ?? 'tous nos points de collecte';
 
         try {
-            $donnees = $this->groq->json(
+            $donnees = $this->ia->json(
                 <<<'PROMPT'
                 Tu rédiges la description d'une campagne de collecte de vêtements d'une association tunisienne.
                 80 à 120 mots en français, ton chaleureux et concret : commence par une phrase d'accroche,
@@ -287,7 +287,7 @@ class AssistantCollecte
         $regles = $this->actionsLocales($faits);
 
         try {
-            $donnees = $this->groq->json(
+            $donnees = $this->ia->json(
                 <<<'PROMPT'
                 Tu conseilles une association tunisienne qui gère des points de collecte de vêtements.
                 On te donne la situation (JSON) et une première liste d'actions calculée par des règles.
@@ -378,8 +378,8 @@ class AssistantCollecte
 
     private function journaliser(string $fonction, Throwable $e): void
     {
-        if ($this->groq->estConfigure()) {
-            Log::warning("Assistant collecte ({$fonction}) : moteur local utilisé, Groq indisponible.", ['erreur' => $e->getMessage()]);
+        if ($this->ia->estConfigure()) {
+            Log::warning("Assistant collecte ({$fonction}) : moteur local utilisé, {$this->ia->nom()} indisponible.", ['erreur' => $e->getMessage()]);
         }
     }
 }

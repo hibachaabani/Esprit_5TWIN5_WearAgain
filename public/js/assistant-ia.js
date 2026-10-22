@@ -1,8 +1,11 @@
 /*
- * Appels JSON vers l'assistant IA de la collecte (Groq, ou moteur local de secours).
+ * Appels JSON vers l'assistant IA de la collecte (Gemini ou Groq, ou moteur local de secours).
  * WAIA.envoyer(url, donnees) renvoie la réponse JSON, ou lève une erreur au message lisible.
+ * Le nom du fournisseur vient de l'attribut data-moteur de la balise <script>.
  */
 window.WAIA = {
+    moteur: document.currentScript?.dataset.moteur || 'IA',
+
     async envoyer(url, donnees = {}) {
         const reponse = await fetch(url, {
             method: 'POST',
@@ -29,10 +32,10 @@ window.WAIA = {
     source(source) {
         const badge = document.createElement('span');
         badge.className = 'ia-source' + (source === 'ia' ? '' : ' local');
-        badge.textContent = source === 'ia' ? 'IA Groq' : 'Moteur local';
+        badge.textContent = source === 'ia' ? `IA ${this.moteur}` : 'Moteur local';
         badge.title = source === 'ia'
-            ? 'Réponse générée par le modèle de langage (Groq).'
-            : 'Groq indisponible : réponse calculée par les règles du site.';
+            ? `Réponse générée par le modèle de langage (${this.moteur}).`
+            : `${this.moteur} indisponible : réponse calculée par les règles du site.`;
         return badge;
     },
 };

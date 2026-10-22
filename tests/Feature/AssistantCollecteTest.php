@@ -54,6 +54,31 @@ class AssistantCollecteTest extends TestCase
             && $requete['response_format'] === ['type' => 'json_object']);
     }
 
+    public function test_le_fournisseur_gemini_est_appele_au_format_openai(): void
+    {
+        PointCollecte::factory()->create(['nom' => 'Borne Lafayette']);
+        config(['collecte.ia' => [
+            'fournisseur' => 'gemini',
+            'nom' => 'Gemini',
+            'cle' => 'cle-gemini',
+            'url' => 'https://generativelanguage.googleapis.com/v1beta/openai',
+            'modele' => 'gemini-2.5-flash',
+            'timeout' => 20,
+        ]]);
+        // Gemini entoure parfois son JSON de balises ```json : elles sont retirées.
+        Http::fake(['generativelanguage.googleapis.com/*' => Http::response(['choices' => [['message' => [
+            'content' => "```json\n".json_encode(['reponse' => 'La borne Lafayette a de la place.', 'points' => [1], 'conseil' => ''])."\n```",
+        ]]]])]);
+
+        $this->postJson(route('collecte.assistant'), ['question' => 'Où déposer à Tunis ?'])
+            ->assertOk()
+            ->assertJson(['source' => 'ia', 'reponse' => 'La borne Lafayette a de la place.']);
+
+        Http::assertSent(fn ($requete) => $requete->url() === 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+            && $requete['model'] === 'gemini-2.5-flash'
+            && $requete->hasHeader('Authorization', 'Bearer cle-gemini'));
+    }
+
     public function test_si_groq_echoue_le_moteur_local_prend_le_relais(): void
     {
         PointCollecte::factory()->create(['nom' => 'Borne Lafayette']);

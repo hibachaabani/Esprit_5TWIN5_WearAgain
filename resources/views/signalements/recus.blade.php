@@ -67,7 +67,7 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/assistant-ia.js') }}"></script>
+<script src="{{ asset('js/assistant-ia.js') }}" data-moteur="{{ config('collecte.ia.nom') }}"></script>
 <script>
 document.querySelectorAll('[data-suggestion]').forEach(bouton => {
     bouton.addEventListener('click', async () => {

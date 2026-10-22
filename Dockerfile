@@ -36,7 +36,7 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     && printf '<Directory /var/www/html/public>\n    AllowOverride All\n    Require all granted\n</Directory>\n' > /etc/apache2/conf-available/laravel.conf \
     && a2enconf laravel
 
-# Réglages de production par défaut : l'hébergeur n'a qu'à fournir GROQ_API_KEY (chacun reste modifiable).
+# Réglages de production par défaut : l'hébergeur n'a qu'à fournir GEMINI_API_KEY (chacun reste modifiable).
 ENV APP_NAME=WearAgain \
     APP_ENV=production \
     APP_DEBUG=false \
@@ -49,6 +49,8 @@ ENV APP_NAME=WearAgain \
     QUEUE_CONNECTION=sync \
     MAIL_MAILER=log \
     LOG_CHANNEL=stderr \
+    COLLECTE_IA_FOURNISSEUR=gemini \
+    GEMINI_MODEL=gemini-2.5-flash \
     GROQ_MODEL=llama-3.3-70b-versatile
 
 COPY docker/php.ini /usr/local/etc/php/conf.d/wearagain.ini
