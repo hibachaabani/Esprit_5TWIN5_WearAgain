@@ -92,7 +92,6 @@ class AssociationController extends Controller
             'chiffres' => $chiffres,
             'besoins' => $besoins->take(4),
             'points' => $association->pointsCollecte()->actifs()->orderBy('nom')->limit(5)->get(),
-            'derniersDons' => $gere ? $association->dons()->with('donateur')->latest()->limit(5)->get() : collect(),
         ]);
     }
 

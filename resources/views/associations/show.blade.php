@@ -130,36 +130,6 @@
         </div>
 
         <aside class="asso-aside">
-            @if ($gere)
-                <section class="asso-bloc asso-gestion">
-                    <h2>Gestion de ma fiche</h2>
-                    <p class="small muted">Compte : {{ $association->user?->name }} ({{ $association->user?->email }})</p>
-
-                    <h3 class="h4" style="font-size:1rem; margin:1rem 0 .5rem">Derniers dons reçus</h3>
-                    <ul class="asso-dons">
-                        @forelse ($derniersDons as $don)
-                            <li>
-                                <a href="{{ route('dons.show', $don) }}">{{ $don->vetement_titre }}</a>
-                                — {{ $don->donateur?->name }}
-                                <span class="status-badge status-{{ $don->statut }}">{{ \App\Models\Don::LIBELLES_STATUT[$don->statut] }}</span>
-                            </li>
-                        @empty
-                            <li class="muted">Aucun don pour le moment.</li>
-                        @endforelse
-                    </ul>
-
-                    <div class="hero-actions">
-                        <a href="{{ route('dons.recus') }}" class="btn btn-primary btn-sm">Traiter les dons</a>
-                        <a href="{{ route('associations.edit', $association) }}" class="btn btn-ghost btn-sm">Modifier</a>
-                        <form method="POST" action="{{ route('associations.destroy', $association) }}" onsubmit="return confirm('Supprimer définitivement cette association ?')">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-supprimer btn-sm" type="submit">Supprimer</button>
-                        </form>
-                    </div>
-                </section>
-            @endif
-
             <section class="asso-bloc">
                 <h2>Nous trouver</h2>
                 @if ($association->hasPosition())

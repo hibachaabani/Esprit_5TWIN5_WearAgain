@@ -113,9 +113,40 @@ class BesoinTest extends TestCase
             ->assertSee('Écharpes et bonnets')
             ->assertDontSee($association->user->email);
 
+        // Le responsable voit la même page publique : la gestion se fait depuis « Fiche de mon association ».
         $this->actingAs($association->user)->get(route('associations.show', $association))
-            ->assertSee('Gestion de ma fiche')
-            ->assertSee($association->user->email);
+            ->assertOk()
+            ->assertDontSee('Gestion de ma fiche');
+    }
+
+    public function test_le_bouton_de_la_liste_des_associations_depend_du_compte(): void
+    {
+        $creer = 'href="'.route('associations.create').'"';
+
+        // Visiteur : vers l'inscription, type « association » déjà choisi.
+        $this->get(route('associations.index'))->assertSee('href="'.route('register', ['type' => 'association']).'"', false);
+        $this->get(route('register', ['type' => 'association']))->assertSee("type: 'association'", false);
+
+        // Particulier : aucun lien vers une page réservée aux associations (sinon erreur 403).
+        $this->actingAs(User::factory()->create())->get(route('associations.index'))
+            ->assertOk()->assertDontSee($creer, false)->assertDontSee('Inscrire mon association');
+
+        // Association sans fiche : elle peut la créer.
+        $this->actingAs(User::factory()->association()->create())->get(route('associations.index'))
+            ->assertSee($creer, false)->assertSee('Créer ma fiche');
+    }
+
+    public function test_l_association_supprime_sa_fiche_depuis_la_page_modifier(): void
+    {
+        $association = $this->associationVerifiee();
+
+        $this->actingAs($association->user)->get(route('associations.edit', $association))
+            ->assertOk()
+            ->assertSee("Supprimer l'association", false);
+
+        $this->actingAs($association->user)->delete(route('associations.destroy', $association))
+            ->assertRedirect(route('associations.index'));
+        $this->assertModelMissing($association);
     }
 
     public function test_la_publication_est_validee(): void

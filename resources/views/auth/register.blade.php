@@ -1,5 +1,5 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}" x-data="{ type: '{{ old('type', 'particulier') }}' }">
+    <form method="POST" action="{{ route('register') }}" x-data="{ type: '{{ old('type', in_array(request('type'), ['particulier', 'association', 'atelier'], true) ? request('type') : 'particulier') }}' }">
         @csrf
 
         <!-- Type de compte -->
