@@ -114,9 +114,9 @@ class SuggesteurTransformation
     {
         $texte = mb_strtolower($type . ' ' . $description);
 
-        if (str_contains($texte, ['retouche', 'ourlet', 'zip', 'bouton'])) {
+        if ($this->contientMot($texte, ['retouche', 'ourlet', 'zip', 'bouton'])) {
             $famille = 'simple';
-        } elseif (str_contains($texte, ['veste', 'manteau', 'structurel', 'réparer'])) {
+        } elseif ($this->contientMot($texte, ['veste', 'manteau', 'structurel', 'réparer'])) {
             $famille = 'complexe';
         } else {
             $famille = 'moyen';
@@ -152,6 +152,21 @@ class SuggesteurTransformation
             'source'      => 'local',
         ];
     }
+
+    /**
+     * Vérifie si l'un des mots du tableau est contenu dans le texte.
+     */
+    private function contientMot(string $texte, array $mots): bool
+    {
+        foreach ($mots as $mot) {
+            if (str_contains($texte, $mot)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /* ------------------------------------------------------------------ */
     /* Moteur OpenAI                                                      */
     /* ------------------------------------------------------------------ */

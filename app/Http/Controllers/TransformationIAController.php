@@ -52,14 +52,15 @@ class TransformationIAController extends Controller
         }
 
         $request->validate([
-            'type'        => ['required', 'string', 'max:100'],
+            'type'        => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:2000'],
         ]);
 
+        $type = $request->string('type') ?? $transformation->type;
         $vetement = $transformation->vetement;
 
         $resultat = $this->suggesteur->estimerDevis(
-            $request->string('type'),
+            $type,
             $request->string('description') ?? ($vetement?->description ?? ''),
             $vetement?->matiere ?? '',
             $vetement?->etat ?? ''
