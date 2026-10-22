@@ -106,6 +106,22 @@ class AssistantDonIATest extends TestCase
         $this->assertContains('manteau', $analyse->familles);
     }
 
+    public function test_les_mots_voisins_du_modele_ne_changent_pas_le_type_de_vetement(): void
+    {
+        // Le modèle ajoute « veste » et « pantalon » à un costume : il ne doit pas répondre à un besoin de manteaux.
+        config(['ia.provider' => 'openai', 'ia.api_key' => 'cle-test']);
+        Http::fake(['*' => Http::response(['choices' => [['message' => ['content' => json_encode([
+            'vetement' => 'Costume homme taille 52', 'categorie' => 'homme', 'categories_proches' => ['enfant'],
+            'mots_cles' => ['costume', 'veste', 'pantalon', 'homme'], 'saison' => 'toutes',
+        ])]]]])]);
+        $manteaux = $this->besoin(['titre' => "Manteaux d'hiver pour enfants", 'categorie' => 'enfant', 'urgence' => 'urgente']);
+
+        $analyse = $this->matching()->analyser('Costume homme taille 52');
+
+        $this->assertSame(['costume'], $analyse->familles);
+        $this->assertFalse($this->matching()->noter($manteaux, $analyse)['pertinent']);
+    }
+
     public function test_si_le_modele_de_langage_echoue_le_moteur_local_prend_le_relais(): void
     {
         config(['ia.provider' => 'openai', 'ia.api_key' => 'cle-test']);

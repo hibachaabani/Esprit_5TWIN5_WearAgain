@@ -112,6 +112,7 @@
 .assistant-resultat h3 a { color: var(--ink); text-decoration: none; }
 .assistant-score { display: grid; place-items: center; text-align: center; width: 6.5rem; height: 6.5rem; border-radius: 50%; border: 5px solid; align-content: center; }
 .assistant-score strong { font: 700 1.6rem/1 var(--font-display); }
+.assistant-score strong small { font-size: .8rem; font-weight: 600; color: var(--muted); }
 .assistant-score span { font-size: .68rem; color: var(--muted); margin-top: .2rem; padding: 0 .4rem; }
 .score-fort { border-color: #2F7D4F; color: #2F7D4F; }
 .score-moyen { border-color: #C58A1B; color: #A06F12; }

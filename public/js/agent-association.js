@@ -71,9 +71,34 @@
         </div>`;
     }
 
+    // Bilan : barres des 6 derniers mois (proposés / remis) et chiffres clés.
+    function carteStatistiques(e) {
+        const max = Math.max(1, ...e.par_mois.map((m) => m.proposes));
+        const barres = e.par_mois.map((m) => `
+            <div class="agent-stat-mois" title="${echapper(m.mois)} : ${m.proposes} proposés, ${m.remis} remis">
+                <div class="agent-stat-barres">
+                    <span class="agent-stat-propose" style="height:${Math.round(100 * m.proposes / max)}%"></span>
+                    <span class="agent-stat-remis" style="height:${Math.round(100 * m.remis / max)}%"></span>
+                </div>
+                <span class="agent-stat-valeur">${m.proposes}</span>
+                <span class="agent-stat-libelle">${echapper(m.mois.split(' ')[0])}</span>
+            </div>`).join('');
+        const chiffres = [
+            ['Dons au total', e.total],
+            ['Taux d\'acceptation', e.taux_acceptation !== null ? `${e.taux_acceptation} %` : '—'],
+            ['Délai de réponse', e.delai_moyen_reponse || '—'],
+        ].map(([l, v]) => `<div><strong>${echapper(v)}</strong><span>${echapper(l)}</span></div>`).join('');
+        return `<div class="agent-carte agent-stats">
+            <span class="agent-carte-type">Vos statistiques · 6 derniers mois</span>
+            <div class="agent-stat-graphique" role="img" aria-label="Dons proposés et remis par mois">${barres}</div>
+            <p class="agent-stat-legende"><i class="agent-stat-propose"></i> proposés <i class="agent-stat-remis"></i> remis</p>
+            <div class="agent-stat-chiffres">${chiffres}</div>
+        </div>`;
+    }
+
     function elements(liste) {
         if (!liste || !liste.length) return '';
-        const cartes = liste.map((e) => ({ don: carteDon, besoin: carteBesoin, brouillon: carteBrouillon })[e.type]?.(e) ?? '').join('');
+        const cartes = liste.map((e) => ({ don: carteDon, besoin: carteBesoin, brouillon: carteBrouillon, statistiques: carteStatistiques })[e.type]?.(e) ?? '').join('');
         return `<div class="agent-cartes">${cartes}</div>`;
     }
 

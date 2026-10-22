@@ -5,11 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Association;
 use App\Models\Besoin;
 use App\Models\Don;
-use App\Services\IA\Dons\TriDonsIA;
 use App\Services\WorkflowDon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -78,7 +76,7 @@ class DonController extends Controller
     }
 
     /** Dons reçus par l'association de l'utilisateur connecté, classés par onglet. */
-    public function recus(Request $request, TriDonsIA $triIA): View|RedirectResponse
+    public function recus(Request $request): View|RedirectResponse
     {
         $association = $request->user()->association;
 
@@ -107,29 +105,16 @@ class DonController extends Controller
             ->when($onglet === 'acceptes', fn ($q) => $q->orderByRaw('date_remise is null')->orderBy('date_remise'))
             ->latest();
 
-        // À traiter : l'IA évalue chaque don et range les plus utiles d'abord (ou du plus récent, au choix).
-        $tri = $onglet === 'a_traiter' && $request->query('tri') !== 'recent' ? 'pertinence' : 'recent';
-
-        if ($onglet === 'a_traiter') {
-            $tous = $requete->get()->each(fn (Don $don) => $don->setRelation('association', $association));
-            $evalues = $tri === 'pertinence'
-                ? $triIA->trier($tous, $association)
-                : $tous->each(fn (Don $don) => $don->setAttribute('avis_ia', $triIA->evaluer($don)));
-            $page = LengthAwarePaginator::resolveCurrentPage();
-            $dons = new LengthAwarePaginator($evalues->forPage($page, 10)->values(), $evalues->count(), 10, $page,
-                ['path' => $request->url(), 'query' => $request->query()]);
-        } else {
-            $dons = $requete->paginate(10)->withQueryString();
-            $dons->getCollection()->each(fn (Don $don) => $don->setRelation('association', $association));
-        }
+        $dons = $requete->paginate(10)->withQueryString();
+        $dons->getCollection()->each(fn (Don $don) => $don->setRelation('association', $association));
 
         $points = $association->pointsCollecte()->actifs()->orderBy('nom')->get();
 
-        return view('dons.recus', compact('association', 'dons', 'onglet', 'onglets', 'compteurs', 'points', 'tri'));
+        return view('dons.recus', compact('association', 'dons', 'onglet', 'onglets', 'compteurs', 'points'));
     }
 
     /** Détail d'un don : sa frise, ses actions et le fil de discussion entre le donateur et l'association. */
-    public function show(Request $request, Don $don, TriDonsIA $triIA): View
+    public function show(Request $request, Don $don): View
     {
         $don->load(['donateur', 'association', 'besoin', 'messages.auteur']);
 
@@ -141,10 +126,7 @@ class DonController extends Controller
             ? $don->association->pointsCollecte()->actifs()->orderBy('nom')->get()
             : collect();
 
-        // Avis de l'IA pour aider l'association à répondre à un don proposé.
-        $avisIA = $don->statut === 'propose' && $don->estRecuPar($request->user()) ? $triIA->evaluer($don) : null;
-
-        return view('dons.show', compact('don', 'points', 'avisIA'));
+        return view('dons.show', compact('don', 'points'));
     }
 
     /** Affiche le formulaire de modification pré-rempli. */

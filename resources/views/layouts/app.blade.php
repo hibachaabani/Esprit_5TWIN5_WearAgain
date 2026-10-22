@@ -13,7 +13,7 @@
     @stack('styles')
 </head>
 {{-- Donateurs et associations : badge « Messages » et bulle de notification mis à jour en continu. --}}
-<body @if (auth()->user()?->aLeRole('particulier', 'association')) data-notifications="{{ route('notifications.etat') }}" @endif>
+<body class="site-body" @if (auth()->user()?->aLeRole('particulier', 'association')) data-notifications="{{ route('notifications.etat') }}" @endif>
     @include('partials.header')
 
     <main>

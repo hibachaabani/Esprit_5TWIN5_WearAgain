@@ -6,9 +6,11 @@ use App\Models\Association;
 use App\Models\Besoin;
 use App\Models\Don;
 use App\Services\IA\Besoins\RedactionBesoinIA;
+use App\Services\IA\Dons\AnalyseurDonLocal;
 use App\Services\IA\Dons\LexiqueVetements;
 use App\Services\IA\Dons\MatchingBesoinsIA;
 use App\Services\IA\Dons\TriDonsIA;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -27,6 +29,7 @@ class OutilsAssociation
         'etat_des_besoins' => 'vos besoins',
         'dons_pour_un_besoin' => 'les dons pour un besoin',
         'rediger_besoin' => 'la rédaction d\'un besoin',
+        'statistiques_dons' => 'vos statistiques',
     ];
 
     private const CONSEILS = ['accepter' => 'Conseillé : accepter', 'verifier' => 'À vérifier', 'complet' => 'Besoin déjà complet', 'hors' => 'Hors de vos besoins'];
@@ -35,6 +38,7 @@ class OutilsAssociation
         private readonly TriDonsIA $tri,
         private readonly MatchingBesoinsIA $matching,
         private readonly RedactionBesoinIA $redaction,
+        private readonly AnalyseurDonLocal $analyseurLocal,
     ) {}
 
     /** Description des outils au format « tools » de l'API Chat Completions. */
@@ -58,6 +62,7 @@ class OutilsAssociation
                 ['besoin' => ['type' => 'string', 'description' => 'Identifiant du besoin, ou mots de son titre (ex : « manteaux enfants »).']], ['besoin']),
             $outil('rediger_besoin', 'Prépare un BROUILLON de besoin (titre, description, catégorie, quantité, urgence, date limite) à partir de la demande. Rien n\'est publié : l\'association relit et publie elle-même.',
                 ['demande' => ['type' => 'string', 'description' => 'La demande de l\'association, avec ses propres mots.']], ['demande']),
+            $outil('statistiques_dons', "Bilan chiffré des dons de l'association : dons proposés et remis par mois (6 derniers mois), totaux par statut, taux d'acceptation, délai moyen de réponse, donateurs les plus fidèles, catégories de vêtements les plus reçues. À utiliser pour « combien », « bilan », « statistiques »."),
         ];
     }
 
@@ -72,6 +77,7 @@ class OutilsAssociation
             'etat_des_besoins' => $this->etatDesBesoins($association),
             'dons_pour_un_besoin' => $this->donsPourUnBesoin($association, (string) ($arguments['besoin'] ?? '')),
             'rediger_besoin' => $this->redigerBesoin($association, (string) ($arguments['demande'] ?? '')),
+            'statistiques_dons' => $this->statistiquesDons($association),
             default => ['donnees' => ['erreur' => "Outil inconnu : {$nom}."], 'elements' => []],
         };
     }
@@ -209,6 +215,98 @@ class OutilsAssociation
                 'urgence_libelle' => Besoin::URGENCES[$proposition['urgence']],
             ]],
         ];
+    }
+
+    /**
+     * Bilan de l'activité, calculé ici et non par le modèle : les chiffres sont exacts.
+     * Les catégories viennent du moteur local, sans appel à l'API pour chaque don.
+     */
+    private function statistiquesDons(Association $association): array
+    {
+        $dons = $association->dons()->with('donateur')->get();
+        $statuts = $dons->countBy('statut');
+        $recus = $dons->where('statut', '!=', 'annule');
+
+        $parMois = collect(range(5, 0))->map(function (int $ecart) use ($dons) {
+            $mois = now()->startOfMonth()->subMonthsNoOverflow($ecart);
+
+            return [
+                'mois' => Str::ucfirst($mois->locale('fr')->isoFormat('MMM YYYY')),
+                'proposes' => $dons->filter(fn (Don $don) => $don->created_at->isSameMonth($mois))->count(),
+                'remis' => $dons->filter(fn (Don $don) => $don->statut === 'remis' && $don->cloture_le?->isSameMonth($mois))->count(),
+            ];
+        })->values();
+
+        // Taux d'acceptation : parmi les dons auxquels l'association a répondu.
+        $acceptes = ($statuts['accepte'] ?? 0) + ($statuts['remis'] ?? 0);
+        $reponses = $acceptes + ($statuts['refuse'] ?? 0);
+
+        // Délai de réponse : de la proposition à l'acceptation ou au refus.
+        $delais = $dons->map(fn (Don $don) => $this->dateDeReponse($don)?->diffInMinutes($don->created_at, true))
+            ->filter(fn ($minutes) => $minutes !== null);
+
+        $fideles = $recus->groupBy('donateur_id')
+            ->map(fn (Collection $sesDons) => [
+                'prenom' => $this->prenom($sesDons->first()),
+                'dons' => $sesDons->count(),
+                'remis' => $sesDons->where('statut', 'remis')->count(),
+            ])
+            ->sortByDesc('dons')->take(3)->values();
+
+        $categories = $recus
+            ->map(fn (Don $don) => $this->analyseurLocal->analyser($don->vetement_titre)['categorie'])
+            ->map(fn (?string $cle) => $cle ? Association::CATEGORIES[$cle] : 'Autres')
+            ->countBy()->sortDesc()->take(4);
+
+        $ceMois = $parMois->last();
+        $donnees = [
+            'ce_mois' => [
+                'nouveaux dons proposés ce mois, quel que soit leur statut actuel' => $ceMois['proposes'],
+                'vêtements remis à l\'association ce mois' => $ceMois['remis'],
+                'dons qui attendent encore une réponse (tous mois confondus)' => $statuts['propose'] ?? 0,
+            ],
+            'par_mois' => $parMois->all(),
+            'total' => $dons->count(),
+            // Libellés explicites : un code comme « accepte » se confond facilement avec « remis ».
+            'par_statut' => [
+                'proposés, en attente de réponse' => $statuts['propose'] ?? 0,
+                'acceptés, remise encore à venir' => $statuts['accepte'] ?? 0,
+                'remis, déjà reçus par l\'association' => $statuts['remis'] ?? 0,
+                'refusés' => $statuts['refuse'] ?? 0,
+                'annulés par le donateur' => $statuts['annule'] ?? 0,
+            ],
+            'taux_acceptation' => $reponses ? (int) round(100 * $acceptes / $reponses) : null,
+            'reponses' => $reponses,
+            'delai_moyen_reponse' => $delais->isNotEmpty() ? $this->duree($delais->avg()) : null,
+            'donateurs_fideles' => $fideles->all(),
+            'categories' => $categories->map(fn ($nombre, $libelle) => ['categorie' => $libelle, 'dons' => $nombre])->values()->all(),
+        ];
+
+        return [
+            'donnees' => $donnees,
+            'elements' => [['type' => 'statistiques', 'par_mois' => $donnees['par_mois'], 'total' => $donnees['total'],
+                'taux_acceptation' => $donnees['taux_acceptation'], 'delai_moyen_reponse' => $donnees['delai_moyen_reponse']]],
+        ];
+    }
+
+    /** Quand l'association a répondu : acceptation, ou refus. */
+    private function dateDeReponse(Don $don): ?CarbonInterface
+    {
+        return match ($don->statut) {
+            'accepte', 'remis' => $don->accepte_le,
+            'refuse' => $don->cloture_le,
+            default => null,
+        };
+    }
+
+    /** « 40 minutes », « 5 heures », « 1,5 jour ». */
+    private function duree(float $minutes): string
+    {
+        return match (true) {
+            $minutes < 60 => max(1, (int) round($minutes)).' minutes',
+            $minutes < 24 * 60 => (int) round($minutes / 60).' heures',
+            default => str_replace('.', ',', (string) round($minutes / 1440, 1)).' jour'.(round($minutes / 1440, 1) >= 2 ? 's' : ''),
+        };
     }
 
     /** Le besoin désigné par son identifiant ou par les mots de son titre (vêtements en commun, sinon mots en commun). */

@@ -13,21 +13,19 @@
      data-url-brouillon="{{ route('agent.brouillon') }}"
      data-url-reinitialiser="{{ route('agent.reinitialiser') }}">
 
-    <header class="agent-entete">
+    <header @class(['agent-entete', 'agent-entete-seule' => $iaActive])>
         <div>
             <p class="eyebrow">Assistant IA</p>
             <h1>Votre assistant</h1>
             <p class="lead">Posez une question sur vos dons et vos besoins : l'assistant consulte vos données, choisit lui-même ce qu'il doit vérifier, et vous conseille. Rien n'est accepté ni publié sans votre clic.</p>
         </div>
-        <div class="agent-mode {{ $iaActive ? 'agent-mode-ia' : '' }}">
-            @if ($iaActive)
-                <strong>Agent IA actif</strong>
-                <span>Modèle de langage : {{ config('ia.model') }}</span>
-            @else
+        {{-- Seulement sans clé API : prévient que l'assistant ne reconnaît que les questions fréquentes. --}}
+        @unless ($iaActive)
+            <div class="agent-mode">
                 <strong>Mode simple</strong>
                 <span>Sans clé API : l'assistant reconnaît les questions fréquentes. Ajoutez une clé dans <code>.env</code> pour l'agent complet.</span>
-            @endif
-        </div>
+            </div>
+        @endunless
     </header>
 
     <div class="agent-zone">
@@ -41,7 +39,7 @@
         </div>
 
         <div class="agent-suggestions" data-agent-suggestions>
-            @foreach (["Qu'est-ce que je dois faire aujourd'hui ?", 'Quels dons dois-je traiter en priorité ?', 'Quels besoins sont presque complets ?', 'Prépare un besoin pour 15 pulls enfants avant décembre'] as $suggestion)
+            @foreach (["Qu'est-ce que je dois faire aujourd'hui ?", 'Quels dons dois-je traiter en priorité ?', 'Quels besoins sont presque complets ?', 'Combien de dons ai-je reçus ce mois ?', 'Prépare un besoin pour 15 pulls enfants avant décembre'] as $suggestion)
                 <button type="button" class="agent-suggestion" data-suggestion>{{ $suggestion }}</button>
             @endforeach
         </div>

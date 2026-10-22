@@ -166,7 +166,70 @@ class AgentAssociationTest extends TestCase
                 '- « Quels besoins sont presque complets ? »',
                 '- « Trouve des dons pour mon besoin de manteaux »',
                 '- « Prépare un besoin pour 15 pulls enfants avant décembre »',
+                '- « Combien de dons ai-je reçus ce mois ? »',
             ])->join("\n")]);
+    }
+
+    /* ----- Statistiques ----- */
+
+    /** Deux dons ce mois-ci (dont un remis), un don refusé le mois dernier, et un don d'une autre association. */
+    private function activiteDuMois(): void
+    {
+        $ahmed = User::factory()->create(['name' => 'Ahmed Trabelsi']);
+        $creation = now()->startOfDay();
+        $this->don('Doudoune 8 ans', ['donateur_id' => $ahmed->id, 'statut' => 'remis', 'created_at' => $creation,
+            'accepte_le' => $creation->copy()->addDays(2), 'cloture_le' => now()]);
+        $this->don('Body 3 mois', ['donateur_id' => $ahmed->id, 'statut' => 'propose', 'created_at' => $creation]);
+        $refuse = now()->startOfMonth()->subDays(5);
+        $this->don('Costume homme', ['statut' => 'refuse', 'created_at' => $refuse, 'cloture_le' => $refuse->copy()->addDay()]);
+        Don::factory()->create(['vetement_titre' => 'Don ailleurs', 'statut' => 'remis', 'created_at' => now()]);
+    }
+
+    public function test_le_mode_simple_donne_le_bilan_chiffre(): void
+    {
+        $this->activiteDuMois();
+
+        $reponse = $this->demander('Combien de dons ai-je reçus ce mois ?')->assertOk();
+
+        $this->assertSame(['vos statistiques'], $reponse->json('outils'));
+        $this->assertSame([
+            'Voici votre bilan :',
+            '- Ce mois-ci : **2** dons proposés, **1** remis',
+            '- Au total : **3** dons, dont **1** remis',
+            "- Taux d'acceptation : **50 %** (sur 2 réponses)",
+            '- Délai moyen de réponse : **1,5 jour**',
+        ], array_slice(explode("\n", $reponse->json('texte')), 0, 5));
+        $this->assertStringContainsString('Donateurs les plus fidèles : Ahmed (2 dons)', $reponse->json('texte'));
+        $this->assertStringContainsString('Vêtements les plus reçus : ', $reponse->json('texte'));
+
+        $stats = $reponse->json('elements.0');
+        $this->assertSame('statistiques', $stats['type']);
+        $this->assertCount(6, $stats['par_mois']);
+        $this->assertSame(['proposes' => 2, 'remis' => 1], collect(end($stats['par_mois']))->only(['proposes', 'remis'])->all());
+        $this->assertSame(1, $stats['par_mois'][4]['proposes'], 'Le don refusé compte le mois dernier.');
+    }
+
+    public function test_les_questions_sur_les_dons_a_traiter_ne_sont_pas_des_statistiques(): void
+    {
+        $this->demander('Combien de dons sont en attente ?')->assertOk()->assertJson(['outils' => ['vos dons à traiter']]);
+    }
+
+    public function test_l_agent_utilise_l_outil_de_statistiques(): void
+    {
+        $this->activerModele();
+        $this->activiteDuMois();
+        $this->simulerModele([
+            $this->appelsOutils(['statistiques_dons' => []]),
+            $this->reponseFinale('Ce mois-ci, vous avez reçu **2 dons**.'),
+        ]);
+
+        $this->demander('Fais-moi le bilan du mois')->assertOk()
+            ->assertJson(['source' => 'ia', 'outils' => ['vos statistiques'], 'elements' => [['type' => 'statistiques', 'total' => 3]]]);
+
+        $donnees = json_decode(collect($this->requetesAgent()[1]['messages'])->firstWhere('role', 'tool')['content'], true);
+        $this->assertSame(50, $donnees['taux_acceptation']);
+        $this->assertSame(3, $donnees['total'], "Le don d'une autre association n'est pas compté.");
+        $this->assertSame('Ahmed', $donnees['donateurs_fideles'][0]['prenom']);
     }
 
     /* ----- Brouillons : l'agent prépare, l'association publie ----- */

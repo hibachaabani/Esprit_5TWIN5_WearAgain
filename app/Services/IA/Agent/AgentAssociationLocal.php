@@ -44,6 +44,9 @@ class AgentAssociationLocal
             $contient(['prepar', 'redig', 'ecri', 'cree', 'creer', 'publi', 'ajout', 'nouveau besoin', 'il nous faut', 'nous cherchons', 'on cherche'])
                 && ($contient(['besoin']) || $parleDeVetements) => 'rediger_besoin',
             $contient(['don']) && $contient(['pour', 'correspond']) && ($contient(['besoin']) || $parleDeVetements) => 'dons_pour_un_besoin',
+            // « Combien de dons ai-je reçus ce mois ? » : un bilan, pas la liste des dons à traiter.
+            $contient(['statisti', 'bilan', 'chiffre', 'taux', 'fidele', 'par mois', 'ce mois', 'delai', 'refuse beaucoup', 'meilleurs donateurs'])
+                || ($contient(['combien']) && ! $contient(['traiter', 'attente'])) => 'statistiques_dons',
             $contient(['priorit', 'traiter', 'a traiter', 'quels dons', 'dons recus', 'nouveaux dons', 'accepter', 'en attente']) => 'dons_a_traiter',
             $contient(['besoin', 'complet', 'progress', 'manque', 'objectif']) => 'etat_des_besoins',
             $contient(['aujourd', 'resume', 'activite', 'rendez', 'remise', 'semaine', 'quoi faire', 'que dois', 'situation', 'bonjour', 'salut', 'message']) => 'resume_activite',
@@ -65,6 +68,7 @@ class AgentAssociationLocal
             'etat_des_besoins' => $this->texteBesoins($donnees['besoins']),
             'dons_pour_un_besoin' => $this->texteDonsPourBesoin($donnees),
             'rediger_besoin' => $this->texteBrouillon($donnees['brouillon']),
+            'statistiques_dons' => $this->texteStatistiques($donnees),
         };
     }
 
@@ -139,6 +143,33 @@ class AgentAssociationLocal
         return implode("\n", $lignes);
     }
 
+    private function texteStatistiques(array $d): string
+    {
+        if ($d['total'] === 0) {
+            return 'Vous n\'avez encore reçu aucun don : les statistiques apparaîtront avec vos premiers dons.';
+        }
+
+        $lignes = ['Voici votre bilan :'];
+        [$proposes, $remis] = array_values($d['ce_mois']);
+        $lignes[] = '- Ce mois-ci : '.$this->nombre($proposes, 'don proposé', 'dons proposés').', '.$this->nombre($remis, 'remis', 'remis');
+        $lignes[] = '- Au total : '.$this->nombre($d['total'], 'don', 'dons').', dont '.$this->nombre($d['par_statut']["remis, déjà reçus par l'association"], 'remis', 'remis');
+        if ($d['taux_acceptation'] !== null) {
+            $lignes[] = "- Taux d'acceptation : **{$d['taux_acceptation']} %** (sur {$d['reponses']} ".($d['reponses'] > 1 ? 'réponses' : 'réponse').')';
+        }
+        if ($d['delai_moyen_reponse']) {
+            $lignes[] = "- Délai moyen de réponse : **{$d['delai_moyen_reponse']}**";
+        }
+        if ($d['donateurs_fideles']) {
+            $lignes[] = '- Donateurs les plus fidèles : '.collect($d['donateurs_fideles'])
+                ->map(fn ($f) => $f['prenom'].' ('.$f['dons'].' '.($f['dons'] > 1 ? 'dons' : 'don').')')->join(', ');
+        }
+        if ($d['categories']) {
+            $lignes[] = '- Vêtements les plus reçus : '.collect($d['categories'])->map(fn ($c) => $c['categorie'].' ('.$c['dons'].')')->join(', ');
+        }
+
+        return implode("\n", $lignes);
+    }
+
     private function texteBrouillon(array $brouillon): string
     {
         $texte = 'Voici un **brouillon** pour votre besoin. Relisez-le, puis cliquez sur « Ouvrir dans le formulaire » : rien n\'est publié sans vous.';
@@ -157,6 +188,7 @@ class AgentAssociationLocal
             '- « Quels besoins sont presque complets ? »',
             '- « Trouve des dons pour mon besoin de manteaux »',
             '- « Prépare un besoin pour 15 pulls enfants avant décembre »',
+            '- « Combien de dons ai-je reçus ce mois ? »',
         ]);
     }
 

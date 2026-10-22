@@ -139,11 +139,11 @@ class AgentAssociation
         ];
     }
 
-    /** Un même don ou besoin n'est affiché qu'une fois, même si deux outils l'ont renvoyé. */
+    /** Un même don ou besoin n'est affiché qu'une fois, même si deux outils l'ont renvoyé (brouillons et bilans sont tous gardés). */
     private function sansDoublons(array $elements): array
     {
         return collect($elements)
-            ->unique(fn ($element, $index) => $element['type'] === 'brouillon' ? "brouillon:{$index}" : $element['type'].':'.$element['id'])
+            ->unique(fn ($element, $index) => isset($element['id']) ? $element['type'].':'.$element['id'] : $element['type'].':'.$index)
             ->values()
             ->all();
     }
@@ -159,6 +159,9 @@ class AgentAssociation
         Méthode :
         - Utilise les outils pour connaître les faits (dons, besoins, remises, messages). N'invente jamais un chiffre, un nom ou une date.
         - Tu peux appeler plusieurs outils à la suite si la question le demande.
+        - « Dons reçus » est ambigu : donne à la fois les dons proposés et les dons remis.
+        - Ne parle jamais de tes outils à l'association : dis « vos dons », « vos besoins », « votre bilan ».
+        - Un don ne convient à un besoin que si c'est le même type de vêtement : un score sous 60 veut dire « à vérifier », ne le présente pas comme une bonne correspondance.
         - Pour créer un besoin, appelle rediger_besoin avec les mots de l'association, puis dis-lui de relire le brouillon affiché sous ta réponse et de cliquer sur « Ouvrir dans le formulaire ».
 
         Limites :

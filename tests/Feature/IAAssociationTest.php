@@ -77,26 +77,32 @@ class IAAssociationTest extends TestCase
     public function test_les_dons_a_traiter_sont_ranges_du_plus_utile_au_moins_utile(): void
     {
         $this->besoin(['titre' => "Manteaux d'hiver pour enfants", 'categorie' => 'enfant', 'urgence' => 'urgente']);
+        $costume = $this->don('Costume homme', ['created_at' => now()]);
+        $doudoune = $this->don('Doudoune 8 ans', ['created_at' => now()->subDay()]);
+
+        $tries = app(TriDonsIA::class)->trier(collect([$costume, $doudoune])->each->load('association'), $this->association);
+
+        $this->assertSame(['Doudoune 8 ans', 'Costume homme'], $tries->pluck('vetement_titre')->all());
+    }
+
+    public function test_la_liste_des_dons_recus_reste_chronologique_sans_tri_ia(): void
+    {
+        $this->besoin(['titre' => "Manteaux d'hiver pour enfants", 'categorie' => 'enfant', 'urgence' => 'urgente']);
         $this->don('Costume homme', ['created_at' => now()]);
         $this->don('Doudoune 8 ans', ['created_at' => now()->subDay()]);
 
         $this->actingAs($this->association->user)->get(route('dons.recus'))
             ->assertOk()
-            ->assertSee('Tri intelligent')
-            ->assertSeeInOrder(['Doudoune 8 ans', 'Conseillé : accepter', 'Costume homme', 'Hors de vos besoins']);
-
-        // Au choix, l'ordre chronologique reste disponible.
-        $this->actingAs($this->association->user)->get(route('dons.recus', ['tri' => 'recent']))
-            ->assertSeeInOrder(['Costume homme', 'Doudoune 8 ans']);
+            ->assertSeeInOrder(['Costume homme', 'Doudoune 8 ans'])
+            ->assertDontSee('Tri intelligent');
     }
 
-    public function test_la_page_du_don_affiche_l_avis_de_l_ia_a_l_association_seulement(): void
+    public function test_la_page_du_don_n_affiche_plus_l_avis_de_l_ia(): void
     {
         $this->besoin(['titre' => "Manteaux d'hiver pour enfants", 'categorie' => 'enfant']);
         $don = $this->don('Doudoune 8 ans');
 
-        $this->actingAs($this->association->user)->get(route('dons.show', $don))->assertSee("Avis de l'assistant IA", false);
-        $this->actingAs($don->donateur)->get(route('dons.show', $don))->assertDontSee("Avis de l'assistant IA", false);
+        $this->actingAs($this->association->user)->get(route('dons.show', $don))->assertOk()->assertDontSee("Avis de l'assistant IA", false);
     }
 
     public function test_l_analyse_mise_en_cache_se_relit_avec_un_vrai_cache(): void

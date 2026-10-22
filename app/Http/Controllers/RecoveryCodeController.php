@@ -21,7 +21,7 @@ class RecoveryCodeController extends Controller
         // Si aucun code en session (page rechargée ou accès direct), rediriger
         if (! $plainCodes) {
             return redirect()->route('profile.edit')
-                ->with('status', '2fa-enabled');
+                ->with('status', 'La double authentification est activée.');
         }
 
         return view('profile.recovery-codes', compact('plainCodes'));

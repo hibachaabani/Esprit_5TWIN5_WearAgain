@@ -104,6 +104,6 @@ class TwoFactorController extends Controller
         ]);
 
         return redirect()->route('profile.edit')
-            ->with('status', '2fa-disabled');
+            ->with('status', 'La double authentification est désactivée.');
     }
 }

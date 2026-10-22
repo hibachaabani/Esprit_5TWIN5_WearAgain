@@ -21,7 +21,9 @@ class DonFactory extends Factory
             'date_don' => fake()->optional()->dateTimeBetween('-2 months', 'now'),
             'mode' => fake()->randomElement(Don::MODES),
             'statut' => fake()->randomElement(Don::STATUTS),
-            'message' => fake()->optional()->sentence(10),
+            'message' => fake()->optional()->randomElement([
+                'Lavé et en bon état.', 'Porté quelques fois seulement.', 'Je peux le déposer en semaine.', 'Merci pour votre action !',
+            ]),
         ];
     }
 
@@ -32,7 +34,8 @@ class DonFactory extends Factory
             if (in_array($don->statut, ['accepte', 'remis'], true)) {
                 $don->accepte_le ??= now()->subDays(3);
                 $don->date_remise ??= now()->addDays(fake()->numberBetween(1, 10))->setTime(10, 0);
-                $don->lieu_remise ??= fake()->streetAddress().', '.fake()->randomElement(['Tunis', 'Sousse', 'Sfax']);
+                $don->lieu_remise ??= fake()->randomElement(["Local de l'association", 'Avenue Habib Bourguiba', 'Place Pasteur'])
+                    .', '.fake()->randomElement(['Tunis', 'Sousse', 'Sfax']);
             }
             if ($don->statut === 'refuse') {
                 $don->motif_refus ??= 'Taille ou catégorie non recherchée en ce moment';

@@ -30,6 +30,9 @@ final class AnalyseDon
 
         // Les mots-clés passent par le même lexique, que la réponse vienne du modèle de langage ou non.
         $mots = LexiqueVetements::mots(implode(' ', array_merge([$description], array_map('strval', (array) ($data['mots_cles'] ?? [])))));
+        // Le type de vêtement vient d'abord des mots du donateur : un modèle de langage ajoute parfois des mots voisins
+        // (« veste » pour un costume) qui le feraient passer pour un manteau. Ses mots-clés ne servent que si la description seule ne suffit pas.
+        $familles = LexiqueVetements::familles(LexiqueVetements::mots($description)) ?: LexiqueVetements::familles($mots);
         $saison = array_key_exists($data['saison'] ?? '', self::SAISONS) ? $data['saison'] : 'toutes';
         $vetement = trim((string) ($data['vetement'] ?? '')) ?: $description;
 
@@ -38,7 +41,7 @@ final class AnalyseDon
             categorie: $categorie,
             categoriesProches: array_values(array_diff(array_intersect((array) ($data['categories_proches'] ?? []), $categories), [$categorie])),
             motsCles: array_slice($mots, 0, 12),
-            familles: LexiqueVetements::familles($mots),
+            familles: $familles,
             saison: $saison,
             source: ($data['source'] ?? 'local') === 'ia' ? 'ia' : 'local',
         );

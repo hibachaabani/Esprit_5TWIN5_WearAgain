@@ -8,10 +8,15 @@
         <strong class="auth-email">{{ auth()->user()->email }}</strong>
     </p>
 
-    @if (session('status') == 'verification-link-sent')
+    @if (session('status') == 'verification-link-sent' || ($envoi ?? null) === 'envoye')
         <div class="auth-alert auth-alert-ok" role="status">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-            Un nouveau lien vient de vous être envoyé.
+            Un lien de confirmation vient de vous être envoyé.
+        </div>
+    @elseif (session('status') == 'verification-echec' || ($envoi ?? null) === 'echec')
+        <div class="auth-alert auth-alert-error" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+            L'e-mail n'a pas pu être envoyé pour le moment. Réessayez dans quelques minutes.
         </div>
     @endif
 

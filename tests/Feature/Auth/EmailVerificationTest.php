@@ -86,4 +86,35 @@ class EmailVerificationTest extends TestCase
             VerifyEmail::class
         );
     }
+
+    public function test_le_lien_part_automatiquement_pour_un_ancien_compte_non_verifie(): void
+    {
+        Notification::fake();
+        $user = User::factory()->unverified()->create(['created_at' => now()->subDays(3)]);
+
+        $this->actingAs($user)->get('/verify-email')->assertOk()->assertSee('Un lien de confirmation vient de vous être envoyé.');
+        $this->actingAs($user)->get('/verify-email')->assertOk();
+
+        // Une seule fois en 10 minutes, même si la page est rechargée.
+        Notification::assertSentToTimes($user, VerifyEmail::class, 1);
+    }
+
+    public function test_pas_de_second_lien_juste_apres_l_inscription(): void
+    {
+        Notification::fake();
+        $user = User::factory()->unverified()->create();
+
+        $this->actingAs($user)->get('/verify-email')->assertOk();
+
+        Notification::assertNothingSent();
+    }
+
+    public function test_si_le_serveur_d_e_mails_est_indisponible_la_page_l_explique(): void
+    {
+        config(['mail.default' => 'smtp', 'mail.mailers.smtp.host' => '127.0.0.1', 'mail.mailers.smtp.port' => 1, 'mail.mailers.smtp.timeout' => 1]);
+        $user = User::factory()->unverified()->create(['created_at' => now()->subDays(3)]);
+
+        $this->actingAs($user)->get('/verify-email')->assertOk()->assertSee("L'e-mail n'a pas pu être envoyé pour le moment.", false);
+        $this->actingAs($user)->post('/email/verification-notification')->assertSessionHas('status', 'verification-echec');
+    }
 }
