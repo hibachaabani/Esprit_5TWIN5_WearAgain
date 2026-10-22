@@ -367,6 +367,9 @@ class DepotTest extends TestCase
         $this->assertSame(1, PointCollecte::distinct()->count('association_id'));
         $this->assertGreaterThan(10, Depot::count());
         $this->assertTrue(PointCollecte::where('nom', 'Conteneur Ennasr')->firstOrFail()->estComplet());
+        // Signalements et campagnes de démo : créés une seule fois, eux aussi.
+        $this->assertSame(5, \App\Models\Signalement::count());
+        $this->assertSame(2, \App\Models\CampagneCollecte::count());
 
         PointCollecte::withCount('depotsActifs')->get()->each(
             fn (PointCollecte $point) => $this->assertLessThanOrEqual($point->capacite, $point->depots_actifs_count)
