@@ -18,9 +18,11 @@ class BackOfficeTest extends TestCase
 
     public function test_le_tableau_de_bord_liste_ce_qui_attend_une_action_du_plus_urgent_au_moins_urgent(): void
     {
+        // Un seul point, géré par une association vérifiée : la factory en crée sinon 30 % non vérifiées.
+        $point = PointCollecte::factory()->for(Association::factory()->create(['verifiee' => true]))->create();
         Association::factory()->create(['verifiee' => false]);
-        Depot::factory()->create(['statut' => 'en_attente', 'date_depot' => today()->subDays(3)]);
-        Signalement::factory()->create(['priorite' => 'haute']);
+        Depot::factory()->for($point)->create(['statut' => 'en_attente', 'date_depot' => today()->subDays(3)]);
+        Signalement::factory()->for($point)->create(['priorite' => 'haute']);
 
         $this->enAdmin()->get(route('admin.dashboard'))
             ->assertOk()
