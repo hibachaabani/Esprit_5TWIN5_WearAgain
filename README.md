@@ -111,6 +111,18 @@ docker run --rm -p 8080:8080 wearagain
 
 Puis ouvrir http://localhost:8080 (base SQLite remplie avec les comptes de démonstration).
 
+### Déployer sur Render à partir de l'image publiée
+
+À chaque commit sur `main` dont la CI est verte, l'image `ghcr.io/hibachaabani/wearagain:latest` est publiée sur GitHub Container Registry.
+
+1. Sur GitHub, créer un jeton (*Settings > Developer settings > Personal access tokens > Tokens (classic)*) avec la seule permission `read:packages`.
+2. Sur Render, *Settings > Registry Credentials* : ajouter ce jeton pour le registre GitHub, avec son nom d'utilisateur GitHub.
+3. *New > Web Service > Existing Image* : image `ghcr.io/hibachaabani/wearagain:latest`, avec ces identifiants, région Frankfurt, offre Free.
+4. Variables d'environnement : seulement `GROQ_API_KEY`. Les autres réglages de production sont déjà dans l'image.
+5. *Advanced > Health Check Path* : `/up`. Puis *Create Web Service*.
+
+Pour publier une nouvelle version : *Manual Deploy > Deploy latest reference*. Le lien *Deploy Hook* de Render peut aussi être rangé dans le secret GitHub `RENDER_DEPLOY_HOOK_URL` : `deploy.yml` redéploie alors seul après chaque CI verte sur `main`.
+
 ## Assistant IA de la collecte (Groq)
 
 Le module collecte utilise l'API [Groq](https://console.groq.com) (modèle `llama-3.3-70b-versatile`, réponses JSON) :

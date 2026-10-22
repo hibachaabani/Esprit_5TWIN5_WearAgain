@@ -36,6 +36,21 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     && printf '<Directory /var/www/html/public>\n    AllowOverride All\n    Require all granted\n</Directory>\n' > /etc/apache2/conf-available/laravel.conf \
     && a2enconf laravel
 
+# Réglages de production par défaut : l'hébergeur n'a qu'à fournir GROQ_API_KEY (chacun reste modifiable).
+ENV APP_NAME=WearAgain \
+    APP_ENV=production \
+    APP_DEBUG=false \
+    APP_LOCALE=fr \
+    APP_FALLBACK_LOCALE=fr \
+    APP_FAKER_LOCALE=fr_FR \
+    DB_CONNECTION=sqlite \
+    SESSION_DRIVER=database \
+    CACHE_STORE=database \
+    QUEUE_CONNECTION=sync \
+    MAIL_MAILER=log \
+    LOG_CHANNEL=stderr \
+    GROQ_MODEL=llama-3.3-70b-versatile
+
 COPY docker/php.ini /usr/local/etc/php/conf.d/wearagain.ini
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint
 
