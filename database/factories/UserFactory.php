@@ -17,6 +17,23 @@ class UserFactory extends Factory
      */
     protected static ?string $password;
 
+    /** Prénoms et noms tunisiens, différents de ceux des comptes de démo (Ahmed Trabelsi, Sana Ben Ali…). */
+    private const PRENOMS = ['Amira', 'Youssef', 'Salma', 'Mehdi', 'Ines', 'Karim', 'Rania', 'Omar', 'Nour', 'Hamza', 'Yasmine', 'Sami'];
+
+    private const NOMS = ['Gharbi', 'Jaziri', 'Mansouri', 'Ayari', 'Hammami', 'Bouazizi', 'Khelifi', 'Sassi', 'Dridi', 'Mejri'];
+
+    private static int $numero = 0;
+
+    /** Un nom différent à chaque utilisateur généré : les tests comparent parfois les noms affichés. */
+    private function nomUnique(): string
+    {
+        $n = self::$numero++;
+        $tour = intdiv($n, count(self::PRENOMS));
+        $nom = self::PRENOMS[$n % count(self::PRENOMS)].' '.self::NOMS[$tour % count(self::NOMS)];
+
+        return $tour < count(self::NOMS) ? $nom : $nom.' '.(intdiv($tour, count(self::NOMS)) + 1);
+    }
+
     /**
      * Define the model's default state.
      *
@@ -25,7 +42,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => $this->nomUnique(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

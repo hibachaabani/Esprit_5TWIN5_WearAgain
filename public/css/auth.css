@@ -63,12 +63,21 @@
 .auth-alert-ok { background: #EEF4EC; color: #2E5A32; border: 1px solid #D5E5D1; }
 
 .auth-submit { width: 100%; padding: .8rem 1rem; font-size: .98rem; border-radius: 10px !important; }
-.auth-card button[type="submit"]:not(.auth-eye) { background: var(--maroon); }
-.auth-card button[type="submit"]:not(.auth-eye):hover { background: var(--maroon-dark); }
+.auth-card button[type="submit"]:not(.auth-eye):not(.auth-text-btn) { background: var(--maroon); }
+.auth-card button[type="submit"]:not(.auth-eye):not(.auth-text-btn):hover { background: var(--maroon-dark); }
 
 .auth-switch { text-align: center; font-size: .92rem; color: var(--muted); margin: 1.5rem 0 0; padding-top: 1.3rem; border-top: 1px solid var(--line); }
 .auth-switch a { font-weight: 600; color: var(--maroon); text-decoration: none; }
 .auth-switch a:hover { text-decoration: underline; }
+/* Bouton qui a l'apparence d'un lien (déconnexion dans un formulaire) */
+.auth-text-btn { background: none; border: 0; padding: 0; font: 600 .92rem var(--font-body); color: var(--maroon); cursor: pointer; }
+.auth-text-btn:hover { text-decoration: underline; }
+
+/* Page « Vérifiez votre e-mail » */
+.auth-email { display: block; margin-top: .25rem; color: var(--ink); font-weight: 600; overflow-wrap: anywhere; }
+.auth-steps { list-style: none; margin: 0 0 1.4rem; padding: .9rem 1rem; border-radius: 10px; background: var(--cream); font-size: .88rem; color: var(--muted); }
+.auth-steps li { position: relative; padding-left: 1.2rem; margin: .2rem 0; }
+.auth-steps li::before { content: ""; position: absolute; left: .2rem; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
 
 /* Ligne de confiance sous la carte */
 .auth-trust { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem 1.5rem; margin: 1.6rem 0 0; padding: 0; font-size: .84rem; color: var(--muted); }

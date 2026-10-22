@@ -38,6 +38,7 @@
             $lien('besoins.mes', 'Mes besoins', ['besoins.mes', 'besoins.create', 'besoins.edit', 'besoins.show']),
             $lien('depots.recus', 'Dépôts reçus', ['depots.recus', 'depots.reception', 'tournee.*', 'points-collecte.create', 'points-collecte.edit']),
             $lien('messagerie.index', 'Messages', ['messagerie.*'], [], $user->messagesNonLus(), true),
+            $lien('agent.index', 'Assistant IA', ['agent.*']),
         ];
         $espace = $association ? [
             $lien('associations.show', 'Ma page publique', ['associations.show'], [$association]),

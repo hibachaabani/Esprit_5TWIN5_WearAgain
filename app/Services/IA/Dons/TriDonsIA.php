@@ -89,12 +89,12 @@ class TriDonsIA
     }
 
     /** L'analyse d'un même intitulé est gardée une journée : la liste ne rappelle pas le modèle de langage à chaque affichage. */
-    private function analyse(Don $don): AnalyseDon
+    public function analyse(Don $don): AnalyseDon
     {
         $texte = trim($don->vetement_titre);
 
         // Le cache ne garde que des tableaux (Laravel refuse de désérialiser des objets) : on reconstruit l'analyse.
-        $valeurs = Cache::remember('ia:don:v2:'.md5($texte.'|'.($this->matching->iaActive() ? 'ia' : 'local')), now()->addDay(),
+        $valeurs = Cache::remember('ia:don:v3:'.md5($texte.'|'.($this->matching->iaActive() ? 'ia' : 'local')), now()->addDay(),
             fn () => get_object_vars($this->matching->analyser($texte)));
 
         return new AnalyseDon(...$valeurs);

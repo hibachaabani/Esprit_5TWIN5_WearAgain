@@ -1,25 +1,29 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+<x-guest-layout title="Mot de passe oublié">
+    <div class="auth-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M17 6l3 3M15 8l2 2"/></svg>
     </div>
+    <h1 class="auth-title">Mot de passe oublié ?</h1>
+    <p class="auth-subtitle">Indiquez l'adresse e-mail de votre compte : nous vous envoyons un lien pour en choisir un nouveau.</p>
 
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @if (session('status'))
+        <div class="auth-alert auth-alert-ok" role="status">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            {{ session('status') }}
+        </div>
+    @endif
 
-    <form method="POST" action="{{ route('password.email') }}">
+    <form method="POST" action="{{ route('password.email') }}" novalidate>
         @csrf
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="auth-field">
+            <label class="auth-label" for="email">Adresse e-mail</label>
+            <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="vous@exemple.com"
+                   required autofocus autocomplete="username" @error('email') aria-invalid="true" @enderror>
+            @error('email') <p class="auth-error">{{ $message }}</p> @enderror
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Email Password Reset Link') }}
-            </x-primary-button>
-        </div>
+        <button type="submit" class="btn btn-primary auth-submit">Envoyer le lien</button>
     </form>
+
+    <p class="auth-switch">Vous vous en souvenez ? <a href="{{ route('login') }}">Se connecter</a></p>
 </x-guest-layout>

@@ -64,8 +64,8 @@
                 $niveau = $suggestion['score'] >= 75 ? 'fort' : ($suggestion['score'] >= 50 ? 'moyen' : 'faible');
             @endphp
             <article @class(['assistant-resultat', 'meilleur' => $i === 0])>
-                <div class="assistant-score score-{{ $niveau }}" aria-label="Correspondance {{ $suggestion['score'] }} %">
-                    <strong>{{ $suggestion['score'] }}%</strong>
+                <div class="assistant-score score-{{ $niveau }}" aria-label="Correspondance {{ $suggestion['score'] }} sur 100">
+                    <strong>{{ $suggestion['score'] }}<small>/100</small></strong>
                     <span>{{ $i === 0 ? 'Meilleur choix' : 'Correspondance' }}</span>
                 </div>
                 <div class="assistant-resultat-corps">

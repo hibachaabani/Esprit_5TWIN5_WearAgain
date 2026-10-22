@@ -105,19 +105,3 @@
 }
 
 /* Tri intelligent des dons reçus (IA) */
-.tri-ia { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; margin: 0 0 1rem; padding: .7rem 1rem; border-radius: 12px; background: #F2EEE6; font-size: .9rem; }
-.tri-ia-choix { display: inline-flex; gap: .3rem; padding: .2rem; border-radius: 999px; background: var(--white); }
-.tri-ia-choix a { padding: .3rem .8rem; border-radius: 999px; color: var(--muted); text-decoration: none; font-size: .84rem; font-weight: 600; }
-.tri-ia-choix a.actif { background: var(--maroon); color: var(--white); }
-.avis-ia { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; margin: .4rem 0; padding: .45rem .75rem; border-radius: 10px; border-left: 4px solid; font-size: .86rem; }
-.avis-ia-score { font-weight: 700; }
-.avis-ia-raison { color: var(--muted); }
-.avis-ia-accepter { background: #EAF4EE; border-color: #2F7D4F; }
-.avis-ia-accepter strong, .avis-ia-accepter .avis-ia-score { color: #2F7D4F; }
-.avis-ia-verifier { background: #FBF4E6; border-color: #C58A1B; }
-.avis-ia-verifier strong, .avis-ia-verifier .avis-ia-score { color: #A06F12; }
-.avis-ia-complet, .avis-ia-hors { background: #F6EEEE; border-color: #B3261E; }
-.avis-ia-complet strong, .avis-ia-hors strong, .avis-ia-complet .avis-ia-score, .avis-ia-hors .avis-ia-score { color: #B3261E; }
-.avis-ia-detaille { display: block; padding: .75rem 1rem; }
-.avis-ia-detaille strong { margin-left: .4rem; }
-.avis-ia-detaille ul { margin: .4rem 0 0; padding-left: 1.1rem; color: var(--ink); }

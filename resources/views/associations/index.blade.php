@@ -13,11 +13,16 @@
             <h1 class="h2">Associations partenaires</h1>
             <p class="lead">Donnez une seconde vie à vos vêtements en les confiant à une association.</p>
         </div>
-        @if (auth()->user()?->association)
-            <a href="{{ route('associations.show', auth()->user()->association) }}" class="btn btn-ghost">Mon association</a>
+        {{-- Selon le compte : un particulier ou un atelier ne peut pas créer d'association (page réservée). --}}
+        @guest
+            <a href="{{ route('register', ['type' => 'association']) }}" class="btn btn-primary">Inscrire mon association</a>
         @else
-            <a href="{{ route('associations.create') }}" class="btn btn-primary">Inscrire mon association</a>
-        @endif
+            @if (auth()->user()->association)
+                <a href="{{ route('associations.show', auth()->user()->association) }}" class="btn btn-ghost">Mon association</a>
+            @elseif (auth()->user()->estAssociation())
+                <a href="{{ route('associations.create') }}" class="btn btn-primary">Créer ma fiche</a>
+            @endif
+        @endguest
     </div>
 
     <div class="browse">
@@ -138,9 +143,13 @@
                         <a href="{{ route('associations.index') }}" class="btn btn-primary">Voir toutes les associations</a>
                     @else
                         <p>Aucune association pour le moment.</p>
-                        @unless (auth()->user()?->association)
-                            <a href="{{ route('associations.create') }}" class="btn btn-primary">Inscrire mon association</a>
-                        @endunless
+                        @guest
+                            <a href="{{ route('register', ['type' => 'association']) }}" class="btn btn-primary">Inscrire mon association</a>
+                        @else
+                            @if (auth()->user()->estAssociation() && ! auth()->user()->association)
+                                <a href="{{ route('associations.create') }}" class="btn btn-primary">Créer ma fiche</a>
+                            @endif
+                        @endguest
                     @endif
                 </div>
             @endif

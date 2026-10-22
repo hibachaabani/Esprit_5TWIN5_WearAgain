@@ -43,8 +43,6 @@
 .asso-points a { color: var(--ink); font-weight: 500; text-decoration: none; }
 .asso-points a:hover { color: var(--maroon); }
 
-.asso-gestion { border-color: var(--maroon); }
-.asso-dons { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .6rem; font-size: .92rem; }
 
 .asso-alerte { margin: 1.5rem 0 0; padding: .9rem 1.1rem; border-radius: var(--radius-sm); background: #F6EBD9; color: #7A5527; border: 1px solid #E8D2AE; }
 
@@ -56,3 +54,9 @@
 }
 .asso-hero .btn-sm, .asso-bloc .btn-sm, .asso-besoins .btn-sm { padding: .4rem .85rem; font-size: .85rem; }
 .asso-besoins .besoin-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+
+/* Zone de suppression de la fiche (page Modifier) */
+.asso-suppression { margin-top: 2.5rem; padding: 1.25rem 1.4rem; border: 1px solid #F0C8C4; border-radius: var(--radius-lg); background: var(--white); }
+.asso-suppression h2 { color: #B3261E; margin-bottom: .3rem; }
+.asso-suppression .btn-supprimer { border-color: #B3261E; color: #B3261E; background: transparent; }
+.asso-suppression .btn-supprimer:hover { background: #B3261E; color: var(--white); }

@@ -28,6 +28,11 @@
 .profil-retirer { display: inline-flex; align-items: center; gap: .45rem; font-size: .9rem; color: var(--maroon); cursor: pointer; }
 .profil-retirer input { accent-color: var(--maroon); }
 
+.profil-etat { display: inline-flex; align-items: center; gap: .4rem; margin: 0 0 .6rem; padding: .3rem .8rem; border-radius: 999px; background: var(--cream); color: var(--muted); font-weight: 600; font-size: .9rem; }
+.profil-etat svg { width: 18px; height: 18px; }
+.profil-etat-actif { background: #EEF4EC; color: #2E5A32; }
+.profil-actions form { margin: 0; }
+
 .btn-danger { background: #B3261E; color: var(--white); }
 .btn-danger:hover { background: #8C1D17; }
 .profil-danger { border-color: #F0C8C4; }

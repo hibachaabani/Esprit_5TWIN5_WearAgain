@@ -59,10 +59,6 @@
                     <p>{{ $estAssociation
                         ? 'Acceptez le don en fixant un rendez-vous de remise, ou refusez-le en expliquant pourquoi. Le donateur est prévenu par e-mail.'
                         : $don->association->nom.' va accepter ou refuser votre don. Vous serez prévenu par e-mail ; vous pouvez aussi lui écrire.' }}</p>
-                    @if ($avisIA)
-                        <p class="small muted" style="margin:.75rem 0 .35rem">Avis de l'assistant IA</p>
-                        @include('dons._avis_ia', ['avis' => $avisIA, 'detaille' => true])
-                    @endif
                     <p class="small muted">Remise souhaitée : {{ \App\Models\Don::LIBELLES_MODE[$don->mode] }}{{ $don->adresse_retrait ? ' · '.$don->adresse_retrait : '' }}</p>
                     @break
                 @case('accepte')
