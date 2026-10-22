@@ -10,7 +10,7 @@ Projet **Applications Web Avancées — 5TWIN (2026-2027)**, Laravel 12.
 |---|---|---|
 | 1 — [@Taieb-belhadjali](https://github.com/Taieb-belhadjali) | Catégorie, Vêtement | Annonces, photos, favoris, catégories |
 | 2 — [@hibachaabani](https://github.com/hibachaabani) | Association, Don | Associations (carte), dons et leur suivi, authentification |
-| 3 — [@haythem-djebbi9](https://github.com/haythem-djebbi9) | Point de collecte, Dépôt | Carte des points, dépôts avec code de suivi et QR code, tournée, statistiques, rôles |
+| 3 — [@haythem-djebbi9](https://github.com/haythem-djebbi9) | Point de collecte, Dépôt, Signalement, Campagne de collecte | Carte des points, dépôts avec code de suivi et QR code, tournée, signalements, campagnes, assistant IA (Groq), statistiques, rôles |
 | 4 — [@ChedlyRebai](https://github.com/ChedlyRebai) | Atelier, Transformation | Ateliers, upcycling |
 | 5 — [@romdhaninour](https://github.com/romdhaninour) | Réparation, Avis | Réparations, avis sur les ateliers |
 
@@ -93,4 +93,15 @@ php artisan test
 ## Commandes utiles
 
 - `php artisan depots:expirer` : annule les dépôts jamais apportés (planifiée chaque nuit).
+
+## Assistant IA de la collecte (Groq)
+
+Le module collecte utilise l'API [Groq](https://console.groq.com) (modèle `llama-3.3-70b-versatile`, réponses JSON) :
+
+- **« Où déposer ? »** sur la carte des points : une question libre (« un sac de vêtements d'enfant à Ariana »), l'assistant choisit parmi les points ouverts qui ont de la place ;
+- **signalements** : priorité (haute, moyenne, basse) et résumé estimés à l'envoi, proposition de réponse pour l'association ;
+- **campagnes** : rédaction de la description à partir du titre, de l'objectif et des dates ;
+- **conseils du jour** pour l'association (page « Dépôts reçus ») : points à vider, signalements urgents, dépôts à recevoir ou à trier, campagnes qui finissent.
+
+Mettre la clé dans `.env` (`GROQ_API_KEY=…`), jamais dans le code. Sans clé, ou si Groq ne répond pas, un **moteur local** à base de règles donne un résultat équivalent : l'étiquette « IA Groq » ou « Moteur local » indique d'où vient chaque réponse. Les tests simulent Groq (`Http::fake`) et n'envoient aucune requête réelle.
 - `php artisan migrate:fresh --seed` : réinitialise la base avec les données de démonstration.
