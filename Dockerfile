@@ -66,6 +66,10 @@ RUN chmod +x /usr/local/bin/entrypoint \
     && mkdir -p public/uploads/transformations \
     && chown -R www-data:www-data storage bootstrap/cache database public/uploads
 
+# Version déployée (commit Git) : l'étape 7 de la pipeline lit /version.txt après chaque déploiement.
+ARG APP_COMMIT=local
+RUN echo "$APP_COMMIT" > public/version.txt
+
 EXPOSE 8080
 ENTRYPOINT ["entrypoint"]
 CMD ["apache2-foreground"]

@@ -1,0 +1,29 @@
+# Étape commune du pipeline : PHP 8.4 avec les extensions du projet, puis les dépendances Composer (en cache).
+name: Préparer PHP et Composer
+description: Installe PHP 8.4 et les dépendances Composer de WearAgain.
+
+runs:
+  using: composite
+  steps:
+    - name: PHP 8.4 et extensions
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+        extensions: mbstring, intl, gd, zip, bcmath, pdo_sqlite, sqlite3
+        coverage: none
+
+    - name: Dossier du cache Composer
+      id: cache-composer
+      shell: bash
+      run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Composer
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.cache-composer.outputs.dir }}
+        key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+        restore-keys: composer-${{ runner.os }}-
+
+    - name: Dépendances PHP
+      shell: bash
+      run: composer install --no-interaction --prefer-dist --no-progress
