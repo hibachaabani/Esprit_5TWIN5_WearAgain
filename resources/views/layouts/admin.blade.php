@@ -40,6 +40,14 @@
                         <span class="count-badge" title="Dépôts en retard">{{ $depotsEnRetard }}</span>
                     @endif
                 </a>
+                <a href="{{ route('admin.signalements.index') }}" @class(['active' => request()->routeIs('admin.signalements.*')])>
+                    Signalements
+                    @php $signalementsUrgents = \App\Models\Signalement::ouverts()->where('priorite', 'haute')->count(); @endphp
+                    @if ($signalementsUrgents)
+                        <span class="count-badge" title="Signalements urgents ouverts">{{ $signalementsUrgents }}</span>
+                    @endif
+                </a>
+                <a href="{{ route('admin.campagnes.index') }}" @class(['active' => request()->routeIs('admin.campagnes.*')])>Campagnes</a>
                 <a href="{{ route('admin.collecte.statistiques') }}" @class(['active' => request()->routeIs('admin.collecte.*')])>Statistiques collecte</a>
                 <a href="{{ route('admin.reparations.index') }}" @class(['active' => request()->routeIs('admin.reparations.*')])>Réparations</a>
                 <a href="{{ route('admin.avis.index') }}" @class(['active' => request()->routeIs('admin.avis.*')])>Avis</a>

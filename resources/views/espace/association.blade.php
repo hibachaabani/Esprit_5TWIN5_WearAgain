@@ -140,6 +140,8 @@
                     <a href="{{ route('points-collecte.create') }}" class="btn btn-ghost small">Ajouter un point</a>
                     <a href="{{ route('tournee.index') }}" class="btn btn-ghost small">Planifier la tournée</a>
                     <a href="{{ route('depots.reception') }}" class="btn btn-ghost small">Scanner un bon</a>
+                    <a href="{{ route('signalements.recus') }}" class="btn btn-ghost small">Signalements</a>
+                    <a href="{{ route('campagnes.mes') }}" class="btn btn-ghost small">Campagnes</a>
                 </div>
             </div>
             @if ($points->isEmpty())

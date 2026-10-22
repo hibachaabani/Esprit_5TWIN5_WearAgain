@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AgentAssociationController;
+use App\Http\Controllers\AssistantCollecteController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
 use App\Http\Controllers\AtelierController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\AtelierAvisController;
 use App\Http\Controllers\AtelierStatistiquesController;
 use App\Http\Controllers\AvisController;
 use App\Http\Controllers\BesoinController;
+use App\Http\Controllers\CampagneCollecteController;
 use App\Http\Controllers\CategorieController;
 use App\Http\Controllers\DepotController;
 use App\Http\Controllers\DonController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\Auth\RecoveryCodeLoginController;
 use App\Http\Controllers\ReparationController;
 use App\Http\Controllers\ReparationWorkflowController;
+use App\Http\Controllers\SignalementController;
 use App\Http\Controllers\TransformationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\TransformationController;
@@ -148,6 +151,7 @@ Route::middleware(['auth', 'verified', 'role:particulier'])->group(function () {
 
     Route::resource('dons', DonController::class)->except('show');
     Route::resource('depots', DepotController::class)->except(['show', 'destroy']);
+    Route::resource('signalements', SignalementController::class)->except('show');
 
     Route::get('reparations', [ReparationController::class, 'index'])->name('reparations.index');
     Route::get('reparations/create', [ReparationController::class, 'create'])->name('reparations.create');
@@ -192,6 +196,15 @@ Route::middleware(['auth', 'verified', 'role:association'])->group(function () {
     Route::get('depots/reception', [DepotController::class, 'reception'])->name('depots.reception');
     Route::get('tournee-collecte', [TourneeCollecteController::class, 'index'])->name('tournee.index');
     Route::post('tournee-collecte/{pointCollecte}/collecter', [TourneeCollecteController::class, 'collecter'])->name('tournee.collecter');
+    Route::get('signalements-recus', [SignalementController::class, 'recus'])->name('signalements.recus');
+    Route::patch('signalements/{signalement}/traiter', [SignalementController::class, 'traiter'])->name('signalements.traiter');
+    Route::post('signalements/{signalement}/suggestion', [SignalementController::class, 'suggestion'])->name('signalements.suggestion')->middleware('throttle:20,1');
+    Route::get('mes-campagnes', [CampagneCollecteController::class, 'mes'])->name('campagnes.mes');
+    Route::post('campagnes/rediger', [CampagneCollecteController::class, 'rediger'])->name('campagnes.rediger')->middleware('throttle:20,1');
+    Route::resource('campagnes', CampagneCollecteController::class)
+        ->except(['index', 'show'])
+        ->parameters(['campagnes' => 'campagne']);
+    Route::post('collecte/conseils', [AssistantCollecteController::class, 'conseils'])->name('collecte.conseils')->middleware('throttle:10,1');
 });
 
 /*
@@ -236,6 +249,11 @@ Route::resource('points-collecte', PointCollecteController::class)
     ->only(['index', 'show'])
     ->parameters(['points-collecte' => 'pointCollecte']);
 Route::get('depots/suivi', [DepotController::class, 'suivi'])->name('depots.suivi');
+Route::resource('campagnes', CampagneCollecteController::class)
+    ->only(['index', 'show'])
+    ->parameters(['campagnes' => 'campagne']);
+// Assistant IA « Où déposer ? » : ouvert aux visiteurs, limité à 10 questions par minute.
+Route::post('collecte/assistant', [AssistantCollecteController::class, 'ouDeposer'])->name('collecte.assistant')->middleware('throttle:10,1');
 Route::get('ateliers', [AtelierController::class, 'index'])->name('ateliers.index');
 Route::get('ateliers/{atelier}', [AtelierController::class, 'show'])->name('ateliers.show');
 Route::get('ateliers/{atelier}/avis-analyse', [AvisController::class, 'analyseIA'])->name('avis.analyse')->whereNumber('atelier');
@@ -277,6 +295,10 @@ Route::prefix('admin')->middleware(['auth', 'verified', 'can:admin'])->name('adm
     Route::patch('depots/statut', [Admin\DepotController::class, 'changerStatutGroupe'])->name('depots.statut-groupe');
     Route::patch('depots/{depot}/statut', [Admin\DepotController::class, 'changerStatut'])->name('depots.statut');
     Route::resource('depots', Admin\DepotController::class)->only(['index', 'show', 'destroy']);
+    Route::resource('signalements', Admin\SignalementController::class)->only(['index', 'destroy']);
+    Route::resource('campagnes', Admin\CampagneCollecteController::class)
+        ->only(['index', 'destroy'])
+        ->parameters(['campagnes' => 'campagne']);
 
     // Ateliers et transformations (membre 4)
     Route::resource('ateliers', Admin\AtelierController::class)->except('show');

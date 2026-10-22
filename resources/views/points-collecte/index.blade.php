@@ -23,6 +23,8 @@
     <div class="kpi"><strong>{{ $stats['remplissage'] }} %</strong><span>de la capacité utilisée</span></div>
 </div>
 
+@include('collecte._assistant-ou-deposer')
+
 <form method="GET" action="{{ route('points-collecte.index') }}" class="toolbar" id="filtres-points">
     <label for="q" class="sr-only">Rechercher</label>
     <input id="q" type="search" name="q" value="{{ $filtres['q'] ?? '' }}" placeholder="Nom, adresse, ville…">

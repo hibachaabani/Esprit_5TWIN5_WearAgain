@@ -262,3 +262,35 @@ figure.viz { margin: 0; }
   .split { grid-template-columns: 1fr 1fr; }
   .panel { border-color: #999; }
 }
+
+/* ----- Assistant IA (Groq ou moteur local) ----- */
+.ia-panel { border-left: 4px solid var(--gold); }
+.ia-panel .ia-entete { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.ia-source { display: inline-block; padding: .15rem .55rem; border-radius: 999px; font: 600 .7rem var(--font-body); background: #F3E7D6; color: #7A5524; }
+.ia-source.local { background: #EEE9DF; color: var(--muted); }
+.ia-form { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
+.ia-form input[type=text] { flex: 1 1 18rem; }
+.ia-resultat { margin-top: 1rem; }
+.ia-resultat[hidden] { display: none; }
+.ia-points { list-style: none; padding: 0; margin: .75rem 0 0; display: grid; gap: .5rem; }
+.ia-points li { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: .6rem .8rem; }
+.ia-actions { list-style: none; padding: 0; margin: .75rem 0 0; display: grid; gap: .45rem; }
+.ia-actions li { display: flex; gap: .6rem; align-items: baseline; }
+.ia-attente { color: var(--muted); font-style: italic; }
+.ia-erreur { color: #B3261E; }
+
+/* ----- Priorités des signalements ----- */
+.priorite-haute { background: var(--maroon); color: var(--white); }
+.priorite-moyenne { background: #FBE3D6; color: #8A3A12; }
+.priorite-basse { background: #E4E6DC; color: #4E5240; }
+.signalements { display: grid; gap: 1rem; }
+.signalement-card .resume-ia { font-size: .9rem; color: var(--muted); margin: .25rem 0 .5rem; }
+.signalement-card textarea { width: 100%; }
+
+/* ----- Campagnes de collecte ----- */
+.campagnes-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
+.campagne-card { display: flex; flex-direction: column; gap: .5rem; }
+.campagne-card h3 { margin: 0; font-size: 1.15rem; }
+.progression { margin-top: .25rem; }
+.progression .jauge-barre span { background: var(--gold); }
+.progression p { margin: .35rem 0 0; }

@@ -70,6 +70,16 @@ class PointCollecte extends Model
         return $this->depots()->whereIn('statut', Depot::STATUTS_ACTIFS);
     }
 
+    public function signalements(): HasMany
+    {
+        return $this->hasMany(Signalement::class);
+    }
+
+    public function campagnes(): HasMany
+    {
+        return $this->hasMany(CampagneCollecte::class);
+    }
+
     public function scopeActifs(Builder $query): void
     {
         $query->where('actif', true);

@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\Association;
+use App\Models\CampagneCollecte;
 use App\Models\Depot;
 use App\Models\PointCollecte;
+use App\Models\Signalement;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -26,11 +28,18 @@ class CollecteSeeder extends Seeder
 
     public function run(): void
     {
-        // Relançable sans doublons (db:seed) : la collecte n'est créée qu'une fois.
-        if (PointCollecte::exists()) {
-            return;
+        // Relançable sans doublons (db:seed) : chaque partie n'est créée qu'une fois.
+        if (! PointCollecte::exists()) {
+            $this->pointsEtDepots();
         }
 
+        if (! Signalement::exists() && ! CampagneCollecte::exists()) {
+            $this->signalementsEtCampagnes();
+        }
+    }
+
+    private function pointsEtDepots(): void
+    {
         // Tous les points sont gérés par « Les Mains Solidaires » (compte association@wearagain.tn) :
         // quel que soit le point choisi par le donateur, le dépôt arrive dans l'espace de cette association.
         $associationDemo = Association::where('numero_agrement', 'AGR-2026-0042')->first() ?? Association::factory()->create();
@@ -79,5 +88,47 @@ class CollecteSeeder extends Seeder
         if ($manquants > 0) {
             Depot::factory($manquants)->enAttente()->for($ennasr)->recycle($particuliers)->create();
         }
+    }
+
+    /** Signalements à traiter et campagnes, sur les points de l'association de démo. */
+    private function signalementsEtCampagnes(): void
+    {
+        $point = fn (string $nom) => PointCollecte::where('nom', $nom)->first();
+        $particuliers = User::where('role', 'particulier')->get();
+        $association = $point('Conteneur Ennasr')?->association;
+
+        if (! $association || $particuliers->isEmpty()) {
+            return;
+        }
+
+        $signalements = [
+            ['Conteneur Ennasr', 'plein', 'haute', 'Le conteneur déborde : des sacs de vêtements sont posés par terre sous la pluie.'],
+            ['Local solidaire Nabeul', 'endommage', 'moyenne', 'La porte du local ferme mal, la serrure semble forcée.'],
+            ['Borne textile Sousse Centre', 'sale', 'moyenne', 'Des déchets ménagers sont jetés à côté de la borne.'],
+            ['Conteneur Monastir Marina', 'autre', 'basse', 'Les horaires affichés sur place ne sont pas les mêmes que sur le site.'],
+        ];
+        foreach ($signalements as [$nom, $type, $priorite, $message]) {
+            Signalement::factory()->for($point($nom))->for($particuliers->random())
+                ->create(compact('type', 'priorite', 'message'));
+        }
+        Signalement::factory()->traite()->for($point('Borne textile Sousse Centre'))->for($particuliers->random())
+            ->create(['type' => 'plein', 'priorite' => 'haute', 'message' => 'Borne pleine depuis samedi.']);
+
+        CampagneCollecte::factory()->for($association)->create([
+            'titre' => "Vêtements chauds pour l'hiver",
+            'description' => "Manteaux, pulls, écharpes : l'hiver arrive et des familles manquent de vêtements chauds.\n"
+                .'Apportez-les propres et en bon état dans nos points de collecte, nous les redistribuons dans les quartiers.',
+            'objectif' => 120,
+            'date_debut' => today()->subDays(20),
+            'date_fin' => today()->addDays(2),
+        ]);
+        CampagneCollecte::factory()->for($association)->create([
+            'titre' => 'Rentrée solidaire à Sousse',
+            'point_collecte_id' => $point('Borne textile Sousse Centre')?->id,
+            'description' => "Vêtements d'enfants de 4 à 14 ans pour une rentrée scolaire digne. Déposez-les à la borne de Sousse Centre.",
+            'objectif' => 60,
+            'date_debut' => today()->addDays(7),
+            'date_fin' => today()->addDays(37),
+        ]);
     }
 }

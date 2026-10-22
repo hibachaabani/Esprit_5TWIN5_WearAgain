@@ -23,6 +23,9 @@
             @endparticulier
         @endif
         <a href="{{ $point->lienItineraire() }}" class="btn btn-ghost" target="_blank" rel="noopener">Itinéraire</a>
+        @particulier
+            <a href="{{ route('signalements.create', ['point_collecte_id' => $point->id]) }}" class="btn btn-ghost">Signaler un problème</a>
+        @endparticulier
     </div>
 </div>
 
@@ -60,6 +63,19 @@
                 </div>
             @endif
         </section>
+
+        @if ($campagnes->isNotEmpty())
+        <section class="panel">
+            <h2>Campagnes en cours</h2>
+            @foreach ($campagnes as $campagne)
+                <div style="margin-top: .75rem">
+                    <a href="{{ route('campagnes.show', $campagne) }}"><strong>{{ $campagne->titre }}</strong></a>
+                    <span class="small muted">· jusqu'au {{ $campagne->date_fin->format('d/m/Y') }}</span>
+                    @include('campagnes._progression')
+                </div>
+            @endforeach
+        </section>
+        @endif
 
         {{-- Les dépôts nomment des particuliers : seule l'association du point les voit. --}}
         @if ($gere)
@@ -101,6 +117,9 @@
         <div class="panel" style="margin-top: 1.5rem">
             <h2>Gestion du point</h2>
             <p class="small muted">Vous gérez ce point pour {{ $point->association->nom }}.</p>
+            @if ($point->signalements_ouverts_count > 0)
+                <p><a href="{{ route('signalements.recus') }}" class="tag tag-alerte">{{ $point->signalements_ouverts_count }} signalement(s) à traiter</a></p>
+            @endif
             <div class="actions">
                 <a href="{{ route('points-collecte.edit', $point) }}" class="btn btn-ghost btn-sm">Modifier</a>
                 <form method="POST" action="{{ route('points-collecte.destroy', $point) }}" class="inline-form"

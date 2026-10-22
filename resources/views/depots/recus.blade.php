@@ -15,6 +15,8 @@
     </div>
 </div>
 
+@include('collecte._conseils-ia')
+
 <section class="panel">
     <div class="section-head">
         <h2>Mes points de collecte</h2>

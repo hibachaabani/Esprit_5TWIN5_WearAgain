@@ -74,6 +74,7 @@
             <div class="espace-actions">
                 <a href="{{ route('depots.create') }}" class="btn btn-primary">Déclarer un dépôt</a>
                 <a href="{{ route('depots.index') }}" class="btn btn-ghost">Voir mes dépôts</a>
+                <a href="{{ route('signalements.index') }}" class="btn btn-ghost">Mes signalements</a>
             </div>
         </article>
 
