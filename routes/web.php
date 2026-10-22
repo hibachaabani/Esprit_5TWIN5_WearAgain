@@ -266,6 +266,7 @@ Route::get('transformations/{transformation}', [TransformationController::class,
 */
 Route::prefix('admin')->middleware(['auth', 'verified', 'can:admin'])->name('admin.')->group(function () {
     Route::get('/', Admin\TableauDeBordController::class)->name('dashboard');
+    Route::get('recherche', Admin\RechercheController::class)->name('recherche');
     Route::get('utilisateurs', [Admin\UtilisateurController::class, 'index'])->name('utilisateurs.index');
 
     Route::resource('associations', Admin\AssociationController::class)->only('index');
