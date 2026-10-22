@@ -60,13 +60,39 @@
                         <a href="{{ route('transformations.show', $transformation) }}"><strong>{{ $transformation->type }}</strong></a>
                         <span class="small muted">— {{ $transformation->statutLabel() }}</span>
                     </p>
-                    <p class="small muted" style="margin: 0;">{{ number_format((float) $transformation->prix, 2) }} DT</p>
+                    <p class="small muted" style="margin: 0;">
+                        @if ((float) $transformation->prix > 0)
+                            {{ number_format((float) $transformation->prix, 2) }} DT
+                        @elseif ($transformation->devis_prix)
+                            Devis : {{ number_format((float) $transformation->devis_prix, 2) }} DT
+                        @else
+                            Prix à définir par l’atelier
+                        @endif
+                    </p>
                 </article>
             @empty
                 <div class="empty">
                     <p>Aucune transformation pour cet atelier pour le moment.</p>
                 </div>
             @endforelse
+
+            @if ($realisations->isNotEmpty())
+                <h2 class="h2">Créations upcyclées ({{ $realisations->count() }})</h2>
+                <p class="small muted">Réalisations terminées et validées par nos clients.</p>
+                <div class="grid" style="margin-top: 1rem;">
+                    @foreach ($realisations as $realisation)
+                        <a href="{{ route('transformations.show', $realisation) }}" class="item-card">
+                            <div class="item-photo" style="--swatch: #E6DECD;">
+                                <img src="{{ $realisation->imageUrl() }}" alt="{{ $realisation->type }}">
+                            </div>
+                            <div class="item-body">
+                                <h3>{{ $realisation->type }}</h3>
+                                <p class="item-price">{{ number_format((float) $realisation->prix, 2) }} DT</p>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
         </div>
 
         <div>

@@ -34,12 +34,22 @@ class AtelierController extends Controller
     }
 
     /**
-     * Front office : détail d'un atelier + ses transformations.
+     * Front office : détail d'un atelier + ses transformations et son portfolio
+     * de créations upcyclées (transformations terminées avec photo).
      */
     public function show(Atelier $atelier)
     {
         $atelier->load(['user', 'transformations.vetement', 'avis.user']);
 
-        return view('ateliers.show', compact('atelier'));
+        $realisations = $atelier->transformations()
+            ->where('statut', 'terminee')
+            ->whereNotNull('image_resultat')
+            ->latest()
+            ->take(9)
+            ->get()
+            ->filter(fn ($transformation) => $transformation->hasImage())
+            ->values();
+
+        return view('ateliers.show', compact('atelier', 'realisations'));
     }
 }

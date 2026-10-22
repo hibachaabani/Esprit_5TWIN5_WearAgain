@@ -373,3 +373,8 @@
 }
 .timeline-item:last-child::before { border-color: var(--maroon); }
 
+
+/* Statuts propres au workflow des transformations (palette admin) */
+.status-devis_recu { background: #F3E1BF; color: #8A5A1E; }
+.status-a_corriger { background: #F6D4CC; color: #8A231C; }
+.status-prete { background: #D9E8D2; color: #2F5D1F; }

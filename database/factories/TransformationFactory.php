@@ -15,6 +15,11 @@ class TransformationFactory extends Factory
 
     public function definition(): array
     {
+        $statut = fake()->randomElement(['en_attente', 'devis_recu', 'en_cours', 'prete', 'terminee', 'annulee']);
+        // Sans devis seulement en attente (aucun échange) ou annulée sans suite.
+        $sansDevis = in_array($statut, ['en_attente', 'annulee'], true);
+        $prix = fake()->randomFloat(2, 10, 150);
+
         return [
             'vetement_id' => Vetement::inRandomOrder()->first()?->id ?? Vetement::create([
                 'user_id' => User::factory()->create()->id,
@@ -39,9 +44,16 @@ class TransformationFactory extends Factory
                 'Manteau en veste courte',
             ]),
             'description' => fake()->paragraph(),
-            'prix' => fake()->randomFloat(2, 10, 150),
+            'prix' => $sansDevis ? 0 : $prix,
+            'devis_prix' => $sansDevis ? null : $prix,
+            'devis_delai_jours' => $sansDevis ? null : fake()->numberBetween(3, 21),
+            'devis_message' => $sansDevis ? null : fake()->sentence(8),
+            'devis_envoye_le' => $sansDevis ? null : now()->subDays(fake()->numberBetween(2, 10)),
+            'devis_repondu_le' => in_array($statut, ['devis_recu', 'en_attente', 'annulee'], true) ? null : now()->subDays(fake()->numberBetween(1, 5)),
             'image_resultat' => null,
-            'statut' => fake()->randomElement(array_keys(Transformation::STATUTS)),
+            'statut' => $statut,
+            'motif_annulation' => $statut === 'annulee' ? fake()->sentence(6) : null,
+            'annule_par' => $statut === 'annulee' ? fake()->randomElement(['client', 'atelier']) : null,
         ];
     }
 }

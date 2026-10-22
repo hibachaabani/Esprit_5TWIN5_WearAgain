@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DemandeTransformationRequest;
 use App\Models\Atelier;
 use App\Models\Transformation;
+use App\Services\TransformationWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TransformationController extends Controller
 {
+    public function __construct(private readonly TransformationWorkflow $workflow) {}
+
     /**
      * Front office : liste des transformations (recherche + filtre par statut + pagination).
      */
@@ -36,13 +39,25 @@ class TransformationController extends Controller
     }
 
     /**
-     * Front office : détail d'une transformation.
+     * Front office : détail d'une transformation (statut, devis, avant/après,
+     * actions du workflow pour les parties concernées et journal des étapes).
      */
-    public function show(Transformation $transformation)
+    public function show(Request $request, Transformation $transformation)
     {
-        $transformation->load(['atelier.user', 'vetement']);
+        $user = $request->user();
 
-        return view('transformations.show', compact('transformation'));
+        $transformation->load(['atelier.user', 'vetement.photos', 'suivis.auteur']);
+
+        // Photo d'origine du vêtement : servie au comparateur « avant / après ».
+        $cheminAvant = $transformation->vetement?->photos()->orderBy('ordre')->first()?->chemin;
+
+        return view('transformations.show', [
+            'transformation' => $transformation,
+            'estProprietaire' => $transformation->vetement?->user_id === $user?->id,
+            'estAtelier' => (bool) $transformation->atelier?->estGerePar($user),
+            'transitions' => $this->workflow->autorisees($transformation, $user),
+            'photoAvant' => $cheminAvant ? asset('storage/'.$cheminAvant) : null,
+        ]);
     }
 
     /** « Mes transformations » : les demandes d'upcycling du particulier connecté. */
@@ -66,13 +81,21 @@ class TransformationController extends Controller
         ]);
     }
 
-    /** La demande part « en attente » ; l'atelier fixera le prix. */
+    /** La demande part « en attente » ; l'atelier enverra un devis. */
     public function store(DemandeTransformationRequest $request): RedirectResponse
     {
         $transformation = Transformation::create($request->validated() + ['statut' => 'en_attente', 'prix' => 0]);
 
+        // Première étape du journal : la demande est en attente de devis.
+        $transformation->suivis()->create([
+            'auteur_id' => $request->user()->id,
+            'ancien_statut' => null,
+            'nouveau_statut' => 'en_attente',
+            'commentaire' => 'Demande créée par le particulier.',
+        ]);
+
         return redirect()
-            ->route('transformations.mes')
+            ->route('transformations.show', $transformation)
             ->with('status', "Demande de transformation « {$transformation->type} » envoyée à l'atelier.");
     }
 

@@ -197,6 +197,27 @@ class ReparationTransformationTest extends TestCase
 
     /* ----- Transformations ----- */
 
+    private function transformation(User $client, Atelier $atelier, array $attributs = []): Transformation
+    {
+        $transformation = Transformation::create(array_merge([
+            'vetement_id' => $this->vetementDe($client)->id,
+            'atelier_id' => $atelier->id,
+            'type' => 'Chemise en top',
+            'description' => 'Avec manches courtes.',
+            'prix' => 0,
+            'statut' => 'en_attente',
+        ], $attributs));
+
+        // Première étape du journal, comme le fait le contrôleur au stockage.
+        $transformation->suivis()->create([
+            'auteur_id' => $client->id,
+            'ancien_statut' => null,
+            'nouveau_statut' => 'en_attente',
+        ]);
+
+        return $transformation;
+    }
+
     public function test_le_particulier_demande_une_transformation(): void
     {
         $client = User::factory()->create();
@@ -208,42 +229,243 @@ class ReparationTransformationTest extends TestCase
             'atelier_id' => $atelier->id,
             'type' => 'Jean en tote bag',
             'description' => 'Avec une poche intérieure.',
-        ])->assertRedirect(route('transformations.mes'));
+        ])->assertRedirect(route('transformations.show', Transformation::firstOrFail()));
 
         $transformation = Transformation::firstOrFail();
         $this->assertSame('en_attente', $transformation->statut);
         $this->assertEquals(0, $transformation->prix);
 
+        // La demande ouvre le journal des étapes.
+        $this->assertSame('en_attente', $transformation->suivis()->first()->nouveau_statut);
+
         $this->actingAs($client)->get(route('transformations.mes'))->assertOk()->assertSee('Jean en tote bag')->assertSee('Prix à définir');
     }
 
-    public function test_l_atelier_fixe_le_prix_et_ajoute_la_photo_du_resultat(): void
+    public function test_l_atelier_propose_un_devis_que_le_particulier_accepte(): void
     {
         $client = User::factory()->create();
         $atelier = Atelier::factory()->create();
-        $transformation = Transformation::create([
-            'vetement_id' => $this->vetementDe($client)->id,
-            'atelier_id' => $atelier->id,
-            'type' => 'Chemise en top',
-            'prix' => 0,
-            'statut' => 'en_attente',
-        ]);
+        $transformation = $this->transformation($client, $atelier);
 
-        $this->actingAs($atelier->user)->post(route('mon-atelier.transformations.update', $transformation), [
-            'prix' => 45,
-            'statut' => 'terminee',
-            'image_resultat' => UploadedFile::fake()->create('resultat.jpg', 120, 'image/jpeg'),
+        // L'atelier propose un devis : montant + délai.
+        $this->actingAs($atelier->user)->post(route('transformations.devis.proposer', $transformation), [
+            'devis_prix' => 45,
+            'devis_delai_jours' => 7,
+            'devis_message' => 'Upcycling complet avec doublure.',
         ])->assertSessionHasNoErrors();
 
         $transformation->refresh();
+        $this->assertSame('devis_recu', $transformation->statut);
+        $this->assertEquals(45, $transformation->devis_prix);
+        $this->assertSame(7, $transformation->devis_delai_jours);
+        $this->assertNotNull($transformation->devis_envoye_le);
+
+        // Le particulier accepte : la transformation démarre, le prix retenu est le devis.
+        $this->actingAs($client)->post(route('transformations.devis.accepter', $transformation))
+            ->assertSessionHasNoErrors();
+
+        $transformation->refresh();
+        $this->assertSame('en_cours', $transformation->statut);
         $this->assertEquals(45, $transformation->prix);
-        $this->assertSame('terminee', $transformation->statut);
+        $this->assertNotNull($transformation->devis_repondu_le);
+
+        // Il ne peut plus supprimer la demande : le travail a commencé.
+        $this->actingAs($client)->delete(route('transformations.destroy', $transformation))->assertForbidden();
+    }
+
+    public function test_le_particulier_refuse_le_devis_et_l_atelier_peut_le_retoucher(): void
+    {
+        $client = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier, ['statut' => 'devis_recu', 'devis_prix' => 80, 'devis_delai_jours' => 10]);
+
+        $this->actingAs($client)->post(route('transformations.devis.refuser', $transformation), [
+            'commentaire' => 'Trop cher pour moi.',
+        ])->assertSessionHasNoErrors();
+
+        $transformation->refresh();
+        $this->assertSame('en_attente', $transformation->statut);
+
+        // L'atelier retouche son devis.
+        $this->actingAs($atelier->user)->post(route('transformations.devis.proposer', $transformation), [
+            'devis_prix' => 55,
+            'devis_delai_jours' => 10,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('devis_recu', $transformation->refresh()->statut);
+        $this->assertEquals(55, $transformation->devis_prix);
+    }
+
+    public function test_l_atelier_marque_la_transformation_prete_avec_la_photo(): void
+    {
+        $client = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier, ['statut' => 'en_cours', 'prix' => 45]);
+
+        // Sans photo du résultat, impossible de marquer prête.
+        $this->actingAs($atelier->user)->post(route('transformations.resultat.prete', $transformation), [])
+            ->assertSessionHasErrors(['image_resultat']);
+
+        $this->actingAs($atelier->user)->post(route('transformations.resultat.prete', $transformation), [
+            'image_resultat' => UploadedFile::fake()->image('resultat.jpg', 600, 800),
+        ])->assertSessionHasNoErrors();
+
+        $transformation->refresh();
+        $this->assertSame('prete', $transformation->statut);
         $this->assertTrue($transformation->hasImage());
 
         @unlink(public_path('uploads/transformations/'.$transformation->image_resultat));
+    }
 
-        // Le particulier ne peut plus l'annuler : l'atelier l'a terminée.
+    public function test_le_particulier_approuve_le_resultat(): void
+    {
+        $client = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier, ['statut' => 'prete', 'prix' => 45]);
+
+        $this->actingAs($client)->post(route('transformations.resultat.approuver', $transformation))
+            ->assertSessionHasNoErrors();
+
+        $transformation->refresh();
+        $this->assertSame('terminee', $transformation->statut);
+        $this->assertNotNull($transformation->resultat_valide_le);
+
+        // Terminée : ni suppression ni annulation.
         $this->actingAs($client)->delete(route('transformations.destroy', $transformation))->assertForbidden();
+        $this->actingAs($client)->post(route('transformations.annuler', $transformation))->assertSessionHas('erreur');
+    }
+
+    public function test_le_particulier_peut_demander_une_retouche(): void
+    {
+        $client = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier, ['statut' => 'prete', 'prix' => 45]);
+
+        // La retouche exige une explication.
+        $this->actingAs($client)->post(route('transformations.resultat.retoucher', $transformation), ['commentaire' => ''])
+            ->assertSessionHasErrors(['commentaire']);
+
+        $this->actingAs($client)->post(route('transformations.resultat.retoucher', $transformation), [
+            'commentaire' => 'La poche est de travers.',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('a_corriger', $transformation->refresh()->statut);
+
+        // L'atelier retravaille avec une nouvelle photo, puis le client approuve.
+        $this->actingAs($atelier->user)->post(route('transformations.resultat.prete', $transformation), [
+            'image_resultat' => UploadedFile::fake()->image('retouche.jpg', 600, 800),
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('prete', $transformation->refresh()->statut);
+
+        $this->actingAs($client)->post(route('transformations.resultat.approuver', $transformation));
+        $this->assertSame('terminee', $transformation->refresh()->statut);
+
+        @unlink(public_path('uploads/transformations/'.$transformation->image_resultat));
+    }
+
+    public function test_l_atelier_annule_une_transformation_avec_un_motif(): void
+    {
+        $client = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier, ['statut' => 'en_cours', 'prix' => 45]);
+
+        // Sans motif, l'atelier ne peut pas annuler.
+        $this->actingAs($atelier->user)->post(route('transformations.annuler', $transformation))
+            ->assertSessionHas('erreur');
+
+        $this->actingAs($atelier->user)->post(route('transformations.annuler', $transformation), [
+            'motif' => 'Le tissu est trop abîmé pour être upcyclé.',
+        ])->assertSessionHasNoErrors();
+
+        $transformation->refresh();
+        $this->assertSame('annulee', $transformation->statut);
+        $this->assertSame('atelier', $transformation->annule_par);
+        $this->assertSame('Le tissu est trop abîmé pour être upcyclé.', $transformation->motif_annulation);
+    }
+
+    public function test_un_client_ne_peut_pas_agir_cote_atelier(): void
+    {
+        $client = User::factory()->create();
+        $autre = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier);
+
+        // Ni le client, ni un tiers ne peuvent proposer le devis.
+        $this->actingAs($client)->post(route('transformations.devis.proposer', $transformation), [
+            'devis_prix' => 10, 'devis_delai_jours' => 3,
+        ])->assertForbidden();
+        $this->actingAs($autre)->post(route('transformations.devis.proposer', $transformation), [
+            'devis_prix' => 10, 'devis_delai_jours' => 3,
+        ])->assertForbidden();
+
+        // Un atelier étranger ne traite pas la demande d'un autre atelier.
+        $autreAtelier = Atelier::factory()->create();
+        $this->actingAs($autreAtelier->user)->post(route('transformations.devis.proposer', $transformation), [
+            'devis_prix' => 10, 'devis_delai_jours' => 3,
+        ])->assertForbidden();
+    }
+
+    public function test_chaque_etape_est_journalisee_dans_le_suivi(): void
+    {
+        $client = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier);
+
+        $this->actingAs($atelier->user)->post(route('transformations.devis.proposer', $transformation), [
+            'devis_prix' => 30, 'devis_delai_jours' => 5,
+        ]);
+        $this->actingAs($client)->post(route('transformations.devis.accepter', $transformation));
+        $this->actingAs($atelier->user)->post(route('transformations.resultat.prete', $transformation), [
+            'image_resultat' => UploadedFile::fake()->image('suivi.jpg', 600, 800),
+        ]);
+        $this->actingAs($client)->post(route('transformations.resultat.approuver', $transformation));
+
+        $this->assertSame(
+            ['en_attente', 'devis_recu', 'en_cours', 'prete', 'terminee'],
+            $transformation->suivis()->pluck('nouveau_statut')->all()
+        );
+
+        @unlink(public_path('uploads/transformations/'.$transformation->image_resultat));
+    }
+
+    public function test_la_page_detail_montre_le_comparateur_et_le_suivi(): void
+    {
+        $client = User::factory()->create();
+        $atelier = Atelier::factory()->create();
+        $transformation = $this->transformation($client, $atelier, ['statut' => 'prete', 'prix' => 45]);
+
+        // Photo d'origine du vêtement (« avant ») et résultat (« après »).
+        $transformation->vetement->photos()->create(['chemin' => 'vetements/avant-test.jpg', 'ordre' => 1]);
+        UploadedFile::fake()->image('apres-test.jpg', 600, 800)->move(public_path('uploads/transformations'), 'apres-test.jpg');
+        $transformation->update(['image_resultat' => 'apres-test.jpg']);
+        $transformation->suivis()->create(['nouveau_statut' => 'en_attente', 'commentaire' => 'Demande créée par le particulier.']);
+
+        $this->actingAs($client)->get(route('transformations.show', $transformation))
+            ->assertOk()
+            ->assertSee('Avant')
+            ->assertSee('Après')
+            ->assertSee('Suivi de la transformation')
+            ->assertSee('Approuver le résultat');
+
+        @unlink(public_path('uploads/transformations/apres-test.jpg'));
+    }
+
+    public function test_la_galerie_de_l_atelier_affiche_les_creations_terminees(): void
+    {
+        $atelier = Atelier::factory()->create();
+
+        $terminee = $this->transformation(User::factory()->create(), $atelier, ['statut' => 'terminee', 'prix' => 45]);
+        UploadedFile::fake()->image('galerie.jpg', 600, 800)->move(public_path('uploads/transformations'), 'galerie.jpg');
+        $terminee->update(['image_resultat' => 'galerie.jpg']);
+
+        // Une transformation en cours avec la même photo n'entre pas dans la galerie.
+        $this->transformation(User::factory()->create(), $atelier, ['statut' => 'en_cours', 'prix' => 30, 'image_resultat' => 'galerie.jpg']);
+
+        $this->get(route('ateliers.show', $atelier))
+            ->assertOk()
+            ->assertSee('Créations upcyclées (1)');
+
+        @unlink(public_path('uploads/transformations/galerie.jpg'));
     }
 
     /* ----- Fiche de l'atelier ----- */
