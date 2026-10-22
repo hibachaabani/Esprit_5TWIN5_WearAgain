@@ -25,8 +25,10 @@ use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\Auth\RecoveryCodeLoginController;
 use App\Http\Controllers\ReparationController;
 use App\Http\Controllers\ReparationWorkflowController;
+use App\Http\Controllers\TransformationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\TransformationController;
+use App\Http\Controllers\TransformationIAController;
 use App\Http\Controllers\VetementController;
 use App\Http\Controllers\VetementIAController;
 use Illuminate\Support\Facades\Route;
@@ -118,6 +120,21 @@ Route::middleware(['auth', 'verified'])->prefix('reparations/{reparation}')->nam
 });
 
 /*
+| Cycle de vie d'une transformation : devis, photo du résultat, validation,
+| retouche et annulation (atelier et particulier, selon la policy).
+*/
+Route::middleware(['auth', 'verified'])->prefix('transformations/{transformation}')->name('transformations.')->whereNumber('transformation')->group(function () {
+    Route::post('devis', [TransformationWorkflowController::class, 'proposerDevis'])->name('devis.proposer');
+    Route::post('devis/accepter', [TransformationWorkflowController::class, 'accepterDevis'])->name('devis.accepter');
+    Route::post('devis/refuser', [TransformationWorkflowController::class, 'refuserDevis'])->name('devis.refuser');
+    Route::post('resultat', [TransformationWorkflowController::class, 'marquerPrete'])->name('resultat.prete');
+    Route::post('resultat/approuver', [TransformationWorkflowController::class, 'approuverResultat'])->name('resultat.approuver');
+    Route::post('resultat/retouche', [TransformationWorkflowController::class, 'demanderRetouche'])->name('resultat.retoucher');
+    Route::post('annuler', [TransformationWorkflowController::class, 'annuler'])->name('annuler');
+  Route::post('ia/estimer-devis', [TransformationIAController::class, 'estimerDevis'])->name('ia.estimer-devis');
+});
+
+/*
 | Particulier : vêtements, dons, dépôts, demandes de réparation / transformation, avis
 */
 Route::middleware(['auth', 'verified', 'role:particulier'])->group(function () {
@@ -144,6 +161,7 @@ Route::middleware(['auth', 'verified', 'role:particulier'])->group(function () {
     Route::get('mes-transformations', [TransformationController::class, 'mes'])->name('transformations.mes');
     Route::get('transformations/create', [TransformationController::class, 'create'])->name('transformations.create');
     Route::post('transformations', [TransformationController::class, 'store'])->name('transformations.store');
+  Route::post('ia/suggérer-type', [TransformationIAController::class, 'suggérerType'])->name('ia.suggérer-type');
     Route::delete('transformations/{transformation}', [TransformationController::class, 'destroy'])->name('transformations.destroy');
 });
 
@@ -177,7 +195,6 @@ Route::middleware(['auth', 'verified', 'role:atelier'])->prefix('mon-atelier')->
     Route::get('modifier', [EspaceAtelierController::class, 'edit'])->name('edit');
     Route::put('/', [EspaceAtelierController::class, 'update'])->name('update');
     Route::patch('reparations/{reparation}', [EspaceAtelierController::class, 'traiterReparation'])->name('reparations.update');
-    Route::post('transformations/{transformation}', [EspaceAtelierController::class, 'traiterTransformation'])->name('transformations.update');
 });
 
 /*

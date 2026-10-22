@@ -33,17 +33,37 @@
                         <p class="small muted">
                             {{ $transformation->atelier->nom }} · {{ $transformation->vetement->titre ?? 'Vêtement' }}
                         </p>
-                        <p class="item-price">
-                            {{ (float) $transformation->prix > 0 ? number_format((float) $transformation->prix, 2).' DT' : 'Prix à définir par l’atelier' }}
-                        </p>
-                        @if ($transformation->estAnnulablePar(auth()->user()))
-                            <form method="POST" action="{{ route('transformations.destroy', $transformation) }}"
-                                  onsubmit="return confirm('Annuler cette demande de transformation ?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-ghost small">Annuler la demande</button>
-                            </form>
+                        @if ($transformation->statut === 'devis_recu')
+                            <p class="small" style="margin: 0 0 .35rem;"><strong>Un devis vous attend</strong> — consultez la demande pour l'accepter ou le refuser.</p>
+                        @elseif ($transformation->statut === 'prete')
+                            <p class="small" style="margin: 0 0 .35rem;"><strong>Résultat prêt</strong> — approuvez-le ou demandez une retouche.</p>
                         @endif
+                        <p class="item-price">
+                            @if ((float) $transformation->prix > 0)
+                                {{ number_format((float) $transformation->prix, 2).' DT' }}
+                            @elseif ($transformation->devis_prix)
+                                Devis : {{ number_format((float) $transformation->devis_prix, 2).' DT' }}
+                            @else
+                                Prix à définir par l’atelier
+                            @endif
+                        </p>
+                        <div class="hero-actions" style="margin: 0;">
+                            <a href="{{ route('transformations.show', $transformation) }}" class="btn btn-ghost small">Voir le détail</a>
+                            @if ($transformation->estAnnulablePar(auth()->user()))
+                                <form method="POST" action="{{ route('transformations.destroy', $transformation) }}"
+                                      onsubmit="return confirm('Annuler cette demande de transformation ?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-ghost small">Annuler la demande</button>
+                                </form>
+                            @elseif (in_array($transformation->statut, ['devis_recu', 'en_cours'], true) && $transformation->vetement?->user_id === auth()->id())
+                                <form method="POST" action="{{ route('transformations.annuler', $transformation) }}"
+                                      onsubmit="return confirm('Annuler cette demande de transformation ?')">
+                                    @csrf
+                                    <button type="submit" class="btn btn-ghost small">Annuler la demande</button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
                 </article>
             @endforeach

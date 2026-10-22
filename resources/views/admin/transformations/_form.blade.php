@@ -47,6 +47,60 @@
     </div>
 
     <div>
+        <label for="devis_prix">Devis — montant (DT)</label><br>
+        <input type="number" name="devis_prix" id="devis_prix" min="0" step="0.01" value="{{ old('devis_prix', $transformation->devis_prix ?? '') }}" style="width:100%">
+        @error('devis_prix')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_delai_jours">Devis — délai (jours)</label><br>
+        <input type="number" name="devis_delai_jours" id="devis_delai_jours" min="1" max="365" value="{{ old('devis_delai_jours', $transformation->devis_delai_jours ?? '') }}" style="width:100%">
+        @error('devis_delai_jours')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_message">Devis — message de l'atelier</label><br>
+        <textarea name="devis_message" id="devis_message" rows="3" placeholder="Précisez le travail envisagé…" style="width:100%">{{ old('devis_message', $transformation->devis_message ?? '') }}</textarea>
+        @error('devis_message')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_prix">Devis — montant (DT, facultatif)</label><br>
+        <input type="number" name="devis_prix" id="devis_prix" min="0" step="0.01" value="{{ old('devis_prix', $transformation->devis_prix ?? '') }}" style="width:100%">
+        @error('devis_prix')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_delai_jours">Devis — délai en jours (facultatif)</label><br>
+        <input type="number" name="devis_delai_jours" id="devis_delai_jours" min="1" max="365" value="{{ old('devis_delai_jours', $transformation->devis_delai_jours ?? '') }}" style="width:100%">
+        @error('devis_delai_jours')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_message">Devis — message de l'atelier (facultatif)</label><br>
+        <textarea name="devis_message" id="devis_message" rows="3" placeholder="Précisez le travail envisagé…" style="width:100%">{{ old('devis_message', $transformation->devis_message ?? '') }}</textarea>
+        @error('devis_message')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_prix">Devis — montant (DT)</label><br>
+        <input type="number" name="devis_prix" id="devis_prix" min="0" step="0.01" value="{{ old('devis_prix', $transformation->devis_prix ?? '') }}" style="width:100%">
+        @error('devis_prix')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_delai_jours">Devis — délai (jours)</label><br>
+        <input type="number" name="devis_delai_jours" id="devis_delai_jours" min="1" max="365" step="1" value="{{ old('devis_delai_jours', $transformation->devis_delai_jours ?? '') }}" style="width:100%">
+        @error('devis_delai_jours')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
+        <label for="devis_message">Devis — message de l'atelier</label><br>
+        <textarea name="devis_message" id="devis_message" rows="3" placeholder="Précisez le travail envisagé…" style="width:100%">{{ old('devis_message', $transformation->devis_message ?? '') }}</textarea>
+        @error('devis_message')<p class="error">{{ $message }}</p>@enderror
+    </div>
+
+    <div>
         <label for="statut">Statut</label><br>
         <select name="statut" id="statut" required>
             @foreach (\App\Models\Transformation::STATUTS as $cle => $label)
@@ -57,8 +111,18 @@
     </div>
 
     <div>
-        <label for="prix">Prix (DT)</label><br>
+        <label for="prix">Prix retenu (DT)</label><br>
         <input type="number" name="prix" id="prix" min="0" step="0.01" value="{{ old('prix', $transformation->prix ?? '') }}" required>
         @error('prix')<p class="error">{{ $message }}</p>@enderror
     </div>
+
+    @if (isset($transformation) && $transformation->statut === 'annulee')
+        <div>
+            <label>Annulation</label>
+            <p class="small muted" style="margin:0">
+                Par {{ $transformation->motifAnnulationAuteur() ?? '—' }}
+                @if ($transformation->motif_annulation) — « {{ $transformation->motif_annulation }} » @endif
+            </p>
+        </div>
+    @endif
 </div>

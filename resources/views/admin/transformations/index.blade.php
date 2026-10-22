@@ -36,7 +36,15 @@
                 <td><a href="{{ route('transformations.show', $transformation) }}">{{ $transformation->type }}</a></td>
                 <td>{{ $transformation->atelier->nom }}</td>
                 <td>{{ $transformation->vetement->titre ?? '—' }}</td>
-                <td>{{ number_format((float) $transformation->prix, 2) }} DT</td>
+                <td>
+                    @if ((float) $transformation->prix > 0)
+                        {{ number_format((float) $transformation->prix, 2) }} DT
+                    @elseif ($transformation->devis_prix)
+                        Devis : {{ number_format((float) $transformation->devis_prix, 2) }} DT
+                    @else
+                        —
+                    @endif
+                </td>
                 <td>
                     @if ($transformation->statut === 'terminee')
                         <span class="status-badge status-ok">{{ $transformation->statutLabel() }}</span>

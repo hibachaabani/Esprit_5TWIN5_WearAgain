@@ -58,7 +58,15 @@
                                     {{ $transformation->atelier->nom }} ·
                                     {{ $transformation->vetement->titre ?? 'Vêtement' }}
                                 </p>
-                                <p class="item-price">{{ number_format((float) $transformation->prix, 2) }} DT</p>
+                                <p class="item-price">
+                                    @if ((float) $transformation->prix > 0)
+                                        {{ number_format((float) $transformation->prix, 2) }} DT
+                                    @elseif ($transformation->devis_prix)
+                                        Devis : {{ number_format((float) $transformation->devis_prix, 2) }} DT
+                                    @else
+                                        Prix à définir par l’atelier
+                                    @endif
+                                </p>
                             </div>
                         </a>
                     @endforeach

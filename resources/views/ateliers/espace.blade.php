@@ -24,7 +24,10 @@
 
     <nav class="chips" aria-label="Filtrer par statut" style="margin-bottom: 2rem">
         <a href="{{ route('mon-atelier.index') }}" class="chip"><span @style(['background: var(--maroon); color: var(--white); border-color: var(--maroon)' => ! $statut])>Toutes</span></a>
-        @foreach (\App\Models\Reparation::STATUTS as $cle => $libelle)
+        @foreach ($statuts as $cle)
+            @php
+                $libelle = \App\Models\Reparation::STATUTS[$cle] ?? \App\Models\Transformation::STATUTS[$cle] ?? $cle;
+            @endphp
             <a href="{{ route('mon-atelier.index', ['statut' => $cle]) }}" class="chip"><span @style(['background: var(--maroon); color: var(--white); border-color: var(--maroon)' => $statut === $cle])>{{ $libelle }}</span></a>
         @endforeach
     </nav>
@@ -58,7 +61,8 @@
     @forelse ($transformations as $transformation)
         <article class="demande">
             <div>
-                <p class="eyebrow">{{ $transformation->statutLabel() }} · reçue le {{ $transformation->created_at->format('d/m/Y') }}</p>
+                @php $s = $transformation->statut; @endphp
+                <p class="eyebrow"><span class="status-pill status-{{ $s }}">{{ $transformation->statutLabel() }}</span> · reçue le {{ $transformation->created_at->format('d/m/Y') }}</p>
                 <h3><a href="{{ route('transformations.show', $transformation) }}">{{ $transformation->type }}</a></h3>
                 <p class="small muted">
                     {{ $transformation->vetement->titre ?? 'Vêtement' }} · Client : {{ $transformation->vetement?->user?->name ?? '—' }}
@@ -66,27 +70,22 @@
                 @if ($transformation->description)
                     <p>{{ $transformation->description }}</p>
                 @endif
+                <p class="small muted" style="margin-top: .5rem">
+                    @if ($transformation->devis_prix)
+                        Devis envoyé : {{ number_format((float) $transformation->devis_prix, 2) }} DT · {{ $transformation->devis_delai_jours }} jour(s)
+                        @if ($transformation->statut === 'devis_recu') · <strong>en attente de la réponse du client</strong> @endif
+                    @else
+                        Aucun devis envoyé pour l'instant.
+                    @endif
+                </p>
                 @if ($transformation->hasImage())
                     <img src="{{ $transformation->imageUrl() }}" alt="Résultat : {{ $transformation->type }}" class="demande-image">
                 @endif
             </div>
-            <form method="POST" action="{{ route('mon-atelier.transformations.update', $transformation) }}" enctype="multipart/form-data" class="demande-form">
-                @csrf
-                <label>Prix (DT)
-                    <input type="number" name="prix" min="0" step="0.5" value="{{ $transformation->prix }}" required>
-                </label>
-                <label>Statut
-                    <select name="statut">
-                        @foreach (\App\Models\Transformation::STATUTS as $cle => $libelle)
-                            <option value="{{ $cle }}" @selected($transformation->statut === $cle)>{{ $libelle }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label>Photo du résultat
-                    <input type="file" name="image_resultat" accept="image/*">
-                </label>
-                <button type="submit" class="btn btn-primary">Enregistrer</button>
-            </form>
+            <div class="demande-actions">
+                <a href="{{ route('transformations.show', $transformation) }}" class="btn btn-primary">Gérer la demande</a>
+                <p class="small muted" style="margin: .5rem 0 0">Devis, photo du résultat et annulation se gèrent sur la page de la demande.</p>
+            </div>
         </article>
     @empty
         <p class="muted">Aucune demande de transformation{{ $statut ? ' avec ce statut' : '' }}.</p>

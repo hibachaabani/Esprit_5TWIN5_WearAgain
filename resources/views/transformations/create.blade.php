@@ -41,8 +41,12 @@
 
             <div class="field">
                 <label for="type">Objet souhaité *</label>
-                <input id="type" name="type" type="text" value="{{ old('type') }}" placeholder="Ex. Jean en tote bag" required>
+                <div class="field-ia">
+                    <input id="type" name="type" type="text" value="{{ old('type') }}" placeholder="Ex. Jean en tote bag" required>
+                    <button type="button" class="btn btn-ghost small" id="ia-suggérer-type" data-url="{{ route('ia.suggérer-type') }}" data-vetement-id="{{ old('vetement_id') }}">Suggérer avec l'IA</button>
+                </div>
                 @error('type') <p class="error">{{ $message }}</p> @enderror
+                <p class="small muted" id="ia-suggérer-explication"></p>
             </div>
 
             <div class="field">
@@ -55,4 +59,71 @@
         </form>
     @endif
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const btn = document.getElementById('ia-suggérer-type');
+    const input = document.getElementById('type');
+    const expl = document.getElementById('ia-suggérer-explication');
+    const vetementSelect = document.getElementById('vetement_id');
+
+    if (!btn || !input) return;
+
+    function setVetementId() {
+        const id = vetementSelect ? vetementSelect.value : btn.dataset.vetementId || '';
+        btn.dataset.vetementId = id;
+        btn.disabled = !id;
+        expl.textContent = '';
+    }
+
+    setVetementId();
+
+    if (vetementSelect) {
+        vetementSelect.addEventListener('change', setVetementId);
+    }
+
+    btn.addEventListener('click', async function () {
+        const vetementId = btn.dataset.vetementId;
+        if (!vetementId) return;
+
+        btn.textContent = 'Recherche…';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(btn.dataset.url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                body: JSON.stringify({ vetement_id: vetementId }),
+            });
+
+            if (!response.ok) throw new Error('Erreur serveur');
+
+            const data = await response.json();
+
+            if (data.type) {
+                input.value = data.type;
+                expl.textContent = data.explication ? 'IA (' + data.source + ') : ' + data.explication : '';
+                expl.style.display = 'block';
+            } else {
+                expl.textContent = 'Aucune suggestion retournée.';
+                expl.style.display = 'block';
+            }
+        } catch (e) {
+            expl.textContent = 'L\'IA est indisponible pour le moment. Saisissez votre idée manuellement.';
+            expl.style.display = 'block';
+            console.error(e);
+        } finally {
+            btn.textContent = 'Suggérer avec l\'IA';
+            btn.disabled = false;
+        }
+    });
+});
+</script>
+@endpush
 @endsection

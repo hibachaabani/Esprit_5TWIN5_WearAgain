@@ -66,11 +66,39 @@ class AtelierTransformationSeeder extends Seeder
         }
 
         foreach (range(1, 12) as $i) {
-            Transformation::factory()->create([
+            $transformation = Transformation::factory()->create([
                 'vetement_id' => $vetements->random()->id,
                 // Un tiers des demandes arrive à l'atelier de démo.
                 'atelier_id' => $i % 3 === 0 ? $atelierDemo->id : $ateliers->random()->id,
             ]);
+
+            // Trois réalisations terminées avec photo : la vitrine « Créations
+            // upcyclées » de la fiche atelier (images de démonstration générées).
+            if ($i <= 3) {
+                $transformation->update([
+                    'statut' => 'terminee',
+                    'prix' => $transformation->devis_prix ?? 45,
+                    'resultat_valide_le' => now()->subDay(),
+                    'image_resultat' => $this->genererPhotoResultat($i),
+                ]);
+            }
         }
+    }
+
+    /** Image JPEG de démonstration (GD), pour montrer la galerie et le comparateur. */
+    private function genererPhotoResultat(int $index): string
+    {
+        $couleurs = [[90, 60, 120], [60, 110, 90], [150, 100, 60]];
+        [$r, $g, $b] = $couleurs[($index - 1) % count($couleurs)];
+
+        $image = imagecreatetruecolor(640, 480);
+        imagefilledrectangle($image, 0, 0, 639, 479, imagecolorallocate($image, $r, $g, $b));
+        imagestring($image, 5, 250, 230, 'Resultat #'.$index, imagecolorallocate($image, 255, 255, 255));
+
+        $nom = uniqid('transformation_demo_').'.jpg';
+        imagejpeg($image, public_path('uploads/transformations/'.$nom), 85);
+        imagedestroy($image);
+
+        return $nom;
     }
 }
