@@ -11,9 +11,7 @@ use Illuminate\Http\Request;
  */
 class AssistantCollecteController extends Controller
 {
-    public function __construct(private AssistantCollecte $assistant)
-    {
-    }
+    public function __construct(private AssistantCollecte $assistant) {}
 
     /** « Où déposer ? » : ouvert à tous, limité en nombre d'appels par minute. */
     public function ouDeposer(Request $request): JsonResponse

@@ -17,9 +17,7 @@ use Illuminate\View\View;
  */
 class CampagneCollecteController extends Controller
 {
-    public function __construct(private AssistantCollecte $assistant)
-    {
-    }
+    public function __construct(private AssistantCollecte $assistant) {}
 
     /* ----- Public ----- */
 

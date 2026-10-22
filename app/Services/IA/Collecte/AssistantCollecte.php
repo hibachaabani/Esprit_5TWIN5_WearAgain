@@ -7,6 +7,7 @@ use App\Models\CampagneCollecte;
 use App\Models\Depot;
 use App\Models\PointCollecte;
 use App\Models\Signalement;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -24,9 +25,7 @@ class AssistantCollecte
 {
     private const PRIORITES = ['haute', 'moyenne', 'basse'];
 
-    public function __construct(private ClientGroq $groq)
-    {
-    }
+    public function __construct(private ClientGroq $groq) {}
 
     /* ----------------------------------------------------------------------
      | 1. « Où déposer ? » : recommander des points à partir d'une question libre
@@ -272,7 +271,7 @@ class AssistantCollecte
 
     private function date(?string $date): string
     {
-        return $date ? \Illuminate\Support\Carbon::parse($date)->translatedFormat('j F Y') : '…';
+        return $date ? Carbon::parse($date)->translatedFormat('j F Y') : '…';
     }
 
     /* ----------------------------------------------------------------------

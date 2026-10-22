@@ -15,9 +15,7 @@ class SignalementTraite extends Notification
 {
     use Queueable;
 
-    public function __construct(public Signalement $signalement)
-    {
-    }
+    public function __construct(public Signalement $signalement) {}
 
     public function via(object $notifiable): array
     {

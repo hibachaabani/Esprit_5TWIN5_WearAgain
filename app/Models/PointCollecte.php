@@ -16,7 +16,6 @@ class PointCollecte extends Model
 
     protected $table = 'points_collecte';
 
-
     protected $fillable = [
         'association_id',
         'nom',

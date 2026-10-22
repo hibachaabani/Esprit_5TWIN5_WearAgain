@@ -19,9 +19,7 @@ use Illuminate\View\View;
  */
 class SignalementController extends Controller
 {
-    public function __construct(private AssistantCollecte $assistant)
-    {
-    }
+    public function __construct(private AssistantCollecte $assistant) {}
 
     /* ----- Particulier ----- */
 

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PointCollecteRequest;
-use App\Models\Depot;
 use App\Models\CampagneCollecte;
+use App\Models\Depot;
 use App\Models\PointCollecte;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

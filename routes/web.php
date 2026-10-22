@@ -1,12 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin;
 use App\Http\Controllers\AgentAssociationController;
 use App\Http\Controllers\AssistantCollecteController;
-use App\Http\Controllers\Admin;
 use App\Http\Controllers\AssociationController;
-use App\Http\Controllers\AtelierController;
 use App\Http\Controllers\AtelierAvisController;
+use App\Http\Controllers\AtelierController;
 use App\Http\Controllers\AtelierStatistiquesController;
+use App\Http\Controllers\Auth\RecoveryCodeLoginController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\AvisController;
 use App\Http\Controllers\BesoinController;
 use App\Http\Controllers\CampagneCollecteController;
@@ -22,19 +24,18 @@ use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PointCollecteController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\RecoveryCodeController;
-use App\Http\Controllers\Auth\TwoFactorChallengeController;
-use App\Http\Controllers\Auth\RecoveryCodeLoginController;
 use App\Http\Controllers\ReparationController;
 use App\Http\Controllers\ReparationWorkflowController;
 use App\Http\Controllers\SignalementController;
-use App\Http\Controllers\TransformationWorkflowController;
 use App\Http\Controllers\TourneeCollecteController;
 use App\Http\Controllers\TransformationController;
 use App\Http\Controllers\TransformationIAController;
+use App\Http\Controllers\TransformationWorkflowController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\VetementController;
 use App\Http\Controllers\VetementIAController;
+use App\Models\Vetement;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -47,7 +48,7 @@ use Illuminate\Support\Facades\Route;
 
 // Page d'accueil — 4 derniers vêtements disponibles
 Route::get('/', function () {
-    $items = \App\Models\Vetement::with(['categorie', 'photos'])
+    $items = Vetement::with(['categorie', 'photos'])
         ->where('statut', 'disponible')
         ->latest()
         ->take(4)
@@ -135,7 +136,7 @@ Route::middleware(['auth', 'verified'])->prefix('transformations/{transformation
     Route::post('resultat/approuver', [TransformationWorkflowController::class, 'approuverResultat'])->name('resultat.approuver');
     Route::post('resultat/retouche', [TransformationWorkflowController::class, 'demanderRetouche'])->name('resultat.retoucher');
     Route::post('annuler', [TransformationWorkflowController::class, 'annuler'])->name('annuler');
-  Route::post('ia/estimer-devis', [TransformationIAController::class, 'estimerDevis'])->name('ia.estimer-devis');
+    Route::post('ia/estimer-devis', [TransformationIAController::class, 'estimerDevis'])->name('ia.estimer-devis');
 });
 
 /*
@@ -166,7 +167,7 @@ Route::middleware(['auth', 'verified', 'role:particulier'])->group(function () {
     Route::get('mes-transformations', [TransformationController::class, 'mes'])->name('transformations.mes');
     Route::get('transformations/create', [TransformationController::class, 'create'])->name('transformations.create');
     Route::post('transformations', [TransformationController::class, 'store'])->name('transformations.store');
-  Route::post('ia/suggérer-type', [TransformationIAController::class, 'suggérerType'])->name('ia.suggérer-type');
+    Route::post('ia/suggérer-type', [TransformationIAController::class, 'suggérerType'])->name('ia.suggérer-type');
     Route::delete('transformations/{transformation}', [TransformationController::class, 'destroy'])->name('transformations.destroy');
 });
 
