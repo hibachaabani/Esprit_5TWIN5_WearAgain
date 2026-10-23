@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Association;
+use App\Models\Atelier;
 use App\Models\Don;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -13,12 +14,16 @@ class DatabaseSeeder extends Seeder
     use WithoutModelEvents;
 
     /**
-     * Remplit la base avec des données de démonstration.
-     * Un compte par rôle (mot de passe : Wearagain2026) :
+     * Base de départ : uniquement les comptes de démonstration (mot de passe : Wearagain2026),
+     * leurs fiches et les catégories de vêtements. Aucun don, dépôt ni point de collecte :
+     * tout se crée en direct pendant la démonstration.
      *   particulier  donateur@wearagain.tn
-     *   association  association@wearagain.tn
-     *   atelier      atelier@wearagain.tn
-     *   admin        admin@wearagain.tn
+     *   association  association@wearagain.tn   (« Les Mains Solidaires »)
+     *   atelier      atelier@wearagain.tn       (« Atelier Éco-Couture »)
+     *   admin        admin@wearagain.tn         (back-office /admin)
+     *
+     * Pour retrouver le jeu de données de démonstration complet (faux utilisateurs, dons,
+     * points de collecte, dépôts, transformations, avis...) : SEED_DEMO_DATA=true.
      */
     public function run(): void
     {
@@ -27,8 +32,7 @@ class DatabaseSeeder extends Seeder
 
         $this->compte('donateur@wearagain.tn', 'Ahmed Trabelsi', 'particulier');
         $responsable = $this->compte('association@wearagain.tn', 'Sana Ben Ali', 'association');
-        $this->compte('atelier@wearagain.tn', 'Karim Ben Salah', 'atelier');
-        $this->compte('test@example.com', 'Test User', 'particulier');
+        $gerant = $this->compte('atelier@wearagain.tn', 'Karim Ben Salah', 'atelier');
 
         Association::firstOrCreate(
             ['numero_agrement' => 'AGR-2026-0042'],
@@ -44,6 +48,33 @@ class DatabaseSeeder extends Seeder
                 'verifiee' => true,
             ],
         );
+
+        if (filter_var(env('SEED_DEMO_DATA', false), FILTER_VALIDATE_BOOLEAN)) {
+            $this->donneesDeDemonstration();
+        } else {
+            Atelier::firstOrCreate(
+                ['user_id' => $gerant->id],
+                [
+                    'nom' => 'Atelier Éco-Couture',
+                    'description' => 'Atelier de couture solidaire : retouches, réparations et upcycling de vêtements.',
+                    'ville' => 'Tunis',
+                    'adresse' => '18 rue de Marseille',
+                    'specialites' => 'Retouches, upcycling, broderie',
+                    'horaires' => 'Lun–Sam 9h–18h',
+                ],
+            );
+        }
+
+        $this->call([
+            AdminSeeder::class,
+            RoleSeeder::class,
+        ]);
+    }
+
+    /** Jeu de données de démonstration complet (activé par SEED_DEMO_DATA=true). */
+    private function donneesDeDemonstration(): void
+    {
+        $this->compte('test@example.com', 'Test User', 'particulier');
 
         // Associations et dons générés par les factories (avec leurs relations), une seule fois.
         if (Association::count() < 2) {
@@ -64,14 +95,12 @@ class DatabaseSeeder extends Seeder
 
         // Ordre important : les réparations et avis s'appuient sur les ateliers et vêtements.
         $this->call([
-            AdminSeeder::class,
             BesoinSeeder::class,
             CollecteSeeder::class,
             ScenarioDonSeeder::class,
             AtelierTransformationSeeder::class,
             ReparationSeeder::class,
             AvisSeeder::class,
-            RoleSeeder::class,
         ]);
     }
 
