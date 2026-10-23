@@ -104,4 +104,5 @@
   .choix-cartes { grid-template-columns: 1fr; }
 }
 
-/* Tri intelligent des dons reçus (IA) */
+/* En-tête de « Dons reçus » : export Excel et lien vers la fiche */
+.dons-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
