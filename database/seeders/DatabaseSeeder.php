@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Catégories de vêtements d'abord : la catégorisation automatique et les annonces s'en servent.
+        $this->call(CategorieSeeder::class);
+
         $this->compte('donateur@wearagain.tn', 'Ahmed Trabelsi', 'particulier');
         $responsable = $this->compte('association@wearagain.tn', 'Sana Ben Ali', 'association');
         $this->compte('atelier@wearagain.tn', 'Karim Ben Salah', 'atelier');
