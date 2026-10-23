@@ -4,7 +4,9 @@ namespace App\Services\IA;
 
 use App\Models\Categorie;
 use App\Services\IA\Concerns\ConfigureTls;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 /**
  * Suggère automatiquement une catégorie pour un vêtement
@@ -18,16 +20,30 @@ class CategorieurVetement
 {
     use ConfigureTls;
 
-    /** Mots-clés par slug de catégorie (moteur local). */
-    private const LEXIQUE = [
-        'hauts'        => ['t-shirt', 'tshirt', 'chemise', 'top', 'polo', 'blouse', 'pull', 'sweat', 'hoodie', 'débardeur', 'debardeur', 'tunique', 'haut'],
-        'bas'          => ['pantalon', 'jean', 'jeans', 'legging', 'short', 'bermuda', 'jogging', 'bas'],
-        'robes'        => ['robe', 'combinaison', 'salopette'],
-        'vestes'       => ['veste', 'manteau', 'blouson', 'parka', 'imperméable', 'impermeable', 'trench', 'doudoune', 'anorak', 'blazer', 'gilet'],
-        'chaussures'   => ['chaussure', 'basket', 'botte', 'bottine', 'escarpin', 'sandale', 'mocassin', 'tennis', 'sneaker'],
-        'accessoires'  => ['sac', 'ceinture', 'chapeau', 'casquette', 'bonnet', 'écharpe', 'echarpe', 'foulard', 'gant', 'bijou', 'cravate', 'montre'],
-        'sport'        => ['sport', 'running', 'yoga', 'football', 'cyclisme', 'natation', 'fitness', 'gym', 'athletisme'],
-        'enfants'      => ['enfant', 'bébé', 'bebe', 'garçon', 'garcon', 'fille', 'kid'],
+    /**
+     * Types de vêtements reconnus par le moteur local :
+     *  - « noms » : noms possibles de la catégorie correspondante dans la base ;
+     *  - « mots » : mots du titre ou de la description qui désignent ce type.
+     * Mots sans accents et au singulier : le texte est normalisé de la même façon.
+     * L'ordre départage deux types à égalité (le plus spécifique d'abord).
+     */
+    private const TYPES = [
+        'enfants' => ['libelle' => 'Enfants', 'noms' => ['enfant', 'bebe', 'kid'],
+            'mots' => ['enfant', 'bebe', 'garcon', 'fille', 'fillette', 'kid', 'naissance', 'nourrisson']],
+        'chaussures' => ['libelle' => 'Chaussures', 'noms' => ['chaussure'],
+            'mots' => ['chaussure', 'basket', 'botte', 'bottine', 'escarpin', 'sandale', 'mocassin', 'sneaker', 'espadrille', 'tong', 'derby', 'ballerine', 'babouche']],
+        'sport' => ['libelle' => 'Sport', 'noms' => ['sport', 'sportswear'],
+            'mots' => ['sport', 'running', 'yoga', 'football', 'foot', 'cyclisme', 'natation', 'fitness', 'gym', 'survetement', 'athletisme', 'tennis', 'jogging']],
+        'robes' => ['libelle' => 'Robes', 'noms' => ['robe'],
+            'mots' => ['robe', 'combinaison', 'salopette', 'jumpsuit', 'caftan', 'jebba']],
+        'vestes' => ['libelle' => 'Vestes et manteaux', 'noms' => ['veste', 'manteau', 'blouson'],
+            'mots' => ['veste', 'manteau', 'blouson', 'parka', 'impermeable', 'trench', 'doudoune', 'anorak', 'blazer', 'gilet', 'kimono', 'cape']],
+        'bas' => ['libelle' => 'Bas', 'noms' => ['bas', 'pantalon', 'jean'],
+            'mots' => ['pantalon', 'jean', 'legging', 'short', 'bermuda', 'jupe', 'chino', 'cargo', 'sarouel']],
+        'hauts' => ['libelle' => 'Hauts', 'noms' => ['haut', 'top', 't-shirt'],
+            'mots' => ['t-shirt', 'tshirt', 'tee-shirt', 'chemise', 'chemisier', 'top', 'polo', 'blouse', 'pull', 'pull-over', 'sweat', 'sweatshirt', 'hoodie', 'debardeur', 'tunique', 'cardigan', 'maillot', 'haut']],
+        'accessoires' => ['libelle' => 'Accessoires', 'noms' => ['accessoire'],
+            'mots' => ['sac', 'ceinture', 'chapeau', 'casquette', 'bonnet', 'echarpe', 'foulard', 'gant', 'bijou', 'collier', 'bracelet', 'cravate', 'montre', 'lunette', 'portefeuille', 'pochette']],
     ];
 
     /**
@@ -50,80 +66,97 @@ class CategorieurVetement
         return $this->suggererViaLocal($titre, $description, $categories);
     }
 
-    private function suggererViaLocal(string $titre, string $description, $categories): array
+    /**
+     * Moteur local : chaque mot reconnu du titre compte 2 points, de la description 1 point.
+     */
+    private function suggererViaLocal(string $titre, string $description, Collection $categories): array
     {
-        $texte = mb_strtolower($titre . ' ' . $description);
-        $scores = [];
+        $motsTitre = $this->mots($titre);
+        $motsDescription = $this->mots($description);
 
-        foreach (self::LEXIQUE as $slug => $mots) {
-            $score = 0;
-            foreach ($mots as $mot) {
-                if (str_contains($texte, $mot)) {
-                    $score++;
-                }
-            }
+        $scores = [];
+        $reconnus = [];
+        foreach (self::TYPES as $type => $definition) {
+            $vocabulaire = array_map(fn (string $mot) => $this->singulier($mot), $definition['mots']);
+            $dansTitre = array_values(array_intersect($motsTitre, $vocabulaire));
+            $dansDescription = array_values(array_intersect($motsDescription, $vocabulaire));
+            $score = 2 * count($dansTitre) + count($dansDescription);
+
             if ($score > 0) {
-                $scores[$slug] = $score;
+                $scores[$type] = $score;
+                $reconnus[$type] = array_values(array_unique([...$dansTitre, ...$dansDescription]));
             }
         }
 
-        if (empty($scores)) {
+        if ($scores === []) {
             return [
-                'categorie_id'  => null,
+                'categorie_id' => null,
                 'categorie_nom' => '',
-                'confiance'     => 'faible',
-                'explication'   => 'Aucun mot-clé reconnu. Veuillez choisir manuellement.',
-                'source'        => 'local',
+                'confiance' => 'faible',
+                'explication' => 'Aucun type de vêtement reconnu dans le titre ou la description. Choisissez la catégorie dans la liste.',
+                'source' => 'local',
             ];
         }
 
-        arsort($scores);
-        $meilleurSlug = array_key_first($scores);
+        // Le meilleur score l'emporte ; à égalité, l'ordre de TYPES (le plus spécifique d'abord).
+        $classement = collect($scores)->sortBy(fn (int $score, string $type) => [-$score, array_search($type, array_keys(self::TYPES), true)]);
+        $type = $classement->keys()->first();
+        $categorie = $this->categoriePour($type, $categories);
+        $mots = implode(', ', $reconnus[$type]);
 
-        // Try to find a matching category in DB using multiple strategies
-        $categorie = null;
-
-        // Strategy 1: category name contains the slug keyword
-        foreach ($categories as $cat) {
-            $nomNorm = mb_strtolower($cat->nom);
-            if (str_contains($nomNorm, $meilleurSlug) || str_contains($meilleurSlug, $nomNorm)) {
-                $categorie = $cat;
-                break;
-            }
-        }
-
-        // Strategy 2: match on first keyword of the slug
         if (! $categorie) {
-            $premierMot = explode(' ', $meilleurSlug)[0];
-            foreach ($categories as $cat) {
-                if (str_contains(mb_strtolower($cat->nom), $premierMot)) {
-                    $categorie = $cat;
-                    break;
-                }
-            }
+            return [
+                'categorie_id' => null,
+                'categorie_nom' => self::TYPES[$type]['libelle'],
+                'confiance' => 'faible',
+                'explication' => 'Ce vêtement ressemble à « '.self::TYPES[$type]['libelle']." » (mots reconnus : {$mots}), mais cette catégorie n'existe pas encore. Choisissez une catégorie dans la liste.",
+                'source' => 'local',
+            ];
         }
 
-        // Strategy 3: match on any keyword from the lexique entry directly against category names
-        if (! $categorie) {
-            foreach (self::LEXIQUE[$meilleurSlug]['mots'] ?? [] as $mot) {
-                foreach ($categories as $cat) {
-                    if (str_contains(mb_strtolower($cat->nom), $mot)) {
-                        $categorie = $cat;
-                        break 2;
-                    }
-                }
-            }
-        }
-
-        $confiance = $scores[$meilleurSlug] >= 2 ? 'élevée' : 'moyenne';
+        $alternative = $classement->keys()->skip(1)
+            ->map(fn (string $autre) => $this->categoriePour($autre, $categories))
+            ->first(fn (?Categorie $autre) => $autre && $autre->id !== $categorie->id);
 
         return [
-            'categorie_id'  => $categorie?->id,
-            'categorie_nom' => $categorie?->nom ?? ucfirst($meilleurSlug),
-            'confiance'     => $confiance,
-            'explication'   => "Catégorie détectée d'après les mots-clés du titre et de la description.",
-            'source'        => 'local',
+            'categorie_id' => $categorie->id,
+            'categorie_nom' => $categorie->nom,
+            'confiance' => $scores[$type] >= 3 ? 'élevée' : ($scores[$type] === 2 ? 'moyenne' : 'faible'),
+            'explication' => "Mots reconnus : {$mots}.".($alternative ? " Autre possibilité : {$alternative->nom}." : ''),
+            'source' => 'local',
         ];
+    }
+
+    /** Catégorie active de la base qui correspond à un type (par son nom : « Vestes et manteaux », « Hauts »…). */
+    private function categoriePour(string $type, Collection $categories): ?Categorie
+    {
+        $noms = array_map(fn (string $nom) => $this->singulier($nom), self::TYPES[$type]['noms']);
+
+        return $categories->first(fn (Categorie $categorie) => array_intersect($this->mots($categorie->nom), $noms) !== []);
+    }
+
+    /**
+     * Mots d'un texte, en minuscules, sans accents et au singulier.
+     *
+     * @return list<string>
+     */
+    private function mots(string $texte): array
+    {
+        preg_match_all('/[a-z0-9]+(?:-[a-z0-9]+)*/', Str::of($texte)->ascii()->lower()->value(), $correspondances);
+
+        return array_values(array_unique(array_map(fn (string $mot) => $this->singulier($mot), $correspondances[0])));
+    }
+
+    /** Forme au singulier d'un mot simple : « baskets » → « basket », « manteaux » → « manteau ». */
+    private function singulier(string $mot): string
+    {
+        $mot = Str::of($mot)->ascii()->lower()->value();
+
+        if (strlen($mot) > 3 && (str_ends_with($mot, 's') || str_ends_with($mot, 'x'))) {
+            return substr($mot, 0, -1);
+        }
+
+        return $mot;
     }
 
     private function suggererViaOpenAI(string $titre, string $description, $categories): array
@@ -134,11 +167,11 @@ class CategorieurVetement
             ->withOptions($this->tlsOptions())
             ->timeout((int) config('ia.timeout', 20))
             ->acceptJson()
-            ->post(rtrim((string) config('ia.base_url'), '/') . '/chat/completions', [
-                'model'           => config('ia.model'),
-                'temperature'     => 0.1,
+            ->post(rtrim((string) config('ia.base_url'), '/').'/chat/completions', [
+                'model' => config('ia.model'),
+                'temperature' => 0.1,
                 'response_format' => ['type' => 'json_object'],
-                'messages'        => [
+                'messages' => [
                     ['role' => 'system', 'content' => $this->promptSysteme($listeCats)],
                     ['role' => 'user',   'content' => "Titre : {$titre}\nDescription : {$description}"],
                 ],
@@ -146,7 +179,9 @@ class CategorieurVetement
 
         $response->throw();
 
-        $data = json_decode(data_get($response->json(), 'choices.0.message.content'), true);
+        // Certains modèles entourent le JSON de balises ```json : on les retire.
+        $contenu = preg_replace('/^```(?:json)?\s*|\s*```$/', '', trim((string) data_get($response->json(), 'choices.0.message.content')));
+        $data = json_decode((string) $contenu, true);
 
         if (! is_array($data) || ! isset($data['categorie_id'])) {
             throw new \RuntimeException('Réponse IA invalide.');
@@ -154,12 +189,16 @@ class CategorieurVetement
 
         $categorie = $categories->firstWhere('id', (int) $data['categorie_id']);
 
+        if (! $categorie) {
+            throw new \RuntimeException('Catégorie proposée par l\'IA inconnue.');
+        }
+
         return [
-            'categorie_id'  => $categorie?->id,
-            'categorie_nom' => $categorie?->nom ?? '',
-            'confiance'     => $data['confiance'] ?? 'moyenne',
-            'explication'   => $data['explication'] ?? '',
-            'source'        => 'ia',
+            'categorie_id' => $categorie->id,
+            'categorie_nom' => $categorie->nom,
+            'confiance' => $data['confiance'] ?? 'moyenne',
+            'explication' => $data['explication'] ?? '',
+            'source' => 'ia',
         ];
     }
 
