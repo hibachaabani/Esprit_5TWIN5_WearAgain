@@ -18,7 +18,10 @@
             <h1 class="h2">Dons reçus</h1>
             <p class="lead">Les vêtements proposés à {{ $association->nom }}.</p>
         </div>
-        <a href="{{ route('associations.show', $association) }}" class="btn btn-ghost">Voir ma fiche</a>
+        <div class="dons-actions">
+            <a href="{{ route('dons.recus.export') }}" class="btn btn-ghost" download>Exporter en Excel</a>
+            <a href="{{ route('associations.show', $association) }}" class="btn btn-ghost">Voir ma fiche</a>
+        </div>
     </div>
 
     <nav class="tabs" aria-label="Filtrer les dons">

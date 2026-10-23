@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Association;
 use App\Models\Besoin;
 use App\Models\Don;
+use App\Services\ExportDonsAssociation;
 use App\Services\WorkflowDon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DonController extends Controller
 {
@@ -111,6 +114,25 @@ class DonController extends Controller
         $points = $association->pointsCollecte()->actifs()->orderBy('nom')->get();
 
         return view('dons.recus', compact('association', 'dons', 'onglet', 'onglets', 'compteurs', 'points'));
+    }
+
+    /** Export Excel des dons reçus et du bilan des besoins de l'association connectée. */
+    public function exporter(Request $request, ExportDonsAssociation $export): StreamedResponse|RedirectResponse
+    {
+        $association = $request->user()->association;
+
+        if (! $association) {
+            return redirect()->route('dons.index')
+                ->with('erreur', 'Cette page est réservée aux comptes association.');
+        }
+
+        return response()->streamDownload(function () use ($export, $association): void {
+            $classeur = $export->classeur($association);
+            (new Xlsx($classeur))->save('php://output');
+            $classeur->disconnectWorksheets();
+        }, $export->nomFichier($association), [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
     }
 
     /** Détail d'un don : sa frise, ses actions et le fil de discussion entre le donateur et l'association. */
