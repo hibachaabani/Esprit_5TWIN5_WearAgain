@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccueilController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\AgentAssociationController;
 use App\Http\Controllers\AssistantCollecteController;
@@ -35,7 +36,6 @@ use App\Http\Controllers\TransformationWorkflowController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\VetementController;
 use App\Http\Controllers\VetementIAController;
-use App\Models\Vetement;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,16 +46,8 @@ use Illuminate\Support\Facades\Route;
 | routes publiques à paramètre ({vetement}, {atelier}…) qui les captureraient.
 */
 
-// Page d'accueil — 4 derniers vêtements disponibles
-Route::get('/', function () {
-    $items = Vetement::with(['categorie', 'photos'])
-        ->where('statut', 'disponible')
-        ->latest()
-        ->take(4)
-        ->get();
-
-    return view('home', compact('items'));
-})->name('home');
+// Page d'accueil — derniers vêtements, besoins urgents, chiffres et assistant de don IA
+Route::get('/', AccueilController::class)->name('home');
 
 /*
 | Tout compte connecté

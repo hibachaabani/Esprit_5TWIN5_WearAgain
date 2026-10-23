@@ -16,7 +16,7 @@
         <p class="lead">Décrivez-le en une phrase. L'IA comprend de quoi il s'agit et trouve les associations qui en ont le plus besoin.</p>
     </header>
 
-    <form method="GET" action="{{ route('besoins.assistant') }}" class="assistant-form">
+    <form method="GET" action="{{ route('besoins.assistant') }}" class="assistant-form" data-ia-attente>
         <label for="description" class="sr-only">Votre vêtement</label>
         <textarea id="description" name="description" rows="2" maxlength="300" required
                   placeholder="Ex. Doudoune bleue taille 8 ans, portée un hiver">{{ $description }}</textarea>
@@ -28,7 +28,7 @@
                     <option value="{{ $nomVille }}" @selected($ville === $nomVille)>{{ $nomVille }}</option>
                 @endforeach
             </select>
-            <button type="submit" class="btn btn-primary">Trouver les besoins</button>
+            <button type="submit" class="btn btn-primary" data-ia-attente="L'IA analyse votre vêtement…">Trouver les besoins</button>
         </div>
         @error('description') <p class="error">{{ $message }}</p> @enderror
         @unless ($analyse)
@@ -101,3 +101,7 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/ia-attente.js') }}"></script>
+@endpush
