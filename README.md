@@ -4,6 +4,14 @@ Plateforme d'économie circulaire du textile : les particuliers publient, donnen
 
 Projet **Applications Web Avancées — 5TWIN (2026-2027)**, Laravel 12.
 
+## 📸 Aperçu
+
+![Page d'accueil](docs/screenshots/accueil.jpg)
+
+| Assistant de don IA | Besoins des associations |
+|---|---|
+| ![Assistant de don IA](docs/screenshots/assistant-ia.jpg) | ![Besoins des associations](docs/screenshots/besoins.jpg) |
+
 ## Équipe et modules
 
 | Membre | Entités | Module |
